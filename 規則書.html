@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth snap-y snap-proximity">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaka：島嶼的維度 | 數位規則書</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 僅引入 Noto Serif TC (思源明體)，包含多種字重以呈現細緻排版 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        /* 將 sans 與 serif 都強制對應到明體，確保全域統一 */
+                        sans: ['"Noto Serif TC"', 'serif'],
+                        serif: ['"Noto Serif TC"', 'serif'],
+                    },
+                    colors: {
+                        avaka: {
+                            // 博物館深邃基調
+                            dark: '#01120d',        /* 極深墨綠/深淵綠 */
+                            panel: '#032219',       /* 展板底色 Emerald 950 */
+                            glass: 'rgba(1, 18, 13, 0.55)', /* 毛玻璃底色 */
+
+                            // 點綴色與發光色
+                            glow: '#34d399',        /* 發光翠綠 Emerald 400 */
+                            gold: '#d4af37',        /* 古董金/纖維金 */
+                            goldlight: '#fde68a',   /* 淺金 */
+
+                            // 文字色系
+                            textmain: '#ecfdf5',    /* 主要文字 Emerald 50 */
+                            textmuted: '#a7f3d0',   /* 次要文字 Emerald 200 */
+
+                            // 資源色
+                            ap: '#38bdf8',          /* 體力藍 Sky 400 */
+                            kp: '#fbbf24',          /* 技術金 Amber 400 */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 基礎字號再度放大：這會讓所有使用 rem 單位的 text, padding, margin 等比放大 */
+        html {
+            font-size: 19px;
+        }
+
+        /* Custom Dark Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #01120d;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #065f46;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+
+        /* 玻璃擬物化 (Glassmorphism) 共用類別 */
+        .museum-glass {
+            background: var(--tw-colors-avaka-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(52, 211, 153, 0.15);
+            /* 微弱的翠綠邊框 */
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(4, 47, 33, 0.5);
+        }
+
+        /* 發光邊框效果 */
+        .glow-border {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glow-border:hover {
+            border-color: rgba(52, 211, 153, 0.6);
+            box-shadow: 0 0 25px rgba(52, 211, 153, 0.2), inset 0 0 15px rgba(52, 211, 153, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .glow-border-gold:hover {
+            border-color: rgba(212, 175, 55, 0.6);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.2), inset 0 0 15px rgba(212, 175, 55, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .glow-border-subtle {
+            transition: all 0.3s ease;
+        }
+
+        /* 滾動捕捉 (Scroll Snapping) 設定 */
+        main section {
+            scroll-snap-align: start;
+            /* 讓滾動在每個 section 邊界自然停頓 */
+        }
+
+        /* 側邊欄收放設定 */
+        @media (min-width: 768px) {
+            .sidebar-collapsed #sidebar {
+                transform: translateX(-100%) !important;
+            }
+            .sidebar-collapsed #main-wrapper {
+                padding-left: 0 !important;
+            }
+            .sidebar-collapsed #open-sidebar-btn {
+                display: flex !important;
+            }
+        }
+
+        .glow-border-subtle:hover {
+            border-color: rgba(52, 211, 153, 0.4);
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.1);
+        }
+
+        /* 左側導覽列的活動狀態 */
+        .nav-link {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: #d4af37;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+            box-shadow: 0 0 10px #d4af37;
+        }
+
+        .nav-link.active {
+            color: #d4af37;
+            font-weight: 700;
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%);
+        }
+
+        .nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        /* AI Loading Animation */
+        .loader-dots div {
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+
+        .loader-dots div:nth-child(1) {
+            left: 8px;
+            animation: loader-dots1 0.6s infinite;
+        }
+
+        .loader-dots div:nth-child(2) {
+            left: 8px;
+            animation: loader-dots2 0.6s infinite;
+        }
+
+        .loader-dots div:nth-child(3) {
+            left: 32px;
+            animation: loader-dots2 0.6s infinite;
+        }
+
+        .loader-dots div:nth-child(4) {
+            left: 56px;
+            animation: loader-dots3 0.6s infinite;
+        }
+
+        @keyframes loader-dots1 {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes loader-dots3 {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        @keyframes loader-dots2 {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(24px, 0);
+            }
+        }
+
+        /* 全域暗綠色麻草紋理與底部深度漸層 */
+        .global-fiber-dark {
+            background-color: #01120d;
+            background-image:
+                repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.015) 0px, rgba(212, 175, 55, 0.015) 1px, transparent 1px, transparent 6px),
+                repeating-linear-gradient(-45deg, rgba(212, 175, 55, 0.015) 0px, rgba(212, 175, 55, 0.015) 1px, transparent 1px, transparent 6px),
+                radial-gradient(circle at 50% 0%, rgba(0, 139, 99, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 50% 100%, rgba(212, 175, 55, 0.04) 0%, rgba(0, 139, 99, 0.12) 30%, transparent 70%),
+                linear-gradient(to bottom, transparent 40%, rgba(2, 36, 27, 0.7) 100%);
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+
+<body class="global-fiber-dark text-avaka-textmain antialiased font-serif">
+
+    <!-- 全域系統導覽列 -->
+    <div class="fixed top-0 left-0 w-full bg-[#010a08] border-b border-emerald-900/50 flex justify-center py-2.5 z-[100] text-emerald-500/80 font-sans">
+        <nav class="flex items-center gap-3 md:gap-8 px-4 overflow-x-auto hide-scrollbar w-full max-w-5xl justify-center">
+            <a href="./封面.html" class="text-xs md:text-sm font-bold hover:text-emerald-200 transition-colors whitespace-nowrap tracking-widest uppercase no-underline">首頁</a>
+            <span class="w-1 h-1 rounded-full bg-emerald-800/50 shrink-0"></span>
+            <a href="./規則書.html" class="text-xs md:text-sm font-bold hover:text-emerald-200 transition-colors whitespace-nowrap tracking-widest uppercase no-underline">規則書</a>
+            <span class="w-1 h-1 rounded-full bg-emerald-800/50 shrink-0"></span>
+            <a href="./情境腳本.html" class="text-xs md:text-sm font-bold hover:text-emerald-200 transition-colors whitespace-nowrap tracking-widest uppercase no-underline">情境腳本</a>
+            <span class="w-1 h-1 rounded-full bg-emerald-800/50 shrink-0"></span>
+            <a href="./走讀.html" class="text-xs md:text-sm font-bold hover:text-emerald-200 transition-colors whitespace-nowrap tracking-widest uppercase no-underline">走讀版</a>
+            <span class="w-1 h-1 rounded-full bg-emerald-800/50 shrink-0"></span>
+            <a href="./課堂.html" class="text-xs md:text-sm font-bold hover:text-emerald-200 transition-colors whitespace-nowrap tracking-widest uppercase no-underline">課堂版</a>
+        </nav>
+    </div>
+
+    <!-- Mobile Header -->
+    <header
+        class="md:hidden fixed top-[44px] left-0 w-full z-40 border-b border-emerald-900/50 px-4 py-3 flex justify-between items-center shadow-lg"
+        style="background: rgba(2, 28, 20, 0.85); backdrop-filter: blur(12px);">
+        <div class="font-serif font-bold text-avaka-goldlight text-lg tracking-widest">AVAKA</div>
+        <button id="menu-btn"
+            class="text-avaka-gold focus:outline-none p-1.5 rounded-md border border-emerald-800/50 bg-emerald-950/50">
+            <i data-lucide="menu"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar"
+        class="hidden md:block w-full md:w-64 lg:w-72 border-r border-emerald-800/30 fixed top-[44px] left-0 h-[calc(100vh-44px)] overflow-y-auto z-40 shadow-[5px_0_30px_rgba(0,0,0,0.5)] transition-transform transform"
+        style="background: rgba(2, 24, 18, 0.7); backdrop-filter: blur(20px);">
+        <div class="p-6 relative">
+            <!-- 裝飾性光暈 -->
+            <div class="absolute top-0 left-0 w-full h-32 bg-emerald-600/10 blur-3xl pointer-events-none"></div>
+
+            <div class="text-xs tracking-[0.3em] text-emerald-400/70 uppercase mb-2 mt-4 md:mt-0 font-light">GAME RULES
+            </div>
+            <h1 class="font-serif font-bold text-2xl text-white leading-tight mb-8 tracking-wide">Avaka<br><span
+                    class="text-avaka-gold">島嶼的維度</span></h1>
+
+            <nav class="space-y-1.5 font-light" id="nav-menu">
+                <a href="#intro"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">卷宗：遊戲簡介</a>
+                <a href="#goal"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">I.
+                    遊戲目標</a>
+                <a href="#resources"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">II.
+                    核心資源</a>
+                <a href="#roles"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">III.
+                    選擇角色</a>
+                <a href="#map"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">IV.
+                    地圖與移動</a>
+                <a href="#flow"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">V.
+                    遊戲進行流程</a>
+                <a href="#actions"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">VI.
+                    可執行動作</a>
+                <a href="#paths"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">VII.
+                    技術路徑抉擇</a>
+                <a href="#calendar"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">VIII.
+                    海洋夜曆</a>
+                <a href="#scoring"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">IX.
+                    分數結算</a>
+
+                <div class="my-4 border-t border-emerald-800/30"></div>
+
+                <a href="#ai-assistant"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-avaka-glow font-medium hover:bg-emerald-900/50 transition-colors flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> AI 傳承指引
+                </a>
+                <a href="#cards"
+                    class="nav-link block px-4 py-2.5 rounded-r-lg text-sm text-emerald-100/70 hover:text-white hover:bg-emerald-900/30 transition-colors">★
+                    卡牌設計哲學</a>
+
+            </nav>
+
+            <!-- 手機版關閉按鈕 -->
+            <button id="close-menu-btn"
+                class="md:hidden absolute top-4 right-4 text-emerald-400 bg-emerald-950 p-2 rounded-full border border-emerald-800/50">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- 桌機版收合按鈕 -->
+            <button id="collapse-sidebar-btn"
+                class="hidden md:flex absolute top-4 right-4 text-emerald-400 hover:text-white hover:bg-emerald-900/80 p-1.5 rounded-md transition-colors cursor-pointer" title="收合選單">
+                <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Floating Open Sidebar Button (Desktop) -->
+    <button id="open-sidebar-btn" class="hidden fixed top-[64px] left-0 z-50 bg-emerald-950 border border-l-0 border-emerald-800/50 p-2.5 pl-3 rounded-r-lg text-emerald-400 hover:text-white transition-colors shadow-[5px_0_15px_rgba(0,0,0,0.5)] group cursor-pointer" title="展開選單">
+        <i data-lucide="panel-left-open" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></i>
+    </button>
+
+    <!-- Main Content Wrapper -->
+    <div id="main-wrapper" class="w-full md:pl-64 lg:pl-72 flex justify-center pt-[108px] md:pt-[44px] relative z-10 transition-all duration-500 ease-in-out">
+        <main class="w-full max-w-4xl px-4 sm:px-8 py-8 md:py-16 relative">
+
+            <!-- Hero Cover Section -->
+            <section id="intro"
+                class="mb-14 rounded-2xl museum-glass p-8 md:p-14 relative overflow-hidden scroll-mt-24 glow-border">
+                <!-- 背景光暈 -->
+                <div
+                    class="absolute top-[-20%] right-[-10%] w-96 h-96 bg-emerald-700/20 rounded-full blur-[80px] pointer-events-none">
+                </div>
+
+                <div class="relative z-10 flex flex-col md:flex-row gap-8 items-start">
+                    <div class="flex-1">
+                        <div
+                            class="text-xs tracking-[0.4em] text-emerald-400/80 uppercase mb-4 border-b border-emerald-700/50 inline-block pb-1">
+                            Digital Rulebook</div>
+                        <h1
+                            class="font-serif text-4xl md:text-6xl font-bold leading-tight mb-2 tracking-wide text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                            Avaka</h1>
+                        <h2 class="font-serif text-3xl md:text-4xl text-avaka-gold mb-6 font-light">島嶼的維度</h2>
+
+                        <div
+                            class="text-base text-emerald-50/90 leading-relaxed max-w-2xl mb-8 border-l border-avaka-gold bg-emerald-950/40 p-6 rounded-r-xl shadow-inner font-light">
+                            <span class="text-avaka-gold text-2xl leading-none mr-2 font-serif">「</span>蘭嶼（Ponso no
+                            Tao）的時鐘正被兩種力量撥動。一種是順應『海洋夜曆』，需要等待、祈禱與節奏的傳統時光；另一種是追求觀光產值、效率與便利的貨幣經濟。玩家作為工匠，除了是在造船，更是要在這 12
+                            個月（回合）中，決定自己要留下什麼樣的文化認同。<span
+                                class="text-avaka-gold text-2xl leading-none ml-1 font-serif">」</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-emerald-800/50 text-sm relative z-10">
+                    <div class="bg-emerald-950/50 p-4 rounded-lg border border-emerald-800/30 text-center">
+                        <i data-lucide="users" class="w-5 h-5 mx-auto mb-2 text-avaka-gold/70"></i>
+                        <span class="block text-xs text-emerald-400/70 uppercase tracking-widest mb-1">人數</span>
+                        <span class="font-medium text-emerald-50 tracking-wider">2–4 人</span>
+                    </div>
+                    <div class="bg-emerald-950/50 p-4 rounded-lg border border-emerald-800/30 text-center">
+                        <i data-lucide="rotate-cw" class="w-5 h-5 mx-auto mb-2 text-avaka-gold/70"></i>
+                        <span class="block text-xs text-emerald-400/70 uppercase tracking-widest mb-1">回合</span>
+                        <span class="font-medium text-emerald-50 tracking-wider">12 月 (一年)</span>
+                    </div>
+                    <div class="bg-emerald-950/50 p-4 rounded-lg border border-emerald-800/30 text-center">
+                        <i data-lucide="hourglass" class="w-5 h-5 mx-auto mb-2 text-avaka-gold/70"></i>
+                        <span class="block text-xs text-emerald-400/70 uppercase tracking-widest mb-1">時長</span>
+                        <span class="font-medium text-emerald-50 tracking-wider">60–90 分</span>
+                    </div>
+                    <div class="bg-emerald-950/50 p-4 rounded-lg border border-emerald-800/30 text-center">
+                        <i data-lucide="user-check" class="w-5 h-5 mx-auto mb-2 text-avaka-gold/70"></i>
+                        <span class="block text-xs text-emerald-400/70 uppercase tracking-widest mb-1">年齡</span>
+                        <span class="font-medium text-emerald-50 tracking-wider">14+</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 1. 遊戲目標 -->
+            <section id="goal" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">I</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">遊戲目標</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Victory Conditions</div>
+                    </div>
+                </div>
+
+                <p class="mb-4 font-light text-emerald-50/90 leading-loose">所有玩家共用一個底線目標：<strong
+                        class="text-avaka-gold font-normal">在第 12 回合結束前完成自己的拼板舟</strong>。未能完工者視為「文化斷裂」，直接出局。</p>
+                <p class="mb-6 font-light text-emerald-50/90 leading-loose">在此基礎上，<strong
+                        class="text-avaka-glow font-normal border-b border-avaka-glow/30 pb-0.5">文化韌性評分（Cultural
+                        Resilience Score）最高的玩家獲勝</strong>。評分取決於你選擇哪條完工路徑、如何積累技術知識，以及你與耆老、青年之間的傳承互動。</p>
+
+                <div
+                    class="bg-emerald-900/20 border border-emerald-700/30 p-5 rounded-xl mt-6 text-sm text-emerald-100 flex gap-4 items-start shadow-inner">
+                    <div class="p-2 bg-emerald-950 rounded-full border border-emerald-800 flex-shrink-0">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-avaka-gold"></i>
+                    </div>
+                    <div class="pt-1">
+                        <span class="text-avaka-gold text-xs uppercase tracking-widest mb-1 block">傳承機制提示</span>
+                        <span class="font-light leading-relaxed">當青年透過「請益」或「學徒式參與」獲得 KP 時，引導他的耆老同步獲得 <span
+                                class="text-avaka-glow">+1 聲望分</span>，聲望分於結算時等同文化韌性分。</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. 核心資源 -->
+            <section id="resources" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">II</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">核心資源</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Core Resources</div>
+                    </div>
+                </div>
+
+                <p class="mb-8 font-light text-emerald-50/80">遊戲中有兩種核心點數，每位玩家需同時追蹤：</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="bg-cyan-950/20 border border-cyan-800/40 p-6 rounded-xl hover:bg-cyan-950/40 transition-colors shadow-inner">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-full bg-cyan-950 flex items-center justify-center border border-cyan-700/50 shadow-[0_0_15px_rgba(56,189,248,0.2)]">
+                                <i data-lucide="zap" class="w-5 h-5 text-avaka-ap"></i>
+                            </div>
+                            <h3 class="font-serif text-xl text-avaka-ap tracking-wide">行動點數 <span
+                                    class="text-sm font-serif">(AP)</span></h3>
+                        </div>
+                        <p class="text-sm text-cyan-50/70 font-light leading-loose">代表體力與時間。每回合開始自動補滿至角色上限。執行幾乎所有動作都需消耗
+                            AP，用完即代表本回合行動結束。</p>
+                    </div>
+
+                    <div
+                        class="bg-amber-950/20 border border-amber-800/40 p-6 rounded-xl hover:bg-amber-950/40 transition-colors shadow-inner">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-full bg-amber-950 flex items-center justify-center border border-amber-700/50 shadow-[0_0_15px_rgba(251,191,36,0.2)]">
+                                <i data-lucide="brain-circuit" class="w-5 h-5 text-avaka-kp"></i>
+                            </div>
+                            <h3 class="font-serif text-xl text-avaka-kp tracking-wide">技術點數 <span
+                                    class="text-sm font-serif">(KP)</span></h3>
+                        </div>
+                        <p class="text-sm text-amber-50/70 font-light leading-loose">代表對傳統工藝的理解，累積後不會重置。KP
+                            是解鎖高階工序的唯一途徑——捻線需 <span class="text-avaka-kp">KP 3</span>，填縫需 <span class="text-avaka-kp">KP
+                                8</span>。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. 選擇角色 -->
+            <section id="roles" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">III</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">選擇角色</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Role Selection</div>
+                    </div>
+                </div>
+
+                <p class="mb-8 font-light text-emerald-50/80">每位玩家於遊戲開始前選擇一個角色，角色決定你的 AP 上限、初始 KP，以及獨特能力。</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Role 1 -->
+                    <div
+                        class="bg-emerald-950/40 border border-emerald-700/40 rounded-xl p-6 glow-border relative overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 bg-emerald-800/50 border-b border-l border-emerald-600/30 px-3 py-1 text-xs uppercase tracking-widest text-emerald-200 rounded-bl-lg">
+                            傳承者</div>
+                        <h3 class="font-serif text-xl text-white mb-4 mt-2">資深工匠 <span
+                                class="text-sm text-emerald-400/70">(耆老)</span></h3>
+                        <div class="flex gap-3 mb-6 pb-4 border-b border-emerald-800/50">
+                            <span class="inline-flex items-center gap-1.5 text-sm text-avaka-ap font-sans"><i
+                                    data-lucide="zap" class="w-3.5 h-3.5"></i> AP 6</span>
+                            <span class="inline-flex items-center gap-1.5 text-sm text-avaka-kp font-sans"><i
+                                    data-lucide="brain-circuit" class="w-3.5 h-3.5"></i> KP 10</span>
+                        </div>
+                        <ul class="text-sm text-emerald-100/80 font-light space-y-3">
+                            <li class="flex items-start gap-2"><i data-lucide="check-circle"
+                                    class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"></i> <span><strong
+                                        class="text-emerald-300 font-medium">【傳承者】</strong>執行「填縫」不耗 AP。</span></li>
+                            <li class="flex items-start gap-2"><i data-lucide="check-circle"
+                                    class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"></i> <span><strong
+                                        class="text-emerald-300 font-medium">【遠程指導】</strong>跨區域消耗 1 AP 使青年 KP +1。</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Role 2 -->
+                    <div
+                        class="bg-emerald-950/40 border border-emerald-700/40 rounded-xl p-6 glow-border relative overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 bg-emerald-800/50 border-b border-l border-emerald-600/30 px-3 py-1 text-xs uppercase tracking-widest text-emerald-200 rounded-bl-lg">
+                            學習者</div>
+                        <h3 class="font-serif text-xl text-white mb-4 mt-2">文化復振青年</h3>
+                        <div class="flex gap-3 mb-6 pb-4 border-b border-emerald-800/50">
+                            <span class="inline-flex items-center gap-1.5 text-sm text-avaka-ap font-sans"><i
+                                    data-lucide="zap" class="w-3.5 h-3.5"></i> AP 12</span>
+                            <span class="inline-flex items-center gap-1.5 text-sm text-avaka-kp opacity-50 font-sans"><i
+                                    data-lucide="brain-circuit" class="w-3.5 h-3.5"></i> KP 0</span>
+                        </div>
+                        <ul class="text-sm text-emerald-100/80 font-light space-y-3">
+                            <li class="flex items-start gap-2"><i data-lucide="check-circle"
+                                    class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"></i> <span><strong
+                                        class="text-emerald-300 font-medium">【學徒】</strong>移動消耗 0 AP。</span></li>
+                            <li class="flex items-start gap-2"><i data-lucide="check-circle"
+                                    class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"></i> <span><strong
+                                        class="text-emerald-300 font-medium">【快速學習】</strong>主動請益時立即獲得 KP +3。</span></li>
+                        </ul>
+                    </div>
+
+                    <!-- Role 3 -->
+                    <div
+                        class="bg-emerald-950/40 border border-emerald-700/40 rounded-xl p-6 glow-border relative overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 bg-emerald-800/50 border-b border-l border-emerald-600/30 px-3 py-1 text-xs uppercase tracking-widest text-emerald-200 rounded-bl-lg">
+                            適應者</div>
+                        <h3 class="font-serif text-xl text-white mb-4 mt-2">中生代工匠</h3>
+                        <div class="flex gap-3 mb-6 pb-4 border-b border-emerald-800/50">
+                            <span class="inline-flex items-center gap-1.5 text-sm text-avaka-ap font-sans"><i
+                                    data-lucide="zap" class="w-3.5 h-3.5"></i> AP 8</span>
+                            <span class="inline-flex items-center gap-1.5 text-sm text-avaka-kp font-sans"><i
+                                    data-lucide="brain-circuit" class="w-3.5 h-3.5"></i> KP 5</span>
+                        </div>
+                        <ul class="text-sm text-emerald-100/80 font-light space-y-3">
+                            <li class="flex items-start gap-2"><i data-lucide="check-circle"
+                                    class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"></i> <span><strong
+                                        class="text-emerald-300 font-medium">【協商者】</strong>使用工業材料完工時，得分由 +5 提升至
+                                    +10，且免除懲罰。</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. 地圖與移動 -->
+            <section id="map" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">IV</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">地圖與移動</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Map & Movement</div>
+                    </div>
+                </div>
+
+                <p class="mb-8 font-light text-emerald-50/80">地圖為線性設計，玩家只能依序在三個區域間移動。每跨越一格消耗 <span
+                        class="text-avaka-ap font-sans">1 AP</span>（青年角色為 0 AP）。</p>
+
+                <div
+                    class="flex flex-col sm:flex-row items-center gap-3 mb-6 bg-emerald-950/30 p-6 rounded-2xl border border-emerald-800/30 shadow-inner">
+                    <div
+                        class="flex-1 w-full bg-emerald-900/40 border border-emerald-700/50 rounded-xl p-5 text-center shadow-lg relative glow-border-subtle">
+                        <i data-lucide="trees" class="w-6 h-6 mx-auto mb-3 text-emerald-400"></i>
+                        <h3 class="font-serif text-lg text-white mb-2 tracking-widest">山林</h3>
+                        <p class="text-sm text-emerald-200/60 font-light leading-relaxed">採集 Avaka<br>採集花椒纖維</p>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center py-2 sm:py-0">
+                        <i data-lucide="arrow-left-right" class="w-5 h-5 text-emerald-600 rotate-90 sm:rotate-0"></i>
+                    </div>
+
+                    <div
+                        class="flex-1 w-full bg-emerald-800/50 border border-avaka-glow/40 rounded-xl p-5 text-center shadow-[0_0_20px_rgba(52,211,153,0.1)] relative glow-border">
+                        <i data-lucide="hammer" class="w-6 h-6 mx-auto mb-3 text-avaka-glow"></i>
+                        <h3 class="font-serif text-lg text-white mb-2 tracking-widest">灘頭工作室</h3>
+                        <p class="text-sm text-emerald-200/80 font-light leading-relaxed">剝麻、刮絲<br>捻線、填縫</p>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center py-2 sm:py-0">
+                        <i data-lucide="arrow-left-right" class="w-5 h-5 text-emerald-600 rotate-90 sm:rotate-0"></i>
+                    </div>
+
+                    <div
+                        class="flex-1 w-full bg-emerald-900/40 border border-emerald-700/50 rounded-xl p-5 text-center shadow-lg relative glow-border-subtle">
+                        <i data-lucide="store" class="w-6 h-6 mx-auto mb-3 text-blue-400"></i>
+                        <h3 class="font-serif text-lg text-white mb-2 tracking-widest">商店</h3>
+                        <p class="text-sm text-emerald-200/60 font-light leading-relaxed">購買南寶樹脂<br>購買尼龍繩</p>
+                    </div>
+                </div>
+                <p class="text-center text-sm text-emerald-400/60 font-light tracking-wide"><i data-lucide="info"
+                        class="w-4 h-4 inline align-text-bottom mr-1"></i>同區域的玩家可消耗 1 AP 將材料贈予另一名玩家</p>
+            </section>
+
+            <!-- 5. 遊戲進行流程 (視覺化流程圖) -->
+            <section id="flow" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">V</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">遊戲進行流程</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Game Flow & Loop</div>
+                    </div>
+                </div>
+
+                <p class="mb-10 font-light text-emerald-50/80 leading-relaxed">
+                    遊戲以「海洋夜曆」的月份作為時間軸，總共進行 12 個月（回合）。未能在 12 個月內完成拼板舟者，將遭遇文化斷裂而出局。
+                </p>
+
+                <!-- 視覺化流程圖開始 -->
+                <div class="flex flex-col items-center relative z-10 w-full py-4">
+
+                    <!-- START 節點 -->
+                    <div
+                        class="bg-emerald-950/80 border border-avaka-gold/60 px-8 py-2.5 rounded-full text-avaka-gold font-serif tracking-widest shadow-[0_0_20px_rgba(212,175,55,0.15)] flex items-center gap-2">
+                        <i data-lucide="flag" class="w-4 h-4"></i> 遊戲開始 (準備)
+                    </div>
+
+                    <!-- 往下箭頭 -->
+                    <div class="flex flex-col items-center my-2">
+                        <div class="w-[2px] h-6 bg-emerald-700/60"></div>
+                        <div
+                            class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-emerald-700/60">
+                        </div>
+                    </div>
+
+                    <!-- 12個月迴圈外框 -->
+                    <div
+                        class="border border-emerald-800/60 bg-emerald-950/30 rounded-2xl p-6 md:p-10 w-full max-w-2xl relative shadow-inner glow-border-subtle mt-4">
+
+                        <!-- 迴圈標籤 -->
+                        <div
+                            class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#021811] border border-emerald-500/80 px-6 py-1.5 rounded-full text-sm text-avaka-glow tracking-[0.2em] uppercase shadow-[0_0_15px_rgba(52,211,153,0.25)] flex items-center gap-2 whitespace-nowrap">
+                            <i data-lucide="calendar-sync" class="w-4 h-4"></i>
+                            12 個月循環 (回合)
+                        </div>
+
+                        <!-- Phase 1 -->
+                        <div
+                            class="bg-emerald-900/40 border border-emerald-700/40 rounded-xl p-5 mb-8 relative flex flex-col sm:flex-row items-center sm:items-start gap-4 glow-border text-center sm:text-left">
+                            <div
+                                class="w-12 h-12 rounded-full bg-amber-900/30 text-amber-400 flex items-center justify-center border border-amber-700/30 flex-shrink-0 shadow-[0_0_15px_rgba(251,191,36,0.15)]">
+                                <i data-lucide="sun-moon" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1 w-full">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-1.5">
+                                    <div>
+                                        <div
+                                            class="text-xs text-emerald-500 font-serif italic mb-1 uppercase tracking-widest">
+                                            Phase 1</div>
+                                        <h3 class="font-serif text-lg text-white tracking-wide">翻開環境卡</h3>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-emerald-100/70 font-light leading-relaxed">
+                                    全場共用，推進「海洋夜曆」至下個月份，並決定當月的<strong>環境限制</strong>或<strong>豐收加成</strong>。</p>
+                            </div>
+                        </div>
+
+                        <!-- 向下連接線 -->
+                        <div class="flex flex-col items-center my-[-1.5rem] relative z-10">
+                            <div class="w-[2px] h-6 bg-emerald-700/40"></div>
+                            <div
+                                class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-emerald-700/40">
+                            </div>
+                        </div>
+
+                        <!-- Phase 2 -->
+                        <div
+                            class="bg-emerald-900/40 border border-emerald-700/40 rounded-xl p-5 my-8 relative flex flex-col sm:flex-row items-center sm:items-start gap-4 glow-border text-center sm:text-left">
+                            <div
+                                class="w-12 h-12 rounded-full bg-cyan-900/30 text-cyan-400 flex items-center justify-center border border-cyan-700/30 flex-shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.15)]">
+                                <i data-lucide="activity" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1 w-full">
+                                <div class="text-xs text-emerald-500 font-serif italic mb-1 uppercase tracking-widest">
+                                    Phase 2</div>
+                                <h3 class="font-serif text-lg text-white tracking-wide mb-1.5">玩家行動階段</h3>
+                                <p class="text-sm text-emerald-100/70 font-light leading-relaxed mb-4">玩家輪流消耗 <span
+                                        class="text-avaka-ap font-sans">AP</span> 執行移動、工序、請益或購買等動作，直到所有人的 AP 耗盡或主動略過。
+                                </p>
+
+                                <!-- 學徒機制子區塊 -->
+                                <div
+                                    class="bg-[#031811] border border-emerald-800/60 p-3 rounded-lg flex items-center gap-3">
+                                    <i data-lucide="users" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                                    <div class="text-sm text-emerald-200/80 font-light text-left">
+                                        <span
+                                            class="text-emerald-400 font-medium mr-1">傳承觸發：</span>本階段結束時，若青年與耆老位於同一區域，青年自動獲得
+                                        <span class="text-avaka-kp font-medium font-sans">KP +1</span>。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 向下連接線 -->
+                        <div class="flex flex-col items-center my-[-1.5rem] relative z-10">
+                            <div class="w-[2px] h-6 bg-emerald-700/40"></div>
+                            <div
+                                class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-emerald-700/40">
+                            </div>
+                        </div>
+
+                        <!-- Phase 3 -->
+                        <div
+                            class="bg-emerald-900/40 border border-emerald-700/40 rounded-xl p-5 mt-8 relative flex flex-col sm:flex-row items-center sm:items-start gap-4 glow-border text-center sm:text-left">
+                            <div
+                                class="w-12 h-12 rounded-full bg-emerald-800/40 text-avaka-glow flex items-center justify-center border border-emerald-600/40 flex-shrink-0 shadow-[0_0_15px_rgba(52,211,153,0.15)]">
+                                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs text-emerald-500 font-serif italic mb-1 uppercase tracking-widest">
+                                    Phase 3</div>
+                                <h3 class="font-serif text-lg text-white tracking-wide mb-1.5">回合結算</h3>
+                                <p class="text-sm text-emerald-100/70 font-light leading-relaxed">玩家的 <span
+                                        class="text-avaka-ap font-sans">AP</span> 補滿至角色上限，當月環境卡效果解除。</p>
+                            </div>
+                        </div>
+
+                    </div> <!-- 迴圈外框結束 -->
+
+                    <!-- 判斷節點 -->
+                    <div class="flex flex-col items-center my-4">
+                        <div class="w-[2px] h-6 bg-emerald-700/60"></div>
+                        <div
+                            class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-emerald-700/60 mb-2">
+                        </div>
+
+                        <!-- 菱形決策框 -->
+                        <div class="relative w-32 h-32 flex items-center justify-center">
+                            <div
+                                class="absolute inset-0 bg-[#021811] border border-avaka-glow/40 transform rotate-45 rounded shadow-[0_0_20px_rgba(52,211,153,0.1)]">
+                            </div>
+                            <div class="relative z-10 text-center">
+                                <span
+                                    class="block text-xs text-emerald-500 uppercase tracking-widest mb-1 font-sans">Check</span>
+                                <span class="block text-base text-white font-serif tracking-wider">是否滿<br>12個月？</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 決策分歧線 -->
+                    <div class="w-full max-w-sm relative h-16 flex justify-between items-start px-8">
+                        <!-- 左側 (否)：迴圈線 -->
+                        <div class="flex flex-col items-center relative w-1/2 h-full">
+                            <div
+                                class="absolute top-0 right-0 w-full border-t-[2px] border-l-[2px] border-emerald-700/40 h-24 rounded-tl-xl translate-y-[-2rem]">
+                            </div>
+                            <div
+                                class="absolute top-[-2rem] left-0 bg-[#021c14] px-2 text-sm text-emerald-400/80 tracking-widest font-sans">
+                                否 (No)</div>
+                            <!-- 指向最上方的向上的箭頭 -->
+                            <div
+                                class="absolute top-[-2.5rem] left-[-4px] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[7px] border-b-emerald-700/60">
+                            </div>
+                        </div>
+
+                        <!-- 右側 (是)：向下結算 -->
+                        <div class="flex flex-col items-center w-1/2 h-full relative">
+                            <div class="w-[2px] h-8 bg-avaka-gold/60"></div>
+                            <div
+                                class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-avaka-gold/60">
+                            </div>
+                            <div
+                                class="absolute top-2 right-4 bg-[#021c14] px-2 text-sm text-avaka-gold tracking-widest font-sans">
+                                是 (Yes)</div>
+                        </div>
+                    </div>
+
+                    <!-- END 節點 -->
+                    <div
+                        class="bg-gradient-to-r from-amber-900/60 to-emerald-900/60 border border-avaka-gold/60 px-8 py-3 rounded-full text-avaka-goldlight font-serif tracking-widest shadow-[0_0_25px_rgba(212,175,55,0.2)] flex items-center gap-2 mt-2">
+                        <i data-lucide="award" class="w-4 h-4"></i> 遊戲結束，進入文化韌性結算
+                    </div>
+
+                </div>
+                <!-- 視覺化流程圖結束 -->
+            </section>
+
+            <!-- 6. 可執行動作 -->
+            <section id="actions" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">VI</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">可執行動作</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Available Actions</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Action items -->
+                    <div class="p-5 border border-emerald-800/40 rounded-xl bg-emerald-950/30 glow-border">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-serif text-lg text-white tracking-wide">移動</h3>
+                            <span
+                                class="text-sm font-bold bg-cyan-950/50 border border-cyan-800/50 text-cyan-300 px-2.5 py-1 rounded tracking-widest font-sans">1
+                                AP</span>
+                        </div>
+                        <p class="text-sm text-emerald-100/70 font-light leading-relaxed">在山林、灘頭、商店之間移動一格。(青年 0 AP)</p>
+                    </div>
+
+                    <div class="p-5 border border-emerald-800/40 rounded-xl bg-emerald-950/30 glow-border">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-serif text-lg text-white tracking-wide">執行工序</h3>
+                            <span
+                                class="text-sm font-bold bg-cyan-950/50 border border-cyan-800/50 text-cyan-300 px-2.5 py-1 rounded tracking-widest font-sans">2
+                                AP</span>
+                        </div>
+                        <p class="text-sm text-emerald-100/70 font-light leading-relaxed">依序打出卡牌：採集 → 剝麻 → 刮絲 → 捻線 → 填縫。
+                        </p>
+                    </div>
+
+                    <div class="p-5 border border-emerald-800/40 rounded-xl bg-emerald-950/30 glow-border">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-serif text-lg text-white tracking-wide">請益耆老</h3>
+                            <span
+                                class="text-sm font-bold bg-cyan-950/50 border border-cyan-800/50 text-cyan-300 px-2.5 py-1 rounded tracking-widest font-sans">2
+                                AP</span>
+                        </div>
+                        <p class="text-sm text-emerald-100/70 font-light leading-relaxed">青年主動向同區耆老學習，立即獲得 <strong
+                                class="text-avaka-kp font-medium">KP +3</strong>。</p>
+                    </div>
+
+                    <div class="p-5 border border-emerald-800/40 rounded-xl bg-emerald-950/30 glow-border">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-serif text-lg text-white tracking-wide">購買材料</h3>
+                            <span
+                                class="text-sm font-bold bg-cyan-950/50 border border-cyan-800/50 text-cyan-300 px-2.5 py-1 rounded tracking-widest font-sans">2
+                                AP</span>
+                        </div>
+                        <p class="text-sm text-emerald-100/70 font-light leading-relaxed">需在商店。購入南寶樹脂或尼龍繩，走工業替代路徑。</p>
+                    </div>
+
+                    <div
+                        class="p-5 border border-indigo-800/40 rounded-xl bg-indigo-950/20 glow-border shadow-[0_0_15px_rgba(79,70,229,0.05)]">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-serif text-lg text-indigo-200 tracking-wide">科學轉譯</h3>
+                            <span
+                                class="text-sm bg-emerald-900/50 border border-emerald-700/50 text-emerald-300 px-2.5 py-1 rounded tracking-widest font-sans">條件觸發</span>
+                        </div>
+                        <p class="text-sm text-emerald-100/70 font-light leading-relaxed">執行捻線或填縫後觸發。驗證卡牌 B 面物理優勢，獲獎勵
+                            <strong class="text-indigo-400 font-medium">+5</strong>。</p>
+                    </div>
+
+                    <div class="p-5 border border-emerald-800/40 rounded-xl bg-emerald-950/30 glow-border">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-serif text-lg text-white tracking-wide">贈予材料</h3>
+                            <span
+                                class="text-sm font-bold bg-cyan-950/50 border border-cyan-800/50 text-cyan-300 px-2.5 py-1 rounded tracking-widest font-sans">1
+                                AP</span>
+                        </div>
+                        <p class="text-sm text-emerald-100/70 font-light leading-relaxed">將手中材料轉交給同區域的另一名玩家，緩解物料匱乏。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. 技術路徑抉擇 -->
+            <section id="paths" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">VII</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">技術路徑抉擇</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Technological Choices</div>
+                    </div>
+                </div>
+
+                <div
+                    class="text-base text-emerald-100/80 leading-relaxed mb-8 border-l border-avaka-gold bg-emerald-950/40 p-5 rounded-r-xl font-light italic">
+                    「傳統馬尼拉蕉麻（Avaka）與現代化學樹脂，不只是材料的選擇，更是文化認同的宣言。」
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Traditional Path -->
+                    <div
+                        class="border border-avaka-glow/40 rounded-xl overflow-hidden flex flex-col bg-emerald-950/30 shadow-[0_0_20px_rgba(52,211,153,0.05)]">
+                        <div
+                            class="bg-emerald-900/60 px-6 py-4 border-b border-emerald-700/50 flex items-center justify-between">
+                            <h3 class="font-serif text-lg text-white tracking-wider">路徑 A：Avaka 傳統</h3>
+                            <i data-lucide="leaf" class="w-4 h-4 text-avaka-glow"></i>
+                        </div>
+                        <div class="p-6 flex-1">
+                            <ol class="space-y-4 relative border-l border-emerald-700/50 ml-3">
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-emerald-950 text-emerald-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-emerald-600/50 shadow-[0_0_10px_rgba(52,211,153,0.2)]">1</span>
+                                    <span class="text-sm text-emerald-100/90 font-light">採集（山林）</span>
+                                </li>
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-emerald-950 text-emerald-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-emerald-600/50 shadow-[0_0_10px_rgba(52,211,153,0.2)]">2</span>
+                                    <span class="text-sm text-emerald-100/90 font-light">剝麻 / 刮絲（灘頭）</span>
+                                </li>
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-emerald-950 text-emerald-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-emerald-600/50 shadow-[0_0_10px_rgba(52,211,153,0.2)]">3</span>
+                                    <span class="text-sm text-emerald-100/90 font-light">捻線 <span
+                                            class="text-xs font-sans text-avaka-kp ml-2 tracking-widest bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-800/50">需
+                                            KP 3</span></span>
+                                </li>
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-emerald-950 text-emerald-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-emerald-600/50 shadow-[0_0_10px_rgba(52,211,153,0.2)]">4</span>
+                                    <span class="text-sm text-emerald-100/90 font-light">填縫 <span
+                                            class="text-xs font-sans text-avaka-kp ml-2 tracking-widest bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-800/50">需
+                                            KP 8</span></span>
+                                </li>
+                            </ol>
+                        </div>
+                        <div
+                            class="bg-emerald-800/50 px-5 py-3 text-emerald-100 text-sm tracking-wider font-light text-center border-t border-emerald-700/50">
+                            基礎得分 <span class="text-avaka-glow font-medium">+15</span>，可再加科學轉譯 +5
+                        </div>
+                    </div>
+
+                    <!-- Modern Path -->
+                    <div class="border border-slate-700/60 rounded-xl overflow-hidden flex flex-col bg-[#051414]/60">
+                        <div
+                            class="bg-[#0a2020]/80 px-6 py-4 border-b border-slate-700/50 flex items-center justify-between">
+                            <h3 class="font-serif text-lg text-slate-300 tracking-wider">路徑 B：工業替代</h3>
+                            <i data-lucide="factory" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+                        <div class="p-6 flex-1">
+                            <ol class="space-y-4 relative border-l border-slate-700 ml-3">
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-[#0a2020] text-slate-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-slate-600">1</span>
+                                    <span class="text-sm text-slate-300 font-light">前往商店 <span
+                                            class="text-xs font-sans text-cyan-400 ml-2 bg-cyan-950/30 px-1.5 py-0.5 rounded border border-cyan-800/30 tracking-widest">1
+                                            AP</span></span>
+                                </li>
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-[#0a2020] text-slate-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-slate-600">2</span>
+                                    <span class="text-sm text-slate-300 font-light">購買南寶樹脂或尼龍繩</span>
+                                </li>
+                                <li class="pl-6 relative">
+                                    <span
+                                        class="absolute w-5 h-5 bg-[#0a2020] text-slate-400 text-xs font-bold font-sans rounded-full flex items-center justify-center -left-[10px] top-0 border border-slate-600">3</span>
+                                    <span class="text-sm text-slate-300 font-medium">直接完工 <span
+                                            class="text-sm text-slate-500 font-light ml-1">(跳過所有工序)</span></span>
+                                </li>
+                            </ol>
+                        </div>
+                        <div
+                            class="bg-[#081818] px-5 py-3 text-slate-400 text-sm tracking-wider font-light text-center border-t border-slate-700/50">
+                            基礎得分 <span class="text-slate-200 font-medium">+5</span>，船隻獲「不可修復」標記
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="mt-6 bg-red-950/20 border border-red-900/50 p-4 rounded-xl flex items-start gap-3 text-sm text-red-200/90 font-light shadow-inner">
+                    <i data-lucide="triangle-alert" class="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0"></i>
+                    <p><span
+                            class="text-red-400 tracking-widest text-sm uppercase mr-2 block mb-1">注意警告</span>若跳過所有工序使用工業材料完工，非協商者角色將觸發「去技能化」懲罰
+                        <strong class="text-red-400 font-medium">-5 分</strong>，最終得分可能為 0。</p>
+                </div>
+            </section>
+
+            <!-- 8. 海洋夜曆 (懸浮詳細視窗版) -->
+            <section id="calendar" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">VIII</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">海洋夜曆</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Oceanic Night Calendar</div>
+                    </div>
+                </div>
+
+                <div
+                    class="flex items-center gap-3 mb-8 bg-emerald-950/40 border border-emerald-700/40 p-4 rounded-xl shadow-inner">
+                    <i data-lucide="mouse-pointer-click"
+                        class="w-5 h-5 text-avaka-gold animate-bounce flex-shrink-0"></i>
+                    <p class="font-light text-emerald-50/80 text-base">每回合翻開一張夜曆卡，效應影響所有玩家。<strong
+                            class="text-avaka-gold font-medium tracking-wide">請將鼠標懸浮於各月份卡片上方</strong>，即可查閱該月份詳細的達悟族歲時祭儀與勞動文化。
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Month 1 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">1. Kashyman <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(準備月)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>本回合移動不消耗
+                            AP</div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                迎接魚季與社交</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>舉行「立春」與「孝敬父母日」。殺豬祭儀，將豬肉分享給祖先以祈求出海平安。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>準備捕魚工具、採集材料、修補大船、理髮。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 2 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">2. Kapowan <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(招魚祭)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-red-950/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">禁忌</span>禁止進入山林，無法採集
+                        </div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                禁忌與正式招魚</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>舉行正式的招飛魚祭
+                                        (Manlag)。東清部落會焚燒蘆葦莖製作火把。</span></li>
+                                <li class="flex gap-2 items-start"><i data-lucide="eye-off"
+                                        class="w-4 h-4 text-purple-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">文化：</strong>進入禁慾期
+                                        (Paneneb)，男船員在共宿屋集體生活防寒並防私會。</span></li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>上山砍伐曬魚架材料；開始夜間火把捕魚。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 3 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">3. Pikaokaod <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(飛魚盛期)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>灘頭工序
+                            AP 消耗 -1</div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                全力捕撈與放寬</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>大船船組解散，男人可回原家屋睡覺。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="eye-off"
+                                        class="w-4 h-4 text-purple-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">文化：</strong>捕獲的飛魚可帶回家中煮熟處理，並塗抹鹽巴晾曬。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>全力捕撈飛魚；婦女開始到山上採集陸蟹。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 4 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">4. Papataw <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(釣鬼頭刀)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-red-950/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">禁忌</span>向耆老請益需耗費
+                            4 AP</div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                鬼頭刀與慰勞</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>舉行小船招魚祭，開始晝間繩釣鬼頭刀。舉行慰勞節，婦女製作芋頭糕慰勞丈夫。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>砍伐專門晾曬鬼頭刀的魚架
+                                        (Papataw)。</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 5 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">5. Pipilapila <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(梅雨月)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-red-950/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">禁忌</span>曝曬材料若未收回，即報廢
+                        </div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                儲備與祈福</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>月初舉行祈福祭。</span></li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>舉行蒸飛魚祭
+                                        (mapasoad)，將飛魚乾剪翅後蒸熟儲存。製作木臼與木杵。</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 6 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">6. Apiya vehan <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(好月節)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>執行填縫額外獲韌性
+                            +2</div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                共享與終止</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>飛魚終了祭，此月結束後不再捕飛魚。舉行收獲節與小米祭。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="eye-off"
+                                        class="w-4 h-4 text-purple-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">文化：</strong>稱為「好月節」，親友間互相贈送剩餘的飛魚，分享勞動成果。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 7 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">7. Pehhakow <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(解禁月)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>執行採集立即獲得
+                            2 份材料</div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                耕作與落成</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>適合舉辦房屋（主屋、涼亭）或各種拼板舟的落成禮。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>開始開墾新的水芋田與地瓜田。</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 8 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">8. Pitanatana <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(土器月)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>科學轉譯判定保證成功
+                        </div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                取土燒陶</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>採集陶土並燒製陶器（陶甕）。因氣候乾燥有利於陶器成型。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 9 -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">9. Kalimman <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(終食祭)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-red-950/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">禁忌</span>商店材料購買
+                            AP 加倍</div>
+
+                        <!-- Hover Detail Tooltip -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 top-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#021c14] border-t border-l border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                終食與去穢</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>月中舉行飛魚終食祭，此後嚴禁食用飛魚乾。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="eye-off"
+                                        class="w-4 h-4 text-purple-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">文化：</strong>剩餘魚乾需餵豬，不可再儲存。此月被視為驅除惡靈的月份。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 10 (Bottom Row - Pops Upwards) -->
+                    <div
+                        class="relative group p-4 border border-red-900/40 rounded-xl bg-red-950/20 hover:bg-red-900/40 transition-colors cursor-default hover:z-50 shadow-inner">
+                        <div class="font-serif text-lg text-red-200 mb-2">10. Kaneman <span
+                                class="font-sans text-sm text-red-400/70 font-light ml-1">(不吉月)</span></div>
+                        <div class="text-sm text-red-100/80 font-light leading-relaxed"><span
+                                class="inline-block bg-red-950/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">禁忌</span>本回合禁止執行填縫完工
+                        </div>
+
+                        <!-- Hover Detail Tooltip (Pops Up) -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 bottom-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#1a0f12] border border-red-800/50 rounded-xl shadow-[0_-15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-[#1a0f12] border-b border-r border-red-800/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-red-400 border border-red-500/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-red-900/20 inline-block mb-3">
+                                大凶與貝灰</div>
+                            <ul class="text-base font-light text-red-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="alert-triangle"
+                                        class="w-4 h-4 text-red-500 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-red-300 font-medium mr-1">禁忌：</strong>全年最不吉利的月份，禁止建屋、造船落成或為嬰兒取名。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-red-300 font-medium mr-1">勞動：</strong>專門燒製貝灰（與檳榔共食或彩繪船身用）。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 11 (Bottom Row - Pops Upwards) -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">11. Kapitowan <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(亡魂節)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>同區域青年與耆老
+                            KP +2</div>
+
+                        <!-- Hover Detail Tooltip (Pops Up) -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 bottom-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_-15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-[#021c14] border-b border-r border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                祭祖與播種</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="flame"
+                                        class="w-4 h-4 text-red-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">祭儀：</strong>舉行祖靈祭 (Pazos)
+                                        與亡魂節，感謝神靈保護與祖先養育。</span></li>
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>播種小米；採伐蘆葦以備未來製作捕魚用的火把。</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Month 12 (Bottom Row - Pops Upwards) -->
+                    <div
+                        class="relative group p-4 border border-emerald-800/40 rounded-xl bg-emerald-950/30 hover:bg-emerald-900/60 transition-colors cursor-default hover:z-50">
+                        <div class="font-serif text-lg text-white mb-2">12. Kaowan <span
+                                class="font-sans text-sm text-emerald-400/60 font-light ml-1">(手工藝月)</span></div>
+                        <div class="text-sm text-emerald-100/70 font-light leading-relaxed"><span
+                                class="inline-block bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-1.5 py-0.5 rounded text-xs font-sans uppercase tracking-wider mr-1.5">祝福</span>執行「捻線」不消耗
+                            AP</div>
+
+                        <!-- Hover Detail Tooltip (Pops Up) -->
+                        <div
+                            class="absolute z-[60] left-1/2 -translate-x-1/2 bottom-[calc(100%+12px)] w-[280px] sm:w-[320px] bg-[#021c14] border border-avaka-gold/50 rounded-xl shadow-[0_-15px_40px_rgba(0,0,0,0.9)] p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 pointer-events-none">
+                            <div
+                                class="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-[#021c14] border-b border-r border-avaka-gold/50 transform rotate-45">
+                            </div>
+                            <div
+                                class="text-xs text-avaka-gold border border-avaka-gold/30 px-2 py-0.5 rounded font-sans uppercase tracking-widest bg-avaka-gold/10 inline-block mb-3">
+                                工藝與冶金</div>
+                            <ul class="text-base font-light text-emerald-100/90 space-y-2.5">
+                                <li class="flex gap-2 items-start"><i data-lucide="hammer"
+                                        class="w-4 h-4 text-avaka-glow flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">勞動：</strong>男人從事冶鐵（製作銀帽、盔甲、漿繩）；女人織布並編織藤籃。</span>
+                                </li>
+                                <li class="flex gap-2 items-start"><i data-lucide="eye-off"
+                                        class="w-4 h-4 text-purple-400 flex-shrink-0 mt-1"></i> <span><strong
+                                            class="text-white font-medium mr-1">文化：</strong>婦女舉行祝福芋頭田的儀式。</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. 分數結算 -->
+            <section id="scoring" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <span class="font-serif text-5xl text-avaka-gold/30 font-bold leading-none -mb-1">IX</span>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">分數結算</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Cultural Resilience</div>
+                    </div>
+                </div>
+
+                <p class="mb-8 font-light text-emerald-50/80">第 12 回合結束後，計算每位完工玩家的最終得分：</p>
+
+                <div class="space-y-4">
+                    <!-- Top Score -->
+                    <div
+                        class="flex items-center justify-between p-5 bg-emerald-900/30 border border-emerald-600/40 rounded-xl shadow-[0_0_15px_rgba(52,211,153,0.05)]">
+                        <div>
+                            <div class="font-serif text-lg text-emerald-100 tracking-wide">傳統 Avaka 路徑</div>
+                            <div class="text-sm text-emerald-400/70 mt-1.5 font-light">基礎 15 + 科學轉譯 +5（保證）</div>
+                        </div>
+                        <div class="text-xl font-serif text-avaka-glow">最高 20 分</div>
+                    </div>
+
+                    <!-- Mid Score -->
+                    <div
+                        class="flex items-center justify-between p-5 bg-[#0a1e1e] border border-slate-700/50 rounded-xl">
+                        <div>
+                            <div class="font-serif text-lg text-slate-200 tracking-wide">中生代工業路徑 <span
+                                    class="text-sm font-sans font-light text-slate-400 ml-1">(協商者)</span></div>
+                            <div class="text-sm text-slate-500 mt-1.5 font-light">基礎 5 + 協商者特殊 +5</div>
+                        </div>
+                        <div class="text-xl font-serif text-slate-300">最高 10 分</div>
+                    </div>
+
+                    <!-- Low Score -->
+                    <div class="flex items-center justify-between p-5 bg-[#1a0f12] border border-red-900/40 rounded-xl">
+                        <div>
+                            <div class="font-serif text-lg text-red-200/90 tracking-wide">一般工業路徑 <span
+                                    class="text-sm font-sans font-light text-red-400/60 ml-1">(非協商者)</span></div>
+                            <div class="text-sm text-red-500/60 mt-1.5 font-light">基礎 5 − 去技能化懲罰 5</div>
+                        </div>
+                        <div class="text-xl font-serif text-red-400">最高 0 分</div>
+                    </div>
+                </div>
+
+                <p class="mt-6 text-sm text-emerald-400/60 font-light border-t border-emerald-800/30 pt-4">※
+                    耆老的聲望分（傳承獎勵）於結算時等同文化韌性分，不包含在上表基礎分內，可額外累加。</p>
+            </section>
+
+            <!-- ✨ AI 傳承指引 (Gemini API 整合) -->
+            <section id="ai-assistant" class="mb-14 rounded-2xl p-8 md:p-10 scroll-mt-24 relative overflow-hidden"
+                style="background: linear-gradient(135deg, rgba(6,78,59,0.8) 0%, rgba(2,28,20,0.9) 100%); border: 1px solid rgba(52, 211, 153, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(52,211,153,0.1);">
+                <div class="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none mix-blend-screen">
+                    <i data-lucide="sparkles" class="w-48 h-48 text-avaka-glow"></i>
+                </div>
+
+                <div class="flex items-center gap-4 mb-8 pb-4 border-b border-emerald-600/30 relative z-10">
+                    <div
+                        class="w-10 h-10 rounded-full bg-emerald-900 text-avaka-glow flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(52,211,153,0.4)] border border-emerald-500/50">
+                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">AI 傳承指引</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Oracle of the Ancestors
+                        </div>
+                    </div>
+                </div>
+
+                <p class="mb-8 text-base text-emerald-100/80 relative z-10 font-light leading-loose">
+                    在遊玩過程中，不知道該如何形容你的行動？或者想沉浸在達悟族的神話中？請選擇你目前的狀態，呼喚耆老的靈魂為你述說專屬的工匠故事。
+                </p>
+
+                <div
+                    class="bg-emerald-950/60 backdrop-blur-md p-6 rounded-xl border border-emerald-700/40 shadow-inner relative z-10 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-emerald-400/80 mb-2 uppercase tracking-widest font-sans">當前角色
+                                Role</label>
+                            <select id="ai-role"
+                                class="w-full p-3 rounded-lg border border-emerald-800/50 text-base focus:ring-1 focus:ring-avaka-glow focus:border-avaka-glow bg-[#032017] text-emerald-50 appearance-none shadow-inner font-light">
+                                <option value="資深工匠 (耆老)">資深工匠 (耆老)</option>
+                                <option value="文化復振青年">文化復振青年</option>
+                                <option value="中生代工匠">中生代工匠</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-emerald-400/80 mb-2 uppercase tracking-widest font-sans">當前夜曆
+                                Month</label>
+                            <select id="ai-month"
+                                class="w-full p-3 rounded-lg border border-emerald-800/50 text-base focus:ring-1 focus:ring-avaka-glow focus:border-avaka-glow bg-[#032017] text-emerald-50 appearance-none shadow-inner font-light">
+                                <option value="1. Kashyman (準備月)">1. Kashyman (準備月)</option>
+                                <option value="2. Kapowan (招魚祭)">2. Kapowan (招魚祭)</option>
+                                <option value="3. Pikaokaod (飛魚盛期)">3. Pikaokaod (飛魚盛期)</option>
+                                <option value="4. Papataw (釣鬼頭刀)">4. Papataw (釣鬼頭刀)</option>
+                                <option value="5. Pipilapila (梅雨月)">5. Pipilapila (梅雨月)</option>
+                                <option value="6. Apiya vehan (好月節)">6. Apiya vehan (好月節)</option>
+                                <option value="7. Pehhakow (解禁月)">7. Pehhakow (解解禁月)</option>
+                                <option value="8. Pitanatana (土器月)">8. Pitanatana (土器月)</option>
+                                <option value="9. Kalimman (終食祭)">9. Kalimman (終食祭)</option>
+                                <option value="10. Kaneman (不吉祥月)">10. Kaneman (不吉祥月)</option>
+                                <option value="11. Kapitowan (亡魂節)">11. Kapitowan (亡魂節)</option>
+                                <option value="12. Kaowan (手工藝月)">12. Kaowan (手工藝月)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label
+                            class="block text-xs font-bold text-emerald-400/80 mb-2 uppercase tracking-widest font-sans">欲執行之行動
+                            Intent</label>
+                        <input type="text" id="ai-action" placeholder="例如：我要在山林採集 Avaka / 我想使用尼龍繩代替..."
+                            class="w-full p-3 rounded-lg border border-emerald-800/50 text-base focus:ring-1 focus:ring-avaka-glow focus:border-avaka-glow bg-[#032017] text-emerald-50 placeholder-emerald-700 font-light shadow-inner">
+                    </div>
+
+                    <button id="ai-generate-btn"
+                        class="w-full py-3.5 px-4 bg-emerald-800/80 hover:bg-emerald-700 border border-emerald-600/50 text-white font-serif tracking-widest rounded-lg transition-all flex items-center justify-center gap-3 shadow-[0_0_15px_rgba(52,211,153,0.15)] hover:shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+                        <i data-lucide="compass" class="w-4 h-4 text-avaka-gold"></i>
+                        <span class="text-lg">聆聽海的記憶</span>
+                    </button>
+                </div>
+
+                <!-- AI Response Area -->
+                <div id="ai-response-container" class="hidden relative z-10">
+                    <div class="bg-[#02140f] p-8 rounded-xl border border-emerald-800/50 shadow-inner relative">
+                        <i data-lucide="quote" class="w-10 h-10 text-emerald-900 absolute top-5 left-5"></i>
+
+                        <!-- Loading State -->
+                        <div id="ai-loading"
+                            class="hidden py-8 flex flex-col items-center justify-center text-avaka-glow">
+                            <div class="loader-dots block relative w-20 h-5 mt-2">
+                                <div
+                                    class="absolute top-0 mt-1 w-2.5 h-2.5 rounded-full bg-avaka-glow shadow-[0_0_8px_#34d399]">
+                                </div>
+                                <div
+                                    class="absolute top-0 mt-1 w-2.5 h-2.5 rounded-full bg-avaka-glow shadow-[0_0_8px_#34d399]">
+                                </div>
+                                <div
+                                    class="absolute top-0 mt-1 w-2.5 h-2.5 rounded-full bg-avaka-glow shadow-[0_0_8px_#34d399]">
+                                </div>
+                                <div
+                                    class="absolute top-0 mt-1 w-2.5 h-2.5 rounded-full bg-avaka-glow shadow-[0_0_8px_#34d399]">
+                                </div>
+                            </div>
+                            <p
+                                class="text-sm mt-4 font-light tracking-widest text-emerald-400/80 animate-pulse uppercase font-sans">
+                                Communing with Ancestors...</p>
+                        </div>
+
+                        <!-- Error State -->
+                        <div id="ai-error" class="hidden py-4 text-red-400 text-sm flex items-start gap-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+                            <span id="ai-error-msg" class="font-light leading-relaxed">發生錯誤，請稍後再試。</span>
+                        </div>
+
+                        <!-- Result Text -->
+                        <div id="ai-result"
+                            class="text-avaka-goldlight text-lg md:text-xl leading-loose relative z-10 pl-8 pt-2 font-serif tracking-wide drop-shadow-[0_0_8px_rgba(253,230,138,0.15)]">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ★ 卡牌雙面設計 -->
+            <section id="cards" class="mb-14 museum-glass rounded-2xl p-8 md:p-10 scroll-mt-24">
+                <div class="flex items-end gap-4 mb-8 pb-4 border-b border-emerald-800/50">
+                    <div
+                        class="w-10 h-10 rounded-full bg-emerald-900 border border-emerald-700 text-avaka-glow flex items-center justify-center font-bold text-lg shadow-inner font-sans">
+                        ★
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-serif text-white tracking-wide">卡牌設計哲學</h2>
+                        <div class="text-xs text-avaka-glow tracking-widest uppercase mt-1">Dual-Sided Cards</div>
+                    </div>
+                </div>
+
+                <p class="mb-8 font-light text-emerald-50/80">每張工序卡採<strong
+                        class="text-avaka-gold font-normal">雙面設計</strong>，體現「內核傳統、外殼現代」的核心主題：</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="bg-[#031e15] border-t-2 border-avaka-glow p-6 rounded-b-xl shadow-lg relative glow-border">
+                        <div
+                            class="absolute -top-3 left-4 bg-emerald-950 border border-emerald-700 px-3 py-1 text-xs font-sans text-avaka-glow tracking-widest">
+                            Side A</div>
+                        <h3 class="font-serif text-white mb-3 text-xl mt-2">傳統與默會</h3>
+                        <p class="text-base text-emerald-100/70 font-light leading-relaxed">工匠動作手繪插圖，附族語動詞（如：<em
+                                class="text-avaka-gold not-italic font-serif">Mivivini</em> 捻線）。角落標註所需 AP 與
+                            KP。傳遞具身實踐與默會知識。</p>
+                    </div>
+
+                    <div
+                        class="bg-[#041926] border-t-2 border-cyan-500 p-6 rounded-b-xl shadow-lg relative glow-border">
+                        <div
+                            class="absolute -top-3 left-4 bg-[#02101a] border border-cyan-800 px-3 py-1 text-xs font-sans text-cyan-400 tracking-widest">
+                            Side B</div>
+                        <h3 class="font-serif text-white mb-3 text-xl mt-2">科學與轉譯</h3>
+                        <p class="text-base text-emerald-100/70 font-light leading-relaxed">SEM 掃描顯微影像，顯示 Avaka 吸水膨脹率
+                            15% vs 尼龍 0%，將原住民生態知識轉譯為科學數據，驗證祖先工藝的物理優勢。</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Sidebar Elements
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const collapseSidebarBtn = document.getElementById('collapse-sidebar-btn');
+        const openSidebarBtn = document.getElementById('open-sidebar-btn');
+
+        // Toggle Mobile Menu
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.remove('hidden');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            sidebar.classList.add('hidden');
+        });
+
+        // Desktop Sidebar Toggle
+        if(collapseSidebarBtn && openSidebarBtn) {
+            collapseSidebarBtn.addEventListener('click', () => {
+                document.body.classList.add('sidebar-collapsed');
+            });
+            openSidebarBtn.addEventListener('click', () => {
+                document.body.classList.remove('sidebar-collapsed');
+            });
+        }
+
+        // Active Link Highlighting (ScrollSpy)
+        const sections = document.querySelectorAll("section");
+        const navLinks = document.querySelectorAll(".nav-link");
+
+        window.addEventListener("scroll", () => {
+            let current = "";
+            sections.forEach((section) => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute("id");
+                }
+            });
+
+            navLinks.forEach((link) => {
+                link.classList.remove("active");
+                if (link.getAttribute("href").includes(current) && current !== "") {
+                    link.classList.add("active");
+                }
+            });
+        });
+
+        // 自訂平滑滾動與偏移量
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const targetId = this.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+
+                if (targetSection) {
+                    const headerOffset = window.innerWidth < 768 ? 70 : 0;
+                    const elementPosition = targetSection.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth"
+                    });
+                }
+
+                if (window.innerWidth < 768) {
+                    sidebar.classList.add('hidden');
+                }
+            });
+        });
+
+        // --- Gemini API Integration Logic ---
+        const apiKey = ""; // Execution environment injects this
+
+        const generateBtn = document.getElementById('ai-generate-btn');
+        const responseContainer = document.getElementById('ai-response-container');
+        const loadingState = document.getElementById('ai-loading');
+        const errorState = document.getElementById('ai-error');
+        const errorMsg = document.getElementById('ai-error-msg');
+        const resultText = document.getElementById('ai-result');
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        async function fetchGeminiNarrative(role, month, action) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const systemInstruction = `你是一位熟悉蘭嶼達悟族（Tao）文化與造舟傳統的長者。
+請根據玩家提供的【角色】、【當前月份】與【行動】，用充滿智慧、具有海洋氣息與文學感的語氣，撰寫一小段（約 3-4 句話）的情境敘事或日誌。
+必須融合馬尼拉蕉麻（Avaka）、拼板舟或達悟族夜曆的文化元素。如果玩家提到現代工業材料（如南寶樹脂或尼龍），請適當地表現出妥協、衝突或警示的態度。使用繁體中文。`;
+
+            const userPrompt = `角色：${role}\n月份：${month}\n玩家想做的行動：${action || "靜靜地看著海洋，思考著下一步。"}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            const maxRetries = 5;
+            const backoffDelays = [1000, 2000, 4000, 8000, 16000];
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API 請求失敗: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0].content.parts[0].text) {
+                        return data.candidates[0].content.parts[0].text;
+                    } else {
+                        throw new Error("無法解析回應內容");
+                    }
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        throw error;
+                    }
+                    await delay(backoffDelays[i]);
+                }
+            }
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            const role = document.getElementById('ai-role').value;
+            const month = document.getElementById('ai-month').value;
+            const action = document.getElementById('ai-action').value;
+
+            responseContainer.classList.remove('hidden');
+            loadingState.classList.remove('hidden');
+            errorState.classList.add('hidden');
+            resultText.innerHTML = "";
+            generateBtn.disabled = true;
+            generateBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            try {
+                const story = await fetchGeminiNarrative(role, month, action);
+                resultText.innerHTML = story.replace(/\n/g, '<br/>');
+                loadingState.classList.add('hidden');
+            } catch (error) {
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                errorMsg.textContent = "祖靈的聲音暫時被海風吹散了，請檢查網路或稍後再試一次。（API 呼叫失敗）";
+                console.error("Gemini API Error:", error);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        });
+    </script>
+</body>
+
+</html>

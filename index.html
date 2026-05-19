@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaka：島嶼的維度</title>
+    <meta name="description" content="Avaka 島嶼的維度 — 一款以蘭嶼達悟族文化為核心的沉浸式桌遊，數位規則書與主持人儀表板。">
+
+    <!-- ===== 全站共用：外部資源 ===== -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons（規則書 / 情境腳本使用） -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Awesome（課堂版使用） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React + ReactDOM + Babel（課堂版使用，預先載入避免動態注入時時序問題） -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- ===== 全站共用：Tailwind 設定 ===== -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Serif TC"', 'PMingLiU', 'MingLiU', 'serif'],
+                        serif: ['"Noto Serif TC"', 'PMingLiU', 'MingLiU', 'serif'],
+                    },
+                    colors: {
+                        avaka: {
+                            dark: '#01120d',
+                            panel: '#032219',
+                            glass: 'rgba(1, 18, 13, 0.55)',
+                            glow: '#34d399',
+                            gold: '#d4af37',
+                            goldlight: '#fde68a',
+                            textmain: '#ecfdf5',
+                            textmuted: '#a7f3d0',
+                            ap: '#38bdf8',
+                            kp: '#fbbf24',
+                        },
+                        brand: {
+                            bg: '#01120d',
+                            panel: '#032219',
+                            panelDark: '#021812',
+                            accent: '#008b63',
+                            border: '#054432',
+                            textMain: '#ecfdf5',
+                            textMuted: '#84b8a4',
+                        },
+                        gold: { bg: '#1a1405', border: '#4d3a0f', text: '#fcd34d' },
+                        danger: { bg: '#250a11', border: '#701a2b', text: '#fda4af' }
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(0, 139, 99, 0.4)',
+                        'glow-lg': '0 0 25px rgba(0, 139, 99, 0.6)',
+                    },
+                    animation: {
+                        slideUp: 'slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        float: 'floatSlow 3.5s ease-in-out infinite',
+                        glow: 'glowPulse 3s ease-in-out infinite',
+                        pulseSlow: 'glowPulse 4s ease-in-out infinite',
+                        spinSlow: 'spinSlow 12s linear infinite',
+                        fadeIn: 'fadeIn 0.4s ease-out forwards'
+                    },
+                    keyframes: {
+                        slideUpFade: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)', filter: 'blur(3px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }
+                        },
+                        floatSlow: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        },
+                        glowPulse: {
+                            '0%, 100%': { opacity: 0.8, filter: 'brightness(1)' },
+                            '50%': { opacity: 1, filter: 'brightness(1.3)' }
+                        },
+                        spinSlow: {
+                            from: { transform: 'rotate(0deg)' },
+                            to: { transform: 'rotate(360deg)' }
+                        },
+                        fadeIn: {
+                            from: { opacity: 0 },
+                            to: { opacity: 1 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- ===== 全站共用 CSS ===== -->
+    <style>
+        /* --- 根基設定 --- */
+        html { font-size: 17px; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
+            background-color: #01120d;
+            color: #ecfdf5;
+            margin: 0;
+        }
+
+        /* --- 全站捲軸 --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #01120d; }
+        ::-webkit-scrollbar-thumb { background: #054432; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #008b63; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- 頁面切換動畫 --- */
+        .page-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .page-section.page-active {
+            display: block;
+            opacity: 1;
+        }
+        /* 封面是 flex 佈局，特殊處理 */
+        #page-cover.page-active {
+            display: flex;
+        }
+
+        /* --- 全域導覽列 (全站共用，封面頁隱藏) --- */
+        #global-nav {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            background: #010a08;
+            border-bottom: 1px solid rgba(6, 78, 59, 0.5);
+            display: flex;
+            justify-content: center;
+            padding: 10px 16px;
+            z-index: 200;
+        }
+        #global-nav nav {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+            overflow-x: auto;
+        }
+        #global-nav nav::-webkit-scrollbar { display: none; }
+        #global-nav a {
+            color: rgba(52, 211, 153, 0.8);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+        #global-nav a:hover { color: #ecfdf5; }
+        #global-nav a.nav-current { color: #a7f3d0; border-bottom: 1px solid rgba(52, 211, 153, 0.4); }
+        #global-nav .dot {
+            width: 4px; height: 4px;
+            border-radius: 50%;
+            background: rgba(6, 78, 59, 0.5);
+            flex-shrink: 0;
+        }
+
+        /* --- 按鈕全域無外框 --- */
+        button { outline: none !important; -webkit-tap-highlight-color: transparent; }
+
+        /* ==========================================
+           封面頁 (page-cover) 專屬 CSS
+        ========================================== */
+        #page-cover {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+        .bg-avaka-leaves {
+            background-image: url('https://images.unsplash.com/photo-1595859702816-0498db2579df?auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            animation: breathe 20s infinite alternate ease-in-out;
+            transform-origin: center;
+        }
+        @keyframes breathe {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+        .cover-text-glow {
+            text-shadow: 0px 0px 20px rgba(253, 230, 138, 0.4), 0px 4px 10px rgba(0, 0, 0, 0.8);
+        }
+        .cover-subtitle-glow { text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.9); }
+        .overlay-gradient {
+            background: radial-gradient(circle at center, rgba(1, 18, 13, 0.5) 0%, rgba(1, 18, 13, 0.95) 100%);
+        }
+        .btn-enter {
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-enter::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        .btn-enter:hover::before { left: 100%; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==========================================
+           通用玻璃效果 (規則書 / 課堂等共用)
+        ========================================== */
+        .museum-glass {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(1, 18, 13, 0.55);
+            border: 1px solid rgba(52, 211, 153, 0.15);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.7), inset 0 0 20px rgba(4,47,33,0.5);
+        }
+        .glow-border { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .glow-border:hover {
+            border-color: rgba(52,211,153,0.6);
+            box-shadow: 0 0 25px rgba(52,211,153,0.2), inset 0 0 15px rgba(52,211,153,0.1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===================================================
+         全域系統導覽列 (封面頁進入後顯示，封面本身隱藏)
+    ==================================================== -->
+    <div id="global-nav" style="display:none;">
+        <nav>
+            <a href="#" onclick="router.go('cover'); return false;" id="gnav-cover">首頁</a>
+            <span class="dot"></span>
+            <a href="#" onclick="router.go('rulebook'); return false;" id="gnav-rulebook">規則書</a>
+            <span class="dot"></span>
+            <a href="#" onclick="router.go('scenario'); return false;" id="gnav-scenario">情境腳本</a>
+            <span class="dot"></span>
+            <a href="#" onclick="router.go('fieldwork'); return false;" id="gnav-fieldwork">走讀版</a>
+            <span class="dot"></span>
+            <a href="#" onclick="router.go('classroom'); return false;" id="gnav-classroom">課堂版</a>
+        </nav>
+    </div>
+
+    <!-- ===================================================
+         頁面容器區
+    ==================================================== -->
+
+    <!-- ★ 頁面 1：封面 ★ -->
+    <section id="page-cover" class="page-section page-active">
+        <!-- 動態蕉葉背景 -->
+        <div class="absolute inset-0 bg-avaka-leaves opacity-60 z-0"></div>
+        <!-- 陸地森林遮罩 -->
+        <div class="absolute inset-0 overlay-gradient z-10"></div>
+        <!-- 海洋深藍遮罩 -->
+        <div id="oceanOverlay" class="absolute inset-0 z-[15] pointer-events-none"
+             style="opacity: 0; background: radial-gradient(circle at bottom, rgba(14,116,144,0.75) 0%, rgba(8,47,73,0.85) 45%, rgba(2,6,23,0.98) 100%); transition: opacity 0.3s ease-out;">
+        </div>
+        <!-- 粒子畫布 -->
+        <canvas id="particleCanvas" class="absolute inset-0 z-20 pointer-events-none"></canvas>
+
+        <!-- 封面內容 -->
+        <div class="relative z-30 flex flex-col items-center justify-center text-center px-4 w-full max-w-5xl">
+            <p class="text-amber-100/70 text-lg md:text-xl tracking-[0.3em] font-light mb-6 cover-subtitle-glow opacity-0 animate-[fadeIn_2s_ease-out_0.5s_forwards]">
+                順應夜曆，還是追求效率？
+            </p>
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-amber-50 tracking-widest cover-text-glow mb-4 opacity-0 animate-[fadeInUp_2s_ease-out_1s_forwards]">
+                Avaka
+            </h1>
+            <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-amber-100/90 tracking-[0.2em] cover-text-glow mb-12 opacity-0 animate-[fadeInUp_2s_ease-out_1.5s_forwards]">
+                島嶼的維度
+            </h2>
+            <div class="h-px w-24 bg-amber-200/30 mb-8 opacity-0 animate-[fadeIn_2s_ease-out_2s_forwards]"></div>
+            <p class="text-emerald-50/80 text-base md:text-lg tracking-[0.15em] font-light max-w-2xl leading-relaxed cover-subtitle-glow opacity-0 animate-[fadeIn_2s_ease-out_2.5s_forwards]">
+                身為蘭嶼的工匠，你必須在 12 個月內完成一艘拼板舟。<br>
+                在「傳統馬尼拉蕉麻」與「現代化學樹脂」之間，<br>
+                決定你要留下什麼樣的文化認同。
+            </p>
+            <!-- 進入按鈕：點擊後切換至規則書頁 -->
+            <button id="cover-enter-btn"
+                onclick="router.go('rulebook')"
+                class="mt-16 px-10 py-4 border border-amber-200/40 text-amber-100 text-lg tracking-[0.2em] font-medium rounded-sm btn-enter hover:bg-amber-900/40 hover:border-amber-200 hover:text-white hover:shadow-[0_0_15px_rgba(253,230,138,0.3)] opacity-0 animate-[fadeIn_2s_ease-out_3s_forwards] cursor-pointer transition-colors duration-500 bg-transparent">
+                進入山林採集
+            </button>
+        </div>
+    </section>
+
+    <!-- ★ 頁面 2：規則書 ★ -->
+    <section id="page-rulebook" class="page-section">
+        <div class="page-loading-placeholder" style="display:flex; align-items:center; justify-content:center; height:100vh; color:#34d399; font-size:1.2rem; letter-spacing:0.2em;">
+            規則書載入中...
+        </div>
+    </section>
+
+    <!-- ★ 頁面 3：情境腳本 ★ -->
+    <section id="page-scenario" class="page-section">
+        <div class="page-loading-placeholder" style="display:flex; align-items:center; justify-content:center; height:100vh; color:#34d399; font-size:1.2rem; letter-spacing:0.2em;">
+            情境腳本載入中...
+        </div>
+    </section>
+
+    <!-- ★ 頁面 4：走讀版 ★ -->
+    <section id="page-fieldwork" class="page-section">
+        <div class="page-loading-placeholder" style="display:flex; align-items:center; justify-content:center; height:100vh; color:#34d399; font-size:1.2rem; letter-spacing:0.2em;">
+            走讀版載入中...
+        </div>
+    </section>
+
+    <!-- ★ 頁面 5：課堂版 ★ -->
+    <section id="page-classroom" class="page-section">
+        <div class="page-loading-placeholder" style="display:flex; align-items:center; justify-content:center; height:100vh; color:#34d399; font-size:1.2rem; letter-spacing:0.2em;">
+            課堂版載入中...
+        </div>
+    </section>
+
+
+    <!-- ===================================================
+         全域路由器 (SPA Router)
+    ==================================================== -->
+    <script>
+        const router = (() => {
+            // 頁面 ID → section element 的映射
+            const pages = {
+                cover:     document.getElementById('page-cover'),
+                rulebook:  document.getElementById('page-rulebook'),
+                scenario:  document.getElementById('page-scenario'),
+                fieldwork: document.getElementById('page-fieldwork'),
+                classroom: document.getElementById('page-classroom'),
+            };
+
+            const globalNav   = document.getElementById('global-nav');
+            const navLinks    = { cover: document.getElementById('gnav-cover'), rulebook: document.getElementById('gnav-rulebook'), scenario: document.getElementById('gnav-scenario'), fieldwork: document.getElementById('gnav-fieldwork'), classroom: document.getElementById('gnav-classroom') };
+
+            // 記錄哪些頁面已初始化（避免重複執行 init）
+            const initialized = { cover: true };
+
+            let currentPage = 'cover';
+
+            function go(pageId) {
+                if (!pages[pageId]) return;
+                if (currentPage === pageId) return;
+
+                // 隱藏當前頁
+                const prev = pages[currentPage];
+                prev.classList.remove('page-active');
+
+                // 切換導覽列顯示邏輯
+                if (pageId === 'cover') {
+                    globalNav.style.display = 'none';
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    globalNav.style.display = 'flex';
+                    document.body.style.overflow = '';
+                    window.scrollTo(0, 0);
+                }
+
+                // 更新 nav active 狀態
+                Object.values(navLinks).forEach(a => a && a.classList.remove('nav-current'));
+                if (navLinks[pageId]) navLinks[pageId].classList.add('nav-current');
+
+                // 顯示目標頁
+                currentPage = pageId;
+                const next = pages[pageId];
+                next.classList.add('page-active');
+
+                // 初始化（只執行一次）
+                if (!initialized[pageId]) {
+                    initialized[pageId] = true;
+                    initPage(pageId);
+                }
+
+                // 更新瀏覽器網址 hash
+                history.pushState({ page: pageId }, '', '#' + pageId);
+            }
+
+            // 瀏覽器返回鍵支援
+            window.addEventListener('popstate', (e) => {
+                const pageId = (e.state && e.state.page) ? e.state.page : 'cover';
+                go(pageId);
+            });
+
+            return { go };
+        })();
+
+        // 根據 hash 決定初始頁面
+        window.addEventListener('DOMContentLoaded', () => {
+            const hash = location.hash.replace('#', '') || 'cover';
+            if (hash !== 'cover') router.go(hash);
+            // 封面預設：鎖定 overflow
+            if (hash === 'cover') {
+                document.body.style.overflow = 'hidden';
+                document.getElementById('global-nav').style.display = 'none';
+            }
+        });
+    </script>
+
+    <!-- ===================================================
+         封面頁：粒子特效 + 海洋動畫
+    ==================================================== -->
+    <script>
+        (function initCover() {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particlesArray = [];
+
+            function setCanvasSize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', setCanvasSize);
+            setCanvasSize();
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2.5 + 0.5;
+                    this.speedX = Math.random() * 1 - 0.5;
+                    this.speedY = Math.random() * -1 - 0.2;
+                    const colors = ['rgba(253,230,138,0.6)', 'rgba(167,243,208,0.4)', 'rgba(252,211,77,0.5)'];
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.y < 0 - this.size) {
+                        this.y = canvas.height + this.size;
+                        this.x = Math.random() * canvas.width;
+                    }
+                }
+                draw() {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                }
+            }
+
+            for (let i = 0; i < 60; i++) particlesArray.push(new Particle());
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particlesArray.forEach(p => { p.update(); p.draw(); });
+                requestAnimationFrame(animate);
+            }
+            animate();
+
+            // --- 海洋滾動切換邏輯 ---
+            const oceanOverlay  = document.getElementById('oceanOverlay');
+            const coverEnterBtn = document.getElementById('cover-enter-btn');
+            let scrollProgress  = 0;
+
+            function updateOceanState() {
+                scrollProgress = Math.max(0, Math.min(1, scrollProgress));
+                oceanOverlay.style.opacity = scrollProgress;
+
+                if (scrollProgress > 0.5) {
+                    coverEnterBtn.style.borderColor   = 'rgba(34,211,238,0.5)';
+                    coverEnterBtn.style.color         = '#cffafe';
+                    coverEnterBtn.textContent         = '揚帆出海航行';
+                } else {
+                    coverEnterBtn.style.borderColor   = 'rgba(253,230,138,0.4)';
+                    coverEnterBtn.style.color         = '#fef3c7';
+                    coverEnterBtn.textContent         = '進入山林採集';
+                }
+            }
+
+            window.addEventListener('wheel', (e) => {
+                scrollProgress += e.deltaY * 0.0015;
+                updateOceanState();
+            });
+
+            let startY = 0;
+            window.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+            window.addEventListener('touchmove', e => {
+                scrollProgress += (startY - e.touches[0].clientY) * 0.003;
+                startY = e.touches[0].clientY;
+                updateOceanState();
+            }, { passive: true });
+        })();
+    </script>
+
+    <!-- ===================================================
+         各頁面動態載入（Lazy Load）系統
+    ==================================================== -->
+    <script>
+        // 頁面 ID → 對應的原始 HTML 檔案名稱
+        const PAGE_FILES = {
+            rulebook:  '規則書.html',
+            scenario:  '情境腳本.html',
+            fieldwork: '走讀.html',
+            classroom: '課堂.html',
+        };
+
+        // 執行從外部 HTML 注入的 <script> 標籤（innerHTML 不會自動執行）
+        // 已在 index.html head 預載的函式庫 src 清單（跳過重複載入）
+        const PRELOADED_SRCS = ['react', 'react-dom', 'babel', 'lucide'];
+
+        async function runInjectedScripts(container) {
+            const scripts = Array.from(container.querySelectorAll('script'));
+
+            for (const oldScript of scripts) {
+                const scriptType = oldScript.getAttribute('type') || '';
+                const src = oldScript.getAttribute('src') || '';
+
+                if (src) {
+                    // 外部腳本：若已預載則直接移除，否則非同步載入並等待
+                    const isPreloaded = PRELOADED_SRCS.some(lib => src.includes(lib));
+                    if (isPreloaded) {
+                        oldScript.remove();
+                        continue;
+                    }
+                    await new Promise(resolve => {
+                        const newScript = document.createElement('script');
+                        newScript.src = src;
+                        Array.from(oldScript.attributes).forEach(attr => {
+                            if (attr.name !== 'src') newScript.setAttribute(attr.name, attr.value);
+                        });
+                        newScript.onload  = resolve;
+                        newScript.onerror = resolve; // 出錯也繼續
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+
+                } else if (scriptType === 'text/babel') {
+                    // Babel/React 腳本：手動轉譯
+                    try {
+                        const transpiled = Babel.transform(oldScript.textContent, {
+                            presets: ['react'],
+                        }).code;
+                        const newScript = document.createElement('script');
+                        newScript.textContent = transpiled;
+                        document.body.appendChild(newScript);
+                        oldScript.remove();
+                    } catch(e) {
+                        console.error('❌ Babel 轉譯失敗：', e);
+                    }
+
+                } else {
+                    // 一般 inline script
+                    const newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(attr => {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.textContent = oldScript.textContent;
+                    document.body.appendChild(newScript);
+                    oldScript.remove();
+                }
+            }
+        }
+
+        // 從原始 HTML 檔案中萃取 <head> 的 style 與 <body> 的內容
+        function extractBody(htmlText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+
+            // 萃取 <head> 中的所有 <style> 標籤，注入到 body 最前面
+            let headStyles = '';
+            doc.querySelectorAll('head style').forEach(s => {
+                headStyles += `<style>${s.textContent}</style>`;
+            });
+
+            // 移除舊的全域導覽列（fixed top-0 z-[100] 樣式的 div）
+            const oldNav = doc.querySelector('#global-nav');
+            if (oldNav) oldNav.remove();
+            // 用 class 特徵再清一次（情境腳本裡的舊導覽）
+            doc.querySelectorAll('div').forEach(div => {
+                const cls = div.className || '';
+                if (cls.includes('fixed') && cls.includes('top-0') && cls.includes('z-[100]')) {
+                    div.remove();
+                }
+            });
+
+            const bodyHTML = doc.body ? doc.body.innerHTML : htmlText;
+            return headStyles + bodyHTML;
+        }
+
+        async function initPage(pageId) {
+            const section = document.getElementById('page-' + pageId);
+            const filename = PAGE_FILES[pageId];
+            if (!filename || !section) return;
+
+            // 顯示載入動畫
+            section.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                     height:100vh;background:#01120d;color:#34d399;font-family:'Noto Serif TC',serif;">
+                    <div style="width:44px;height:44px;border:3px solid rgba(52,211,153,0.2);
+                         border-top-color:#34d399;border-radius:50%;
+                         animation:_spin 1s linear infinite;margin-bottom:20px;">
+                    </div>
+                    <style>@keyframes _spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>
+                    <p style="letter-spacing:0.25em;font-size:0.9rem;opacity:0.8;">${filename.replace('.html','')} 載入中...</p>
+                </div>`;
+
+            try {
+                const res = await fetch('./' + encodeURIComponent(filename));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const html = await res.text();
+
+                // 注入 body 內容（去除舊導覽列）
+                section.innerHTML = extractBody(html);
+
+                // 補上該頁面需要的 padding-top 以避免被全域導覽列遮住
+                section.style.paddingTop = '44px';
+
+                // 執行頁面內的 script（非同步依序，Babel 轉譯完成後才繼續）
+                await runInjectedScripts(section);
+
+                // ★ 腳本執行後，再清除一次殘留的舊導覽列（JS 動態生成的無法預先過濾）
+                // 延遲 300ms 確保情境腳本的 appContainer.innerHTML 已執行完畢
+                setTimeout(() => {
+                    section.querySelectorAll('div, nav').forEach(el => {
+                        const cls = el.className || '';
+                        const hasBg = cls.includes('bg-[#010a08]') || cls.includes('bg-\\[#010a08\\]');
+                        const hasNav = el.querySelector('a[href*=".html"]');
+                        if (hasBg && hasNav) el.remove();
+                    });
+                    // 也移除含有舊連結的 fixed nav div
+                    section.querySelectorAll('[class*="border-emerald-900/50"][class*="justify-center"]').forEach(el => {
+                        if (el.querySelector('a[href*="封面.html"], a[href*="規則書.html"]')) el.remove();
+                    });
+                    if (window.lucide) lucide.createIcons();
+                }, 300);
+
+                console.log(`✅ ${filename} 載入完成`);
+            } catch (err) {
+                section.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;
+                    height:60vh;color:#f87171;font-size:1rem;letter-spacing:0.2em;">
+                    ⚠ 載入失敗：${err.message}<br><small style="opacity:0.6;margin-top:8px;display:block;">
+                    請確認在本機伺服器環境下開啟（非直接用瀏覽器開啟檔案）</small></div>`;
+                console.error(`❌ 載入 ${filename} 失敗：`, err);
+            }
+        }
+    </script>
+
+    <!-- ===================================================
+         本機伺服器提示（直接開啟檔案時顯示）
+    ==================================================== -->
+    <script>
+        // 偵測是否在 file:// 協議下開啟（此時 fetch 無法跨檔案）
+        if (location.protocol === 'file:') {
+            window.addEventListener('DOMContentLoaded', () => {
+                const banner = document.createElement('div');
+                banner.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:9999;
+                    background:#1c0a00;border-top:1px solid #92400e;
+                    color:#fbbf24;font-size:0.8rem;padding:10px 20px;
+                    text-align:center;letter-spacing:0.1em;font-family:monospace;`;
+                banner.innerHTML = `⚠ 目前以 <b>file://</b> 方式開啟。動態載入功能需要本機伺服器。
+                    建議使用 VS Code「Live Server」或執行 <code style="background:#451a03;padding:2px 6px;border-radius:3px;">
+                    python -m http.server 8080</code> 後，前往 <b>http://localhost:8080</b> 開啟。
+                    <button onclick="this.parentNode.remove()" style="margin-left:16px;cursor:pointer;
+                    background:#78350f;border:none;color:#fde68a;padding:2px 10px;border-radius:4px;">✕</button>`;
+                document.body.appendChild(banner);
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaka：島嶼的維度 - 數位主持人儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 全面引入 Noto Serif TC (明體) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700;900&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#01120d', // 極深背景
+                            panel: '#032219', // 卡片背景
+                            panelDark: '#021812', // 深色卡片
+                            accent: '#008b63', // 亮翠綠 (按鈕與高光)
+                            border: '#054432', // 邊框色
+                            textMain: '#ecfdf5', // 主文字
+                            textMuted: '#84b8a4', // 次文字
+                        },
+                        gold: {
+                            bg: '#1a1405', // 準備事項背景
+                            border: '#4d3a0f',
+                            text: '#fcd34d',
+                        },
+                        danger: {
+                            bg: '#250a11',
+                            border: '#701a2b',
+                            text: '#fda4af',
+                        }
+                    },
+                    fontFamily: {
+                        // 將預設 sans 也覆蓋為明體系列，確保全站字體一致
+                        sans: ['"Noto Serif TC"', 'PMingLiU', 'MingLiU', 'serif'],
+                        serif: ['"Noto Serif TC"', 'PMingLiU', 'MingLiU', 'serif'],
+                    },
+                    boxShadow: {
+                        'glow': '0 0 15px rgba(0, 139, 99, 0.4)',
+                        'glow-lg': '0 0 25px rgba(0, 139, 99, 0.6)',
+                        'inner-glow': 'inset 0 0 20px rgba(0, 139, 99, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 全站套用明體與背景設定 */
+        body {
+            font-family: 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
+            background-color: #01120d;
+            color: #ecfdf5;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 139, 99, 0.08) 0%, transparent 60%);
+            background-attachment: fixed;
+        }
+
+        /* Hide scrollbar for tabs */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Main Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #01120d;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #054432;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #008b63;
+        }
+
+        /* --- 核心動畫設計 (Animations) --- */
+
+        /* 1. 分頁切換時的淡入動畫 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 2. 內容區塊的依序浮現 (Staggered Slide Up Fade) */
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-content.active .animate-item {
+            opacity: 0;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* 延遲階層設定 */
+        .delay-1 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.3s;
+        }
+
+        .delay-4 {
+            animation-delay: 0.4s;
+        }
+
+        /* 3. 漂浮動畫 (適用於 Logo 或特定圖示) */
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* 4. 呼吸光暈 (適用於流程圖節點) */
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 10px rgba(0, 139, 99, 0.2);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(0, 139, 99, 0.6);
+            }
+
+            100% {
+                box-shadow: 0 0 10px rgba(0, 139, 99, 0.2);
+            }
+        }
+
+        .animate-pulse-glow {
+            animation: pulseGlow 3s infinite;
+        }
+
+        /* 劇本對話框裝飾 */
+        .dialogue-box {
+            position: relative;
+            background: linear-gradient(90deg, rgba(0, 139, 99, 0.1) 0%, transparent 100%);
+            border-left: 3px solid #008b63;
+            padding: 1.5rem 1.75rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .dialogue-box:hover {
+            background: linear-gradient(90deg, rgba(0, 139, 99, 0.15) 0%, transparent 100%);
+            border-left-width: 5px;
+        }
+
+        /* 懸浮視窗 Modal specific styles */
+        .modal-active {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .modal-content-active {
+            transform: scale(1) !important;
+        }
+
+        /* 全域過場通用設定 */
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 139, 99, 0.3);
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-brand-accent selection:text-white pb-24">
+
+    <!-- Top Navigation / Dashboard Header -->
+    <header
+        class="w-full flex flex-col xl:flex-row xl:items-center justify-between px-6 py-5 border-b border-brand-border bg-brand-bg/95 backdrop-blur-md sticky top-0 z-40 gap-4 transition-all">
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-4 shrink-0">
+            <div
+                class="w-12 h-12 bg-brand-panel border border-brand-accent rounded-lg flex items-center justify-center shadow-glow animate-float">
+                <svg class="w-7 h-7 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold tracking-widest text-white flex items-center gap-3">
+                    Avaka：島嶼的維度
+                </h1>
+                <p class="text-sm text-brand-textMuted tracking-[0.15em] mt-1 flex items-center gap-2">
+                    數位主持人儀表板 <span class="text-brand-accent animate-pulse">✧</span> 走讀工作坊版
+                </p>
+            </div>
+        </div>
+
+        <!-- Navigation Pills -->
+        <nav class="flex gap-3 overflow-x-auto hide-scrollbar py-2">
+            <button onclick="switchTab('s1')" id="btn-s1"
+                class="tab-btn active whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-brand-accent text-white shadow-glow border border-brand-accent hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg> 腳本概覽
+            </button>
+            <button onclick="switchTab('s2')" id="btn-s2"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                    </path>
+                </svg> 集合點
+            </button>
+            <button onclick="switchTab('s3')" id="btn-s3"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                    </path>
+                </svg> 山林區
+            </button>
+            <button onclick="switchTab('s4')" id="btn-s4"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg> 灘頭工作室
+            </button>
+            <button onclick="switchTab('s5')" id="btn-s5"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg> 商店
+            </button>
+            <button onclick="switchTab('s6')" id="btn-s6"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg> 跨站點
+            </button>
+            <button onclick="switchTab('s7')" id="btn-s7"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+                </svg> 收尾
+            </button>
+            <button onclick="switchTab('s8')" id="btn-s8"
+                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                </svg> 附錄
+            </button>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-10 overflow-hidden">
+
+        <!-- Section 1: 腳本概覽 -->
+        <section id="s1" class="tab-content active">
+            <div class="flex items-center gap-4 mb-8 animate-item">
+                <svg class="w-10 h-10 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                <h2 class="text-4xl font-bold tracking-widest text-white">腳本概覽</h2>
+            </div>
+
+            <!-- Intro Panel -->
+            <div
+                class="bg-brand-panel border border-brand-border rounded-xl p-10 mb-8 shadow-inner-glow hover-lift animate-item delay-1">
+                <p class="text-xl leading-relaxed text-brand-textMain font-light">
+                    本腳本為《Avaka：島嶼的維度》沉浸式走讀工作坊的完整帶路人手冊，涵蓋開場引言、各空間站點情境台詞、操作介入時機，以及最終反思討論的引導。全程以 3–4
+                    小時為設計基準，本版腳本的邏輯前提是<strong
+                        class="text-green-400 font-bold tracking-widest mx-1 text-2xl">「空間先於規則」</strong>——玩家的身體位置決定其可執行的行動。
+                </p>
+            </div>
+
+            <!-- Visual Flowchart (NEW ADDITION) -->
+            <div
+                class="bg-brand-panelDark border border-brand-border rounded-xl p-10 mb-8 relative overflow-hidden animate-item delay-2">
+                <h3 class="text-2xl font-bold text-white tracking-wider mb-12 flex items-center gap-3">
+                    <svg class="w-7 h-7 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7l6-3 5.447 2.724A1 1 0 0121 7.618v10.764a1 1 0 01-1.447.894L15 17l-6 3z">
+                        </path>
+                    </svg>
+                    工作坊視覺化操作流程
+                </h3>
+
+                <div class="flex flex-col lg:flex-row justify-between items-center gap-8 lg:gap-0 relative">
+                    <!-- connecting line for desktop -->
+                    <div class="hidden lg:block absolute top-12 left-24 right-24 h-0.5 bg-brand-border z-0"></div>
+
+                    <!-- 1. 集合 -->
+                    <div class="relative z-10 flex flex-col items-center group cursor-pointer w-full lg:w-56 hover:-translate-y-2 transition-transform duration-300"
+                        onclick="switchTab('s2')">
+                        <div
+                            class="w-24 h-24 rounded-full bg-brand-bg border-4 border-[#0a271e] flex flex-col items-center justify-center mb-5 group-hover:border-brand-accent group-hover:shadow-glow transition-all duration-300">
+                            <span class="text-sm text-brand-textMuted font-bold tracking-wider">START</span>
+                            <span class="text-2xl font-black text-white">01</span>
+                        </div>
+                        <div
+                            class="bg-brand-bg px-5 py-4 rounded-lg border border-brand-border text-center w-full shadow-inner-glow group-hover:bg-[#051c16] transition-colors duration-300">
+                            <h4 class="text-white font-bold text-lg tracking-widest mb-1">集合點</h4>
+                            <p class="text-sm text-brand-textMuted">開場與角色分配</p>
+                        </div>
+                    </div>
+
+                    <!-- Arrow Mobile -->
+                    <div class="lg:hidden w-0.5 h-8 bg-brand-border"></div>
+
+                    <!-- 2. 山林 -->
+                    <div class="relative z-10 flex flex-col items-center group cursor-pointer w-full lg:w-56 hover:-translate-y-2 transition-transform duration-300"
+                        onclick="switchTab('s3')">
+                        <div
+                            class="w-24 h-24 rounded-full bg-brand-bg border-4 border-brand-accent flex flex-col items-center justify-center mb-5 animate-pulse-glow group-hover:shadow-glow-lg transition-all duration-300">
+                            <span class="text-2xl font-black text-white">02</span>
+                        </div>
+                        <div
+                            class="bg-brand-bg px-5 py-4 rounded-lg border border-brand-border text-center w-full shadow-inner-glow group-hover:bg-[#051c16] transition-colors duration-300">
+                            <h4 class="text-white font-bold text-lg tracking-widest mb-1">山林區</h4>
+                            <p class="text-sm text-brand-textMuted">採集體驗 / 禁忌觸發</p>
+                        </div>
+                    </div>
+
+                    <!-- Arrow Mobile -->
+                    <div class="lg:hidden w-0.5 h-8 bg-brand-border"></div>
+
+                    <!-- 3. 灘頭 & 商店 (Split) -->
+                    <div
+                        class="relative z-10 flex flex-col items-center w-full lg:w-72 hover:-translate-y-2 transition-transform duration-300">
+                        <div class="flex gap-5 mb-5">
+                            <!-- 灘頭按鈕 -->
+                            <div class="w-20 h-20 rounded-full bg-[#04281f] border-2 border-brand-accent flex items-center justify-center shadow-glow cursor-pointer hover:shadow-glow-lg transition-shadow duration-300 group"
+                                onclick="switchTab('s4')" title="灘頭工作室">
+                                <span
+                                    class="text-xl font-black text-white group-hover:scale-110 transition-transform">03</span>
+                            </div>
+                            <!-- 雙向箭頭 -->
+                            <div class="flex items-center text-brand-textMuted text-2xl font-light">⇄</div>
+                            <!-- 商店按鈕 -->
+                            <div class="w-20 h-20 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors duration-300 group"
+                                onclick="switchTab('s5')" title="商店">
+                                <span
+                                    class="text-xl font-black text-gray-400 group-hover:text-white group-hover:scale-110 transition-transform">04</span>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-brand-bg px-5 py-4 rounded-lg border border-brand-border text-center w-full shadow-inner-glow group-hover:bg-[#051c16] transition-colors duration-300">
+                            <h4 class="text-white font-bold text-lg tracking-widest mb-1">灘頭 <span
+                                    class="text-brand-textMuted font-light mx-1 text-base">vs</span> 商店</h4>
+                            <p class="text-sm text-brand-textMuted">工序轉譯 / 現代誘惑</p>
+                        </div>
+                    </div>
+
+                    <!-- Arrow Mobile -->
+                    <div class="lg:hidden w-0.5 h-8 bg-brand-border"></div>
+
+                    <!-- 4. 收尾 -->
+                    <div class="relative z-10 flex flex-col items-center group cursor-pointer w-full lg:w-56 hover:-translate-y-2 transition-transform duration-300"
+                        onclick="switchTab('s7')">
+                        <div
+                            class="w-24 h-24 rounded-full bg-gold-bg border-4 border-gold-border flex flex-col items-center justify-center mb-5 group-hover:border-gold-text group-hover:shadow-[0_0_15px_rgba(252,211,77,0.4)] transition-all duration-300">
+                            <span class="text-sm text-gold-text/70 font-bold tracking-wider">END</span>
+                            <span class="text-2xl font-black text-gold-text">05</span>
+                        </div>
+                        <div
+                            class="bg-brand-bg px-5 py-4 rounded-lg border border-brand-border text-center w-full shadow-inner-glow group-hover:bg-[#1a1405] transition-colors duration-300">
+                            <h4 class="text-white font-bold text-lg tracking-widest mb-1">集合點</h4>
+                            <p class="text-sm text-brand-textMuted">身體回顧與結算</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div
+                    class="bg-brand-panelDark border border-brand-border rounded-xl p-8 flex flex-col h-full hover-lift animate-item delay-3">
+                    <div class="flex items-center gap-3 mb-6">
+                        <svg class="w-7 h-7 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <h3 class="text-2xl font-bold text-white tracking-wider">設計核心原則</h3>
+                    </div>
+                    <ul class="space-y-6 text-base flex-grow">
+                        <li class="flex gap-4 items-start group">
+                            <span
+                                class="bg-brand-panel border border-brand-accent text-brand-accent px-2 py-0.5 rounded text-sm font-bold shrink-0 mt-0.5 group-hover:bg-brand-accent group-hover:text-white transition-colors">原則一</span>
+                            <span class="text-brand-textMain leading-relaxed"><strong
+                                    class="text-white text-lg">空間即規則。</strong>帶路人不會宣布「你不能這樣做」，透過讓環境說話——「這裡沒有
+                                Avaka，你要去哪裡採集？」</span>
+                        </li>
+                        <li class="flex gap-4 items-start group">
+                            <span
+                                class="bg-brand-panel border border-brand-accent text-brand-accent px-2 py-0.5 rounded text-sm font-bold shrink-0 mt-0.5 group-hover:bg-brand-accent group-hover:text-white transition-colors">原則二</span>
+                            <span class="text-brand-textMain leading-relaxed"><strong
+                                    class="text-white text-lg">身體先於詮釋。</strong>讓玩家先觸摸、先移動、先行動，再給予知識框架解釋其意義。</span>
+                        </li>
+                        <li class="flex gap-4 items-start group">
+                            <span
+                                class="bg-brand-panel border border-brand-accent text-brand-accent px-2 py-0.5 rounded text-sm font-bold shrink-0 mt-0.5 group-hover:bg-brand-accent group-hover:text-white transition-colors">原則三</span>
+                            <span class="text-brand-textMain leading-relaxed"><strong
+                                    class="text-white text-lg">失敗也是完整的體驗。</strong>未完工的玩家不需要補救，其結局文本是整個工作坊中最有討論價值的材料之一。</span>
+                        </li>
+                        <li class="flex gap-4 items-start group">
+                            <span
+                                class="bg-brand-panel border border-brand-accent text-brand-accent px-2 py-0.5 rounded text-sm font-bold shrink-0 mt-0.5 group-hover:bg-brand-accent group-hover:text-white transition-colors">原則四</span>
+                            <span class="text-brand-textMain leading-relaxed"><strong
+                                    class="text-white text-lg">帶路人保持角色扮演。</strong>帶路人在各空間站點以「現場工匠」或「部落耆老」身份說話，而非遊戲設計者。</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Right Column (Gold Theme) -->
+                <div
+                    class="bg-gold-bg border border-gold-border rounded-xl p-8 flex flex-col h-full hover-lift animate-item delay-4">
+                    <div class="flex items-center gap-3 mb-6">
+                        <svg class="w-7 h-7 text-gold-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-2xl font-bold text-gold-text tracking-wider">主持人準備與配置</h3>
+                    </div>
+                    <ul class="space-y-6 text-base text-[#d4c39c] flex-grow font-light">
+                        <li
+                            class="flex items-center gap-4 border-b border-gold-border/50 pb-4 hover:text-white transition-colors">
+                            <div class="w-2 h-2 bg-gold-text rounded-full shrink-0"></div>
+                            <span class="w-28 shrink-0 font-bold text-white text-lg">總時長</span>
+                            <span class="leading-relaxed">約 3–4 小時（含移動、等待、討論緩衝）</span>
+                        </li>
+                        <li
+                            class="flex items-center gap-4 border-b border-gold-border/50 pb-4 hover:text-white transition-colors">
+                            <div class="w-2 h-2 bg-gold-text rounded-full shrink-0"></div>
+                            <span class="w-28 shrink-0 font-bold text-white text-lg">每組人數</span>
+                            <span class="leading-relaxed">3–5 人（耆老×1、青年×1–2、中生代×1–2）</span>
+                        </li>
+                        <li
+                            class="flex items-center gap-4 border-b border-gold-border/50 pb-4 hover:text-white transition-colors">
+                            <div class="w-2 h-2 bg-gold-text rounded-full shrink-0"></div>
+                            <span class="w-28 shrink-0 font-bold text-white text-lg">帶路人配置</span>
+                            <span class="leading-relaxed">理想為 2 人 (一人專責山林區、一人專責灘頭與機動)</span>
+                        </li>
+                        <li class="flex items-center gap-4 pt-2 hover:text-white transition-colors">
+                            <div class="w-2 h-2 bg-gold-text rounded-full shrink-0"></div>
+                            <span class="w-28 shrink-0 font-bold text-white text-lg">走讀路線</span>
+                            <span class="leading-relaxed text-lg font-medium">集合點 → 山林區 → 灘頭工作室 ⇄ 商店 → 集合點</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: 集合點 -->
+        <section id="s2" class="tab-content">
+            <div class="flex items-center gap-4 mb-8 border-b border-brand-border pb-4 animate-item">
+                <span class="text-5xl font-black text-brand-textMuted/30">02</span>
+                <h2 class="text-4xl font-bold tracking-widest text-white">集合點：開場引言與角色分配</h2>
+            </div>
+
+            <div
+                class="bg-gold-bg border border-gold-border text-gold-text p-5 rounded-xl text-base mb-10 flex gap-4 shadow-sm items-center animate-item delay-1 hover-lift">
+                <svg class="w-6 h-6 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd"></path>
+                </svg>
+                在活動正式開始前，讓所有參與者站在集合點，不坐下，保持站立。開場引言在移動之前完成。
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <!-- Left: Speech -->
+                <div class="animate-item delay-2">
+                    <h3 class="text-xl font-bold text-brand-textMuted mb-3 flex items-center gap-2"><span
+                            class="w-2.5 h-2.5 bg-brand-accent rounded-full"></span> 2-1 場景確立</h3>
+                    <div class="dialogue-box">
+                        <span class="text-brand-accent text-base italic mb-3 block font-sans">▶ 帶路人站於集合點，面對全體參與者：</span>
+                        <p class="text-xl text-white leading-loose font-medium">
+                            「你們現在站的這個地方，有人曾在這裡造船，在這裡等待季節，在這裡失去技術，也有人在這裡把知識傳給下一代。<br><br>
+                            今天，我們要跟著這片土地的節奏走一遍。我不會告訴你們應該怎麼做。但可以告訴你們的是，這個地方，它有很多故事。準備好踏入這段旅程吧。」
+                        </p>
+                    </div>
+                    <p class="text-base text-brand-textMuted mt-5 pl-4 border-l-2 border-brand-border leading-relaxed">
+                        說完後停頓 5 秒，不要填補沉默。讓空間本身成為第一個「教材」。接著進行角色分牌。</p>
+                </div>
+
+                <!-- Right: Roles -->
+                <div class="animate-item delay-3">
+                    <h3 class="text-xl font-bold text-brand-textMuted mb-3 flex items-center gap-2"><span
+                            class="w-2.5 h-2.5 bg-brand-accent rounded-full"></span> 2-2 角色分牌儀式</h3>
+                    <div class="dialogue-box !border-brand-textMuted !bg-[#051c16]">
+                        <span class="text-brand-textMuted text-base italic mb-3 block font-sans">▶ 分牌前台詞：</span>
+                        <p class="text-xl text-white leading-loose font-medium">
+                            「手上這張牌，是你今天在這個地方的身份。你不能交換，不能選擇。<span
+                                class="text-brand-textMuted text-base mx-1 font-sans">（停頓）</span>在蘭嶼的傳統社會，沒有人選擇自己的出身，但每一個位置都有它的責任與意義。翻開它，認識你自己。」
+                        </p>
+                    </div>
+
+                    <p class="text-base text-white mb-4 mt-8 font-bold">翻牌後，帶路人逐一口述各角色：</p>
+                    <div class="space-y-4">
+                        <div
+                            class="bg-brand-panelDark border border-brand-border p-5 rounded-xl flex items-start gap-5 hover-lift">
+                            <div
+                                class="bg-brand-bg px-4 py-1.5 rounded text-white font-bold shrink-0 border border-brand-border text-lg">
+                                耆老</div>
+                            <p class="text-base text-brand-textMuted leading-relaxed">
+                                你是今天走讀中知識的「源頭」。你不主動教學，只在被問到的時候才說話。<br><span class="text-white font-bold">AP 6，KP
+                                    10。</span></p>
+                        </div>
+                        <div
+                            class="bg-brand-panelDark border border-brand-border p-5 rounded-xl flex items-start gap-5 hover-lift">
+                            <div
+                                class="bg-brand-bg px-4 py-1.5 rounded text-white font-bold shrink-0 border border-brand-border text-lg">
+                                青年</div>
+                            <p class="text-base text-brand-textMuted leading-relaxed">移動力最強(不耗AP)，但現在什麼都不會(KP
+                                0)。唯一可觸摸所有材料的角色。</p>
+                        </div>
+                        <div
+                            class="bg-brand-panelDark border border-brand-border p-5 rounded-xl flex items-start gap-5 hover-lift">
+                            <div
+                                class="bg-brand-bg px-4 py-1.5 rounded text-white font-bold shrink-0 border border-brand-border text-lg">
+                                中生代</div>
+                            <p class="text-base text-brand-textMuted leading-relaxed">最複雜的角色。有基礎知識(KP
+                                5)，特殊能力讓你使用工業材料時不受懲罰。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: 山林區 -->
+        <section id="s3" class="tab-content">
+            <div class="flex items-center gap-4 mb-8 border-b border-brand-border pb-4 animate-item">
+                <span class="text-5xl font-black text-brand-textMuted/30">03</span>
+                <h2 class="text-4xl font-bold tracking-widest text-white">山林區站點腳本</h2>
+                <span
+                    class="ml-auto bg-brand-panel px-5 py-2 rounded-full text-sm font-bold tracking-widest text-brand-accent border border-brand-border">採集、知識的起點、季節的邊界</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div class="space-y-10 animate-item delay-1">
+                    <div>
+                        <h3 class="text-xl font-bold text-brand-textMuted mb-3 flex items-center gap-2"><span
+                                class="w-2.5 h-2.5 bg-brand-accent rounded-full"></span> 3-1 山林入口引言</h3>
+                        <div class="dialogue-box">
+                            <span class="text-brand-accent text-base italic mb-3 block font-sans">▶
+                                帶路人扮演引路耆老，等玩家靠近後開口：</span>
+                            <p class="text-xl text-white leading-loose font-medium">
+                                「你來了。<br>這裡的採集，並非隨時都可以來的。植物在清晨之前分泌最飽滿，纖維最有韌性。你知道為什麼嗎？<br><span
+                                    class="text-brand-textMuted text-base block my-3 font-sans">（等待玩家回答）</span>幾百年累積下來的生態知識，是透過當地人觀察得出的結果。」
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-brand-textMuted mb-3 flex items-center gap-2"><span
+                                class="w-2.5 h-2.5 bg-brand-accent rounded-full"></span> 3-2 採集行動觸發</h3>
+                        <p
+                            class="text-base text-brand-textMuted pl-4 border-l-2 border-brand-border mb-4 leading-relaxed">
+                            若玩家在集合點試圖打出【採集】卡，回應：「等一下。你站在哪裡？這裡有山嗎？有林地嗎？Avaka 不在這裡生長。」</p>
+                        <div class="dialogue-box">
+                            <span class="text-brand-accent text-base italic mb-3 block font-sans">▶
+                                玩家在山林區執行採集時，靠近輕聲說：</span>
+                            <p class="text-xl text-white leading-loose font-medium">
+                                「採集的人，會知道哪棵樹今年的狀況好，哪一段纖維可以用。這不是可以查手冊的知識，是每一次來都累積一點的眼力。你現在採的這一束，帶著這座山今年的狀態。」
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Section -->
+                <div class="animate-item delay-2">
+                    <h3 class="text-xl font-bold text-danger-text mb-3 flex items-center gap-2"><span
+                            class="w-2.5 h-2.5 bg-danger-text rounded-full shadow-[0_0_8px_#fda4af]"></span> 3-3
+                        飛魚禁令觸發（第 2 月 Kapowan）</h3>
+                    <div
+                        class="bg-danger-bg border border-danger-border p-8 rounded-2xl relative overflow-hidden mt-5 hover-lift">
+                        <div class="absolute top-0 right-0 w-40 h-40 bg-red-600/10 rounded-full blur-3xl -mr-10 -mt-10">
+                        </div>
+                        <span class="text-danger-text text-base italic mb-5 block relative z-10 font-sans">▶
+                            帶路人張開雙臂，擋住入口：</span>
+                        <p class="text-2xl text-white leading-loose font-bold relative z-10">
+                            「今天是 Kapowan。招魚祭的月份。這條路，今天不能走。<br><br>
+                            <span class="text-danger-text/70 text-base font-sans font-normal">（停頓，等玩家反應）</span><br><br>
+                            不是我說的，是部落的規矩。你可以選擇在灘頭等待，或者走到另一個方向的商店。你打算怎麼辦？」
+                        </p>
+
+                        <div class="mt-10 pt-5 border-t border-danger-border/50 relative z-10">
+                            <h4 class="text-base font-bold text-danger-text mb-3 font-sans">💡 主持人操作：</h4>
+                            <p class="text-base text-white/80 leading-relaxed mb-3 font-sans">實際擋住入口，讓玩家身體上感受到「路被封住」。保持
+                                20–30 秒，讓玩家在原地真實感受決策壓力。</p>
+                            <p class="text-base text-white/80 leading-relaxed font-sans">
+                                若強行進入，回應：「你可以進去。但這艘船，在部落眼中將不再乾淨。你確定嗎？」若進入，加注「禁忌標記」，扣 3 分。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: 灘頭 -->
+        <section id="s4" class="tab-content">
+            <div class="flex items-center gap-4 mb-8 border-b border-brand-border pb-4 animate-item">
+                <span class="text-5xl font-black text-brand-textMuted/30">04</span>
+                <h2 class="text-4xl font-bold tracking-widest text-white">灘頭工作室站點腳本</h2>
+                <span
+                    class="ml-auto bg-brand-panel px-5 py-2 rounded-full text-sm font-bold tracking-widest text-brand-accent border border-brand-border">剝麻、刮絲、捻線、填縫</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- Core Experience Left -->
+                <div class="col-span-1 lg:col-span-7 space-y-8">
+                    <div
+                        class="bg-brand-panelDark border border-brand-border rounded-2xl p-8 hover-lift animate-item delay-1">
+                        <h3 class="text-base font-bold text-brand-textMuted mb-3 font-sans uppercase tracking-widest">
+                            4-1 抵達灘頭引言</h3>
+                        <p class="text-xl text-white leading-loose font-medium">
+                            「你從山上帶著材料走下來。注意腳下——你走的這條路，每一個造船的工匠都走過。材料從山上到灘頭，不只是搬運，是一個從採集到製造的儀式轉換。在這裡，每一個動作都有順序，每一個順序都有原因。」
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-[#04281f] border border-[#008b63]/40 rounded-2xl p-8 relative overflow-hidden shadow-glow hover-lift animate-item delay-2">
+                        <div class="absolute right-0 top-0 w-32 h-32 bg-[#008b63]/20 blur-3xl rounded-full"></div>
+                        <h3 class="text-base font-bold text-brand-accent mb-3 font-sans uppercase tracking-widest">4-2
+                            觸感引導腳本（工作坊核心體驗）</h3>
+                        <span class="text-brand-textMuted text-base italic mb-3 block font-sans">▶ 發放實體 Avaka
+                            樣本引導：</span>
+                        <p class="text-xl text-white leading-loose font-bold mb-6">「閉上眼睛，感受手上這束纖維。你感覺到什麼？<span
+                                class="text-brand-textMuted text-base mx-2 font-sans font-normal">（等待描述）</span>你覺得它能撐住一艘在風浪中的木船嗎？<span
+                                class="text-brand-textMuted text-base mx-2 font-sans font-normal">（點頭）</span>現在，把眼睛打開，翻到卡牌的背面。」
+                        </p>
+
+                        <h3 class="text-base font-bold text-brand-accent mb-3 mt-8 font-sans uppercase tracking-widest">
+                            4-3 科學轉譯與水杯實驗</h3>
+                        <span class="text-brand-textMuted text-base italic mb-3 block font-sans">▶ 展示 SEM
+                            顯微照片與放入水杯：</span>
+                        <p class="text-xl text-white leading-loose font-medium">「你看到的照片，是 Avaka 放大了幾千倍。這個數字——吸水膨脹率
+                            ——老人說『讓船呼吸』，這就是它的科學意思。當海水滲進木板，纖維吸水膨脹，縫隙反而變得更緊實。<br><br>換成尼龍繩，吸水膨脹率是
+                            0%。你剛才用手感受到的，和這個科學數據說的，是同一件事。」</p>
+                    </div>
+                </div>
+
+                <!-- Process Steps Right -->
+                <div class="col-span-1 lg:col-span-5 flex flex-col h-full gap-5 animate-item delay-3">
+                    <h3 class="text-2xl font-bold text-white mb-3 border-b border-brand-border pb-3">工序執行引導 (4-5)</h3>
+
+                    <div class="bg-brand-panel border border-brand-border p-6 rounded-xl hover-lift">
+                        <span
+                            class="text-brand-textMuted text-sm font-bold uppercase tracking-widest block mb-2 font-sans">STEP
+                            01</span>
+                        <h4 class="text-white font-bold text-2xl mb-3">剝麻 / 刮絲</h4>
+                        <p class="text-base text-brand-textMuted leading-relaxed">
+                            「這道工序很單調，但單調有它的意義。手的肌肉會在重複中記住力道。這種知識，叫做『默會知識』。」</p>
+                    </div>
+
+                    <div class="bg-brand-panel border border-brand-border p-6 rounded-xl hover-lift">
+                        <span
+                            class="text-brand-textMuted text-sm font-bold uppercase tracking-widest block mb-2 font-sans">STEP
+                            02</span>
+                        <h4 class="text-white font-bold text-2xl mb-3 flex justify-between items-center">捻線 <span
+                                class="bg-brand-bg px-3 py-1 rounded text-sm border border-brand-border font-sans font-bold">需
+                                KP 3</span></h4>
+                        <p class="text-base text-brand-textMuted leading-relaxed">
+                            「捻的方向不能錯——錯了，繩子會在壓力下自然鬆開，而不是越拉越緊。這個道理，只有做過才會知道。」</p>
+                    </div>
+
+                    <div
+                        class="bg-[#051c16] border border-brand-accent/50 p-7 rounded-xl shadow-inner-glow mt-auto hover-lift">
+                        <span
+                            class="text-brand-accent text-sm font-bold uppercase tracking-widest block mb-2 font-sans">FINAL
+                            STEP (最高潮)</span>
+                        <h4 class="text-white font-bold text-3xl mb-4 flex justify-between items-center">填縫 <span
+                                class="bg-brand-accent px-3 py-1 rounded text-sm border border-brand-accent text-white shadow-glow font-sans font-bold">需
+                                KP 8</span></h4>
+                        <p class="text-lg text-brand-textMain leading-relaxed font-medium">「這是最後一道工序。用 Avaka
+                            的，這艘船壞了可以拆開，可以修，這叫做『關係的延續』。<br><br>用樹脂的，縫填得密不透風，但壞了就是壞了，沒有辦法修。它是一次性的物件。」</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: 商店 -->
+        <section id="s5" class="tab-content">
+            <div class="flex items-center gap-4 mb-8 border-b border-brand-border pb-4 animate-item">
+                <span class="text-5xl font-black text-brand-textMuted/30">05</span>
+                <h2 class="text-4xl font-bold tracking-widest text-white">商店站點腳本</h2>
+                <span
+                    class="ml-auto bg-gray-900 px-5 py-2 rounded-full text-sm font-bold tracking-widest text-gray-400 border border-gray-700">便利、誘惑、代價——現代性的邊界</span>
+            </div>
+
+            <div
+                class="bg-gray-900 border border-gray-700 p-5 rounded-xl text-base mb-10 flex gap-4 shadow-sm items-center text-gray-300 animate-item delay-1 font-sans hover-lift">
+                <svg class="w-6 h-6 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd"></path>
+                </svg>
+                帶路人在商店的角色不是反對者，而是一個中立的銷售員。語氣轉換是關鍵，請改用乾淨俐落的商業口吻。
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div
+                    class="bg-brand-panelDark border border-gray-800 rounded-2xl p-8 flex flex-col justify-between hover-lift animate-item delay-2">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-400 mb-4 font-sans uppercase tracking-widest">5-1
+                            商店抵達引言</h3>
+                        <p class="text-xl text-white leading-loose font-medium">「歡迎光臨。南寶樹脂，今天有貨。不受天氣影響，不需要曝曬，不需要 KP
+                            門檻。填縫動作一次完成，今天就可以完工。<br><br>尼龍繩同樣有貨。比 Avaka 便宜，直接可以捻線。需要什麼，告訴我。」</p>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-brand-panelDark border border-gray-800 rounded-2xl p-8 flex flex-col justify-between hover-lift animate-item delay-3">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-400 mb-4 font-sans uppercase tracking-widest">5-2 購買決策時
+                        </h3>
+                        <span class="text-gray-500 text-sm italic mb-3 block font-sans">▶ 交出卡片前告知：</span>
+                        <p class="text-xl text-white leading-loose font-medium">
+                            「我給你這個之前，要告訴你一件事：這艘船，完工後會有『不可修復』標記。意思是，它壞了就是壞了。你不需要再學填縫，因為你不會再用到它。<br><br>這是你的選擇。我沒有立場說對或錯。」
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-gradient-to-b from-[#0a1a24] to-brand-panelDark border border-[#1a384c] rounded-2xl p-8 flex flex-col justify-between hover-lift animate-item delay-4">
+                    <div>
+                        <h3
+                            class="text-base font-bold text-blue-300 mb-5 flex items-center justify-between font-sans uppercase tracking-widest">
+                            5-3 中生代對話 <span
+                                class="bg-blue-900/50 px-3 py-1 rounded text-sm border border-blue-800 text-blue-200">認出玩家</span>
+                        </h3>
+                        <p class="text-xl text-white leading-loose font-medium">
+                            「你來了。你比其他人更清楚這裡賣什麼，也更清楚用了之後是什麼結果。<br><br>你的協商者能力讓你用了工業材料也不會被扣分。但你同樣清楚——技術是在使用的過程中活著的。你每一次跳過工序，那個工序就離你遠一點。要買什麼，請決定。」
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: 跨站點 -->
+        <section id="s6" class="tab-content">
+            <div class="flex items-center gap-4 mb-8 border-b border-brand-border pb-4 animate-item">
+                <span class="text-5xl font-black text-brand-textMuted/30">06</span>
+                <h2 class="text-4xl font-bold tracking-widest text-white">跨站點情境觸發腳本</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Month 5 -->
+                <div
+                    class="bg-brand-panelDark border-t-4 border-t-cyan-600 border border-brand-border rounded-2xl p-8 shadow-sm hover-lift animate-item delay-1">
+                    <h3 class="text-2xl font-bold text-cyan-500 mb-2">第 5 月 Pipilapila</h3>
+                    <p class="text-sm text-cyan-700 mb-5 font-bold tracking-widest font-sans">梅雨腐蝕 (灘頭工作室)</p>
+                    <span class="text-cyan-600 text-sm italic mb-3 block font-sans">▶ 突然提高音量說：</span>
+                    <p class="text-xl text-white leading-loose font-medium">「天空陰雲密佈。你在灘頭曝曬的材料，現在需要有人去收起來。如果你沒有預留 AP
+                        做這件事——<span
+                            class="text-cyan-800 text-base mx-1 font-sans font-normal">（停頓。材料劃掉）</span><br><br>商店那邊，化學樹脂今天不受天氣影響。」
+                    </p>
+                </div>
+
+                <!-- Month 10 -->
+                <div
+                    class="bg-brand-panelDark border-t-4 border-t-gray-500 border border-brand-border rounded-2xl p-8 shadow-sm hover-lift animate-item delay-2">
+                    <h3 class="text-2xl font-bold text-gray-400 mb-2">第 10 月 Kaneman</h3>
+                    <p class="text-sm text-gray-600 mb-5 font-bold tracking-widest font-sans">禁忌之月 (阻擋工作台)</p>
+                    <span class="text-gray-500 text-sm italic mb-3 block font-sans">▶ 肢體阻擋工作台填縫位置：</span>
+                    <p class="text-xl text-white leading-loose font-medium">
+                        「這個月，不能填縫。<br><br>不是材料不夠，是時間不對。這個月的蘭嶼，是製作貝灰的月份。這裡有自己的節奏，你得學會如何等待、順應時序。」</p>
+                    <div class="mt-6 pt-4 border-t border-gray-800 text-sm text-gray-500 font-sans">
+                        若追問能做什麼：「去找耆老問。等待是把時間用在它原本該用的地方。」</div>
+                </div>
+
+                <!-- Month 11 -->
+                <div
+                    class="bg-brand-panelDark border-t-4 border-t-brand-accent border border-brand-border rounded-2xl p-8 shadow-[0_0_15px_rgba(0,139,99,0.15)] hover-lift animate-item delay-3">
+                    <h3 class="text-2xl font-bold text-brand-accent mb-2">第 11 月 Kapitowan</h3>
+                    <p class="text-sm text-brand-accent/60 mb-5 font-bold tracking-widest font-sans">傳承儀式 (學徒加強)</p>
+                    <span class="text-brand-accent/80 text-sm italic mb-3 block font-sans">▶ 轉向所有玩家宣告：</span>
+                    <p class="text-xl text-white leading-loose font-medium">
+                        「這個月是傳承儀式的月份。<br><br>今天，青年與耆老只要在同一個地方，技術知識的流動速度是平時的兩倍——KP 自動 +2。<span
+                            class="text-brand-accent/50 text-base mx-1 font-sans font-normal">（停頓）</span><br><br>同在，在這個月份有特別的重量。」
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: 收尾 -->
+        <section id="s7" class="tab-content">
+            <div class="flex flex-col items-center justify-center py-12">
+
+                <h2 class="text-4xl font-bold tracking-widest text-brand-accent mb-3 text-center animate-item"
+                    style="text-shadow: 0 0 20px rgba(0, 139, 99, 0.5);">集合點：收尾儀式</h2>
+                <p class="text-base text-brand-textMuted mb-12 animate-item font-sans">返回集合點，全員站立不坐下。不結算分數，改以「身體記憶回顧」替代。
+                </p>
+
+                <div
+                    class="w-full max-w-4xl bg-brand-panel border border-brand-accent/30 rounded-3xl p-10 shadow-inner-glow mb-12 text-center relative overflow-hidden hover-lift animate-item delay-1">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-b from-transparent to-brand-accent/5 pointer-events-none">
+                    </div>
+                    <h3 class="text-base font-bold text-brand-accent tracking-widest mb-8 font-sans uppercase">7-1
+                        身體記憶回顧</h3>
+                    <p class="text-2xl text-white leading-loose font-medium">
+                        「今天你的腳走了多少路？你的手摸了什麼？<br>
+                        Avaka 纖維的質地，你還記得嗎？<br>
+                        你在哪個地方停下來猶豫了最久？<br><br>
+                        <span class="text-brand-textMuted/50 text-xl font-sans font-light">（長時間停頓）</span><br><br>
+                        那個猶豫，就是這個遊戲想讓你感受的東西——<br>
+                        每一個選擇，背後都有你沒有看見的代價。」
+                    </p>
+                </div>
+
+                <div class="w-full animate-item delay-2">
+                    <h3
+                        class="text-2xl font-bold text-white mb-8 border-b border-brand-border pb-3 flex justify-between items-end">
+                        7-2 結局敘事文本
+                        <span class="text-sm text-brand-textMuted font-light font-sans">點擊對應結局卡片，開啟懸浮視窗閱讀詳細台詞。</span>
+                    </h3>
+
+                    <!-- MODAL BUTTONS FOR NARRATIVES -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+                        <button onclick="openModal('🌿 第一等級【傳承之靈】', endingData.end1, 'border-green-500')"
+                            class="bg-[#031c15] p-6 rounded-xl border-l-[6px] border-l-green-500 border border-brand-border text-left hover:bg-[#052b20] transition-all duration-300 hover-lift group shadow-sm">
+                            <strong class="text-green-400 block mb-3 flex justify-between items-center text-xl">
+                                傳承之靈 <span
+                                    class="text-sm font-sans text-brand-textMuted bg-brand-bg px-2.5 py-1 rounded border border-brand-border">完成路徑
+                                    A</span>
+                            </strong>
+                            <p class="text-base text-brand-textMuted font-light mb-4 leading-relaxed">
+                                這艘船是活的。你花了一年跟著走過祖先的山路，身體記住了動作...</p>
+                            <span
+                                class="text-sm text-green-500 font-bold flex items-center gap-2 group-hover:text-green-400 font-sans"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg> 點擊檢視完整朗讀文本</span>
+                        </button>
+
+                        <button onclick="openModal('⚖️ 第二等級【協商之光】', endingData.end2, 'border-yellow-500')"
+                            class="bg-[#031c15] p-6 rounded-xl border-l-[6px] border-l-yellow-500 border border-brand-border text-left hover:bg-[#052b20] transition-all duration-300 hover-lift group shadow-sm">
+                            <strong class="text-yellow-400 block mb-3 flex justify-between items-center text-xl">
+                                協商之光 <span
+                                    class="text-sm font-sans text-brand-textMuted bg-brand-bg px-2.5 py-1 rounded border border-brand-border">混用材料</span>
+                            </strong>
+                            <p class="text-base text-brand-textMuted font-light mb-4 leading-relaxed">
+                                幾塊工業材料省了工夫，但你還是去敲了耆老的門。船造好的時候...</p>
+                            <span
+                                class="text-sm text-yellow-500 font-bold flex items-center gap-2 group-hover:text-yellow-400 font-sans"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg> 點擊檢視完整朗讀文本</span>
+                        </button>
+
+                        <button onclick="openModal('🏭 第三等級【效率之重】', endingData.end3, 'border-orange-500')"
+                            class="bg-[#031c15] p-6 rounded-xl border-l-[6px] border-l-orange-500 border border-brand-border text-left hover:bg-[#052b20] transition-all duration-300 hover-lift group shadow-sm">
+                            <strong class="text-orange-400 block mb-3 flex justify-between items-center text-xl">
+                                效率之重 <span
+                                    class="text-sm font-sans text-brand-textMuted bg-brand-bg px-2.5 py-1 rounded border border-brand-border">完成路徑
+                                    B</span>
+                            </strong>
+                            <p class="text-base text-brand-textMuted font-light mb-4 leading-relaxed">
+                                南寶樹脂省下時間，看起來沒兩樣。只是壞了就沒辦法修。這艘船...</p>
+                            <span
+                                class="text-sm text-orange-500 font-bold flex items-center gap-2 group-hover:text-orange-400 font-sans"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg> 點擊檢視完整朗讀文本</span>
+                        </button>
+
+                        <button onclick="openModal('🌑 第四等級【失落之魂】', endingData.end4, 'border-gray-400')"
+                            class="bg-[#031c15] p-6 rounded-xl border-l-[6px] border-l-gray-400 border border-brand-border text-left hover:bg-[#052b20] transition-all duration-300 hover-lift group shadow-sm">
+                            <strong class="text-gray-400 block mb-3 flex justify-between items-center text-xl">
+                                失落之魂 <span
+                                    class="text-sm font-sans text-brand-textMuted bg-brand-bg px-2.5 py-1 rounded border border-brand-border">無文化連結</span>
+                            </strong>
+                            <p class="text-base text-brand-textMuted font-light mb-4 leading-relaxed">
+                                你繞過了所有重要的事。它只是一個形狀，一件賣給觀光客的道具...</p>
+                            <span
+                                class="text-sm text-gray-400 font-bold flex items-center gap-2 group-hover:text-gray-300 font-sans"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg> 點擊檢視完整朗讀文本</span>
+                        </button>
+
+                        <button onclick="openModal('⏳ 第五等級【文化斷裂】', endingData.end5, 'border-red-500')"
+                            class="bg-[#031c15] p-6 rounded-xl border-l-[6px] border-l-red-500 border border-brand-border text-left hover:bg-[#052b20] transition-all duration-300 hover-lift group shadow-sm">
+                            <strong class="text-red-400 block mb-3 flex justify-between items-center text-xl">
+                                文化斷裂 <span
+                                    class="text-sm font-sans text-brand-textMuted bg-brand-bg px-2.5 py-1 rounded border border-brand-border">未完工</span>
+                            </strong>
+                            <p class="text-base text-brand-textMuted font-light mb-4 leading-relaxed">
+                                一年過去了，木材還散在那裡。一艘船的誕生必須跟著季節走...</p>
+                            <span
+                                class="text-sm text-red-500 font-bold flex items-center gap-2 group-hover:text-red-400 font-sans"><svg
+                                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg> 點擊檢視完整朗讀文本</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center animate-item delay-3">
+                    <p class="text-3xl text-white mb-8 tracking-wider font-bold">
+                        「最後，我想請每一個人用一句話說——<br>
+                        今天走完，你覺得這艘船，完成了嗎？」
+                    </p>
+                    <div class="w-16 h-1 bg-brand-accent mx-auto mb-8 rounded"></div>
+                    <p class="text-base text-brand-textMuted font-light mb-6 font-sans">（讓所有人說完。帶路人不評論，最後說一句：）</p>
+                    <p
+                        class="text-2xl text-brand-accent tracking-widest bg-[#021f18] px-8 py-4 rounded-xl border border-brand-accent/30 inline-block shadow-glow hover-lift font-bold">
+                        「謝謝你們今天帶著身體來學這件事。」
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 8: 附錄 -->
+        <section id="s8" class="tab-content">
+            <div class="flex items-center gap-4 mb-8 border-b border-brand-border pb-4 animate-item">
+                <span class="text-5xl font-black text-brand-textMuted/30">08</span>
+                <h2 class="text-4xl font-bold tracking-widest text-white">附錄：帶路人工具包</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <!-- Materials List -->
+                <div class="animate-item delay-1">
+                    <h3 class="text-2xl font-bold text-white mb-5 flex items-center gap-3"><span
+                            class="w-3 h-3 bg-brand-accent rounded-full"></span> 8-1 各站點材料清單</h3>
+                    <div class="bg-brand-panelDark border border-brand-border rounded-xl overflow-hidden hover-lift">
+                        <table class="w-full text-base text-left">
+                            <thead class="bg-brand-panel border-b border-brand-border text-brand-textMuted">
+                                <tr>
+                                    <th class="px-8 py-5 font-bold font-sans">站點</th>
+                                    <th class="px-8 py-5 font-bold font-sans">所需實體材料</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-brand-border/50 text-brand-textMain font-light">
+                                <tr class="hover:bg-brand-panel/30 transition-colors">
+                                    <td class="px-8 py-5 font-bold text-white text-lg">集合點</td>
+                                    <td class="px-8 py-5 leading-relaxed text-lg">角色卡(每組3張)、遊戲規則小卡、月份卡(共12張)、AP 計數籌碼
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-brand-panel/30 transition-colors">
+                                    <td class="px-8 py-5 font-bold text-white text-lg">山林區</td>
+                                    <td class="px-8 py-5 leading-relaxed text-lg">耆老知識卡(帶路人持有)、採集卡、禁忌標記貼紙</td>
+                                </tr>
+                                <tr class="hover:bg-brand-panel/30 transition-colors">
+                                    <td class="px-8 py-5 font-bold text-white text-lg">灘頭</td>
+                                    <td class="px-8 py-5 leading-relaxed text-lg">Avaka
+                                        纖維束(每組一束)、尼龍繩樣本、SEM顯微照片、透明水杯(2個)、工序卡</td>
+                                </tr>
+                                <tr class="hover:bg-brand-panel/30 transition-colors">
+                                    <td class="px-8 py-5 font-bold text-white text-lg">商店</td>
+                                    <td class="px-8 py-5 leading-relaxed text-lg">工業材料卡(南寶樹脂×5、尼龍繩×5)、「不可修復」標記貼紙</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="animate-item delay-2">
+                    <h3 class="text-2xl font-bold text-white mb-5 flex items-center gap-3"><span
+                            class="w-3 h-3 bg-brand-accent rounded-full"></span> 8-2 突發狀況處理指引</h3>
+                    <div class="space-y-5 text-base">
+                        <div class="bg-brand-panel border border-brand-border p-6 rounded-xl hover-lift">
+                            <strong class="text-danger-text block mb-2 text-lg">狀況：玩家全部跑向商店，無人堅持路徑 A</strong>
+                            <p class="text-brand-textMain font-light leading-relaxed">
+                                對策：不干預，讓結算時的敘事文本說話。這個「失敗」是最有教學價值的結果之一。</p>
+                        </div>
+                        <div class="bg-brand-panel border border-brand-border p-6 rounded-xl hover-lift">
+                            <strong class="text-gold-text block mb-2 text-lg">狀況：玩家不理解學徒機制，分散行動</strong>
+                            <p class="text-brand-textMain font-light leading-relaxed">
+                                對策：在第一個回合結束時，主動提示：「你們這個回合不在同一個地方——沒有 KP 流動。」只提示一次，不重複。</p>
+                        </div>
+                        <div class="bg-brand-panel border border-brand-border p-6 rounded-xl hover-lift">
+                            <strong class="text-gold-text block mb-2 text-lg">狀況：時間不足，無法完整跑完</strong>
+                            <p class="text-brand-textMain font-light leading-relaxed">對策：從 1、2、5、10、12
+                                月中選取三個關鍵月份跑完即可。關鍵節點的深度體驗優先於完整性。</p>
+                        </div>
+                        <div class="bg-brand-panel border border-brand-border p-6 rounded-xl hover-lift">
+                            <strong class="text-gold-text block mb-2 text-lg">狀況：玩家情緒高漲，討論無法停止</strong>
+                            <p class="text-brand-textMain font-light leading-relaxed">對策：讓討論繼續 2–3
+                                分鐘，然後說：「我們把這個問題帶進下一個站點。」讓討論在移動中延續，而非被打斷。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer
+        class="w-full text-center py-8 mt-auto border-t border-brand-border bg-brand-bg text-brand-textMuted text-sm font-light tracking-widest font-sans">
+        AVAKA IMMERSIVE WORKSHOP SCRIPT ✧ DESIGNED FOR DIRECTOR & OPERATOR
+    </footer>
+
+    <!-- 懸浮視窗 (Modal) -->
+    <div id="info-modal"
+        class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 px-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer" onclick="closeModal()"></div>
+
+        <!-- Modal Content Box -->
+        <div class="bg-brand-panelDark border-t-[6px] shadow-[0_0_40px_rgba(0,139,99,0.3)] rounded-3xl max-w-3xl w-full z-10 transform scale-95 transition-transform duration-300 flex flex-col"
+            id="modal-content-container">
+            <!-- Header -->
+            <div
+                class="px-8 py-6 border-b border-brand-border flex justify-between items-center bg-brand-bg rounded-t-3xl">
+                <h3 id="modal-title" class="text-3xl font-bold text-white tracking-widest">標題</h3>
+                <button onclick="closeModal()"
+                    class="text-brand-textMuted hover:text-white transition-colors bg-brand-panel p-3 rounded-full border border-brand-border hover:border-brand-textMuted">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Body -->
+            <div id="modal-body"
+                class="p-10 text-white leading-[2.2] text-2xl overflow-y-auto max-h-[70vh] font-medium tracking-wide">
+                <!-- 動態注入內容 -->
+            </div>
+            <!-- Footer -->
+            <div class="px-8 py-5 border-t border-brand-border bg-brand-bg rounded-b-3xl text-center">
+                <p class="text-base font-light text-brand-textMuted font-sans">朗讀完畢後，點擊視窗外圍或關閉按鈕返回</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        // Tab 切換邏輯 (重啟動畫)
+        function switchTab(tabId) {
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(el => {
+                el.classList.remove('active');
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-accent', 'text-white', 'shadow-glow', 'border-brand-accent');
+                btn.classList.add('bg-[#0a271e]', 'text-brand-textMuted', 'border-[#123f31]');
+            });
+
+            // Trigger reflow to restart CSS animations
+            void document.body.offsetWidth;
+
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-[#0a271e]', 'text-brand-textMuted', 'border-[#123f31]');
+                activeBtn.classList.add('bg-brand-accent', 'text-white', 'shadow-glow', 'border-brand-accent');
+                activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 懸浮視窗 (Modal) 資料庫
+        const endingData = {
+            end1: `這艘船是活的。不僅僅是一種比喻，而是真的活著。<br><br>你花了整整一年，跟著走過祖先的同一條山路，身體記住了採集時該繞開哪棵樹、Avaka 的纖維要朝哪個方向捻才不會斷。這些動作可能沒有被文字記錄，卻藏在族人身體的記憶之中，等待被喚醒。<br><br>後來，透過科學資料，證實了 Avaka 纖維吸水之後會膨脹。你忽然明白，老人說「讓船呼吸」不只是一種想像，是造船的學問。當海水滲進縫隙，纖維膨脹後，船反而變得更緊實。可以拆，可以修，可以一塊一塊換掉，再一次出海。<br><br>那些你以為早已斷裂的記憶，其實只是靜靜地等著願意承接的人。`,
+            end2: `你沒辦法只活在傳統裡，這你很清楚。<br><br>孩子要上學，油費要繳，時間不等人，你在這些現實壓力裡嘗試找到縫隙，幾塊工業材料省了些工夫，但你沒有就此撒手。你還是去敲了耆老的門，還是問了那幾個不問不會有人主動說的問題。<br><br>船造好的時候，你自己也說不清它到底是傳統還是現代。<br><br>但或許這才是最誠實的答案，蘭嶼從來就不是一座博物館，人們在這裡過的是真實的生活，傳統也一直在真實的生活裡摩擦、磨損、又重新長出新的樣子。`,
+            end3: `船造好了。但有什麼東西卻悄然失去了。<br><br>南寶樹脂把縫填得密不透風，省下了大半時間。船下水的那一刻，看起來和其他船沒什麼兩樣。只是壞了就是壞了，沒辦法修。那種嵌接的方式、那種拆開再組回去的可能，在你選擇跳過的那幾道工序裡，也連帶消失了。<br><br>手指也忘了。忘了纖維來回時的阻力，忘了怎麼判斷木材的品種。<br><br>這艘船能用，但卻沒辦法教會你任何事。它只是一件時代下的商品。`,
+            end4: `船下水了。你應該覺得完成了什麼，但內心是空的。<br><br>你沒有上山採集過那些 Avaka，不知道採集時要說什麼、要避開哪些日子。你繞過了所有看起來麻煩的環節，也繞過了所有真正重要的事。<br><br>這艘船和這片海沒有關係，和山也沒有關係。它只是一個形狀，一件可以賣給觀光客拍照的道具。<br><br>那些採集時吟唱的歌，那些老人家說只有動手做才能理解的身體知識——不是被你反對，是被你忽略了。被忽略的東西，比被摧毀的東西消失得更安靜，也更難追回。`,
+            end5: `一年過去了，灘頭的木材還散在那裡。<br><br>始終沒有開始，好像哪裡卡住了，也許是不知道下一步該問誰，也許是繞了太多遠路，隨時間一天一天過去，而你還沒準備好。<br><br>一艘船的誕生需要一整年，不是因為工序真的那麼複雜，是因為它必須跟著季節走：採集、乾燥、等待、修整，每一步都有它自己的時間。<br><br>那些纖維會腐爛。那些還沒說出口的技術知識，也會隨著保有記憶的人慢慢老去，而跟著消失。不是誰的錯。那只是隨著時代推進而必然的結果。`
+        };
+
+        // Modal 操作邏輯
+        function openModal(title, content, borderColorClass) {
+            document.getElementById('modal-title').innerHTML = title;
+            document.getElementById('modal-body').innerHTML = content;
+
+            const container = document.getElementById('modal-content-container');
+            // 清除舊的 border class 並套用新的
+            container.className = `bg-brand-panelDark border-t-[6px] shadow-[0_0_40px_rgba(0,139,99,0.3)] rounded-3xl max-w-3xl w-full z-10 transform scale-95 transition-transform duration-300 flex flex-col ${borderColorClass}`;
+
+            document.getElementById('info-modal').classList.add('modal-active');
+            container.classList.add('modal-content-active');
+
+            // 鎖定背景滾動
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('info-modal').classList.remove('modal-active');
+            document.getElementById('modal-content-container').classList.remove('modal-content-active');
+
+            // 恢復背景滾動
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</body>
+
+</html>

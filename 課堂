@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaka 島嶼的維度 - 主持人儀表板</title>
+
+    <!-- 載入 FontAwesome 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 載入明體字型 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 設定 Tailwind 自訂動畫與顏色 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        slideUp: 'slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        float: 'floatSlow 3.5s ease-in-out infinite',
+                        glow: 'glowPulse 3s ease-in-out infinite',
+                        pulseSlow: 'glowPulse 4s ease-in-out infinite',
+                        spinSlow: 'spinSlow 12s linear infinite',
+                        fadeIn: 'fadeIn 0.4s ease-out forwards'
+                    },
+                    keyframes: {
+                        slideUpFade: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)', filter: 'blur(3px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }
+                        },
+                        floatSlow: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        },
+                        glowPulse: {
+                            '0%, 100%': { opacity: 0.8, filter: 'brightness(1)' },
+                            '50%': { opacity: 1, filter: 'brightness(1.3)' }
+                        },
+                        spinSlow: {
+                            from: { transform: 'rotate(0deg)' },
+                            to: { transform: 'rotate(360deg)' }
+                        },
+                        fadeIn: {
+                            from: { opacity: 0 },
+                            to: { opacity: 1 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 全局 CSS 樣式 -->
+    <style>
+        body {
+            font-family: 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.5);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.8);
+        }
+
+        .text-shadow-glow {
+            text-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+        }
+
+        .shadow-glow-amber {
+            box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+        }
+
+        .delay-100 {
+            animation-delay: 100ms;
+        }
+
+        .delay-200 {
+            animation-delay: 200ms;
+        }
+
+        .delay-300 {
+            animation-delay: 300ms;
+        }
+    </style>
+
+    <!-- 載入 React 核心庫 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('section1');
+            const [activeMonth, setActiveMonth] = useState(1);
+            const [isLoaded, setIsLoaded] = useState(false);
+
+            useEffect(() => {
+                setIsLoaded(true);
+            }, []);
+
+            const [modal, setModal] = useState({
+                isOpen: false, title: '', content: null, icon: null, theme: 'emerald'
+            });
+
+            const tabs = [
+                { id: 'section1', name: '腳本概覽', icon: <i className="fas fa-map text-[22px]" /> },
+                { id: 'section2', name: '導入與角色', icon: <i className="fas fa-users text-[22px]" /> },
+                { id: 'section3', name: '精選月份', icon: <i className="fas fa-book-open text-[22px]" /> },
+                { id: 'section4', name: '結算與反思', icon: <i className="fas fa-flag text-[22px]" /> },
+                { id: 'section5', name: '附錄', icon: <i className="fas fa-list text-[22px]" /> }
+            ];
+
+            const months = [
+                { id: 1, name: '第 1 月 Kashyman', subtitle: '預警的季節', duration: '約 5 分鐘' },
+                { id: 2, name: '第 2 月 Kapowan', subtitle: '飛魚禁令', duration: '約 6 分鐘' },
+                { id: 5, name: '第 5 月 Pipilapila', subtitle: '梅雨腐壞', duration: '約 5 分鐘' },
+                { id: 10, name: '第 10 月 Kaneman', subtitle: '禁忌之月', duration: '約 5 分鐘' },
+                { id: 12, name: '第 12 月 Kaowan', subtitle: '最終衝刺', duration: '約 4 分鐘' }
+            ];
+
+            const openModal = (title, content, icon, theme = 'emerald') => {
+                setModal({ isOpen: true, title, content, icon, theme });
+            };
+
+            const closeModal = () => {
+                setModal(prev => ({ ...prev, isOpen: false }));
+            };
+
+            const GlassCard = ({ children, className = "", delay = "" }) => (
+                <div className={`bg-[#021812]/85 backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden animate-slideUp ${delay} ${className}`}>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[50px] pointer-events-none rounded-full"></div>
+                    <div className="relative z-10">{children}</div>
+                </div>
+            );
+
+            const SectionTitle = ({ icon, title }) => (
+                <h2 className="text-3xl font-bold text-white mb-8 flex items-center border-b border-white/10 pb-5 tracking-wider">
+                    <div className="animate-float">{icon}</div>
+                    <span className="ml-4 text-shadow-glow">{title}</span>
+                </h2>
+            );
+
+            const StepBadge = ({ num }) => (
+                <span className="bg-emerald-900/80 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.4)] w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base font-bold flex-shrink-0 animate-glow" style={{ transform: 'translateZ(0)' }}>
+                    {num}
+                </span>
+            );
+
+            const ScriptButton = ({ icon, title, content, buttonText = "閱讀台詞", theme = "emerald" }) => {
+                const themeStyles = {
+                    emerald: { border: 'border-emerald-500/30', text: 'text-emerald-300', bg: 'bg-emerald-950/50', btn: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30' },
+                    cyan: { border: 'border-cyan-500/30', text: 'text-cyan-300', bg: 'bg-cyan-950/50', btn: 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/30' },
+                    amber: { border: 'border-amber-500/30', text: 'text-amber-300', bg: 'bg-amber-950/50', btn: 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30' },
+                    slate: { border: 'border-slate-500/30', text: 'text-slate-300', bg: 'bg-slate-900/50', btn: 'bg-slate-600 hover:bg-slate-500 text-white shadow-slate-600/30' },
+                    rose: { border: 'border-rose-500/30', text: 'text-rose-300', bg: 'bg-rose-950/50', btn: 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30' },
+                    red: { border: 'border-red-500/30', text: 'text-red-300', bg: 'bg-red-950/50', btn: 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/30' },
+                };
+                const t = themeStyles[theme] || themeStyles.emerald;
+
+                return (
+                    <div className={`p-6 rounded-2xl border ${t.border} ${t.bg} flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-${theme}-500/10 mb-5 duration-300`}>
+                        <div className="flex items-center space-x-5">
+                            <div className={`p-3 rounded-full border ${t.border} bg-black/40 shadow-inner flex items-center justify-center`}>
+                                {icon}
+                            </div>
+                            <h4 className={`font-bold ${t.text} tracking-wider text-xl`}>{title}</h4>
+                        </div>
+                        <button
+                            onClick={() => openModal(title, content, icon, theme)}
+                            className={`px-6 py-3 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 ${t.btn}`}
+                        >
+                            <i className="fas fa-quote-left text-[18px] mr-3 opacity-80" />
+                            {buttonText}
+                        </button>
+                    </div>
+                );
+            };
+
+            const renderSection1 = () => (
+                <div className="space-y-8">
+                    <GlassCard className="p-8 md:p-10" delay="delay-100">
+                        <SectionTitle icon={<i className="fas fa-file-alt text-[28px] text-emerald-400" />} title="腳本概覽" />
+
+                        <p className="text-emerald-100/90 leading-relaxed mb-10 bg-[#04281f] p-6 rounded-xl border border-emerald-900 tracking-wide shadow-inner text-lg">
+                            本腳本為《Avaka：島嶼的維度》課堂教學模式的完整主持人手冊，涵蓋開場引言、角色導入、各月份情境台詞、教學介入時機，以及最終反思討論的逐字引導。全程以 60 分鐘為設計基準，主持人可依課堂節奏作 10 分鐘內的彈性調整。
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                            <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 shadow-lg hover:border-emerald-500/50 transition-colors duration-300 group">
+                                <h3 className="font-bold text-emerald-300 mb-6 flex items-center text-xl tracking-wider group-hover:text-emerald-200 transition-colors">
+                                    <i className="fas fa-bullseye text-[24px] mr-3 animate-float" />
+                                    課程目標
+                                </h3>
+                                <ul className="space-y-6">
+                                    <li className="flex items-start">
+                                        <span className="bg-emerald-800/80 text-emerald-100 border border-emerald-500/30 text-sm font-bold px-3 py-1 rounded mr-4 mt-0.5 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.2)]">主要目標</span>
+                                        <span className="text-base text-emerald-50 leading-relaxed">讓學生透過角色扮演與決策體驗，深度理解「技術選擇與文化韌性」之間的邏輯關係。</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="bg-emerald-800/80 text-emerald-100 border border-emerald-500/30 text-sm font-bold px-3 py-1 rounded mr-4 mt-0.5 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.2)]">次要目標一</span>
+                                        <span className="text-base text-emerald-50 leading-relaxed">透過學徒機制，體驗「默會知識」的場域依賴性——知識需要在場才能傳遞。</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="bg-emerald-800/80 text-emerald-100 border border-emerald-500/30 text-sm font-bold px-3 py-1 rounded mr-4 mt-0.5 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.2)]">次要目標二</span>
+                                        <span className="text-base text-emerald-50 leading-relaxed">引導學生思考為何「高分路徑」比「快速路徑」更難達成，並連結至現實中文化傳承的困境。</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-[#291b04] p-8 rounded-2xl border border-amber-800/50 shadow-lg hover:border-amber-500/50 transition-colors duration-300 group">
+                                <h3 className="font-bold text-amber-400 mb-6 flex items-center text-xl tracking-wider group-hover:text-amber-300 transition-colors">
+                                    <i className="fas fa-check-circle text-[24px] mr-3 animate-pulseSlow" />
+                                    主持人準備事項
+                                </h3>
+                                <div className="space-y-8">
+                                    <div>
+                                        <h4 className="font-bold text-amber-200 mb-4 flex items-center text-lg"><div className="w-2 h-2 bg-amber-400 rounded-full mr-3 shadow-glow-amber"></div>材料清單</h4>
+                                        <ul className="list-disc pl-7 text-base text-amber-50/90 space-y-3">
+                                            <li>角色卡（每組 3 張）、分數結算表</li>
+                                            <li>行動點數標記（籌碼或骰子）</li>
+                                            <li>月份卡 12 張（按序排列，正面朝下置於中央）</li>
+                                        </ul>
+                                    </div>
+                                    <div className="border-t border-amber-800/50 pt-6">
+                                        <h4 className="font-bold text-amber-200 mb-4 flex items-center text-lg"><div className="w-2 h-2 bg-amber-400 rounded-full mr-3 shadow-glow-amber"></div>場地與進場設定</h4>
+                                        <ul className="list-disc pl-7 text-base text-amber-50/90 space-y-3">
+                                            <li><strong className="text-amber-300 tracking-wide">場地設定：</strong>建議每組圍桌而坐，3人一組。</li>
+                                            <li><strong className="text-amber-300 tracking-wide">進場前確認：</strong>確認每組已有三名角色卡。</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+
+                    <GlassCard className="p-8 md:p-12" delay="delay-200">
+                        <h3 className="font-bold text-cyan-300 mb-8 flex items-center text-3xl tracking-wider border-b border-white/10 pb-6">
+                            <i className="fas fa-clock text-[32px] mr-4 animate-spinSlow" />
+                            60 分鐘 課堂操作流程圖
+                        </h3>
+
+                        <div className="relative mt-10">
+                            <div className="absolute top-4 bottom-8 left-[19px] md:left-[27px] w-[3px] rounded-full bg-gradient-to-b from-cyan-400 via-emerald-500 to-amber-500 shadow-[0_0_12px_rgba(52,211,153,0.6)]"></div>
+
+                            <div className="space-y-16">
+                                <div className="relative pl-14 md:pl-20">
+                                    <div className="absolute top-0 left-[0px] md:left-[8px] w-10 h-10 bg-[#011410] border-[4px] border-cyan-400 rounded-full z-10 shadow-[0_0_20px_rgba(34,211,238,0.8)] flex items-center justify-center animate-glow" style={{ transform: 'translateZ(0)' }}>
+                                        <div className="w-3 h-3 bg-cyan-300 rounded-full"></div>
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
+                                        <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">00:00 - 10:00</span>
+                                        <span>第一段：導入與角色分配</span>
+                                    </h4>
+
+                                    <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                                        <div className="flex-1 bg-gradient-to-br from-cyan-950/40 to-[#011410] border border-cyan-800/50 p-6 rounded-2xl hover:-translate-y-1 hover:border-cyan-500/50 transition-all shadow-lg group">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="bg-cyan-900/50 text-cyan-300 text-sm font-bold px-3 py-1.5 rounded">Step 1</span>
+                                                <span className="text-cyan-500/70 text-sm font-bold">3 mins</span>
+                                            </div>
+                                            <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-play-circle text-[20px] mr-3 text-cyan-400" />引起動機</div>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">全班朗讀「開場引言」，建立工匠情境與目標，不使用投影片。</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-center hidden md:flex text-cyan-800"><i className="fas fa-arrow-right text-[28px]" /></div>
+                                        <div className="flex items-center justify-center md:hidden text-cyan-800"><i className="fas fa-arrow-down text-[28px]" /></div>
+
+                                        <div className="flex-1 bg-gradient-to-br from-cyan-950/40 to-[#011410] border border-cyan-800/50 p-6 rounded-2xl hover:-translate-y-1 hover:border-cyan-500/50 transition-all shadow-lg group">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="bg-cyan-900/50 text-cyan-300 text-sm font-bold px-3 py-1.5 rounded">Step 2</span>
+                                                <span className="text-cyan-500/70 text-sm font-bold">4 mins</span>
+                                            </div>
+                                            <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-users text-[20px] mr-3 text-cyan-400" />角色分配</div>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">分發卡片，主持人口述三大角色之旁白與特殊能力，賦予責任感。</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-center hidden md:flex text-cyan-800"><i className="fas fa-arrow-right text-[28px]" /></div>
+                                        <div className="flex items-center justify-center md:hidden text-cyan-800"><i className="fas fa-arrow-down text-[28px]" /></div>
+
+                                        <div className="flex-1 bg-gradient-to-br from-cyan-950/40 to-[#011410] border border-cyan-800/50 p-6 rounded-2xl hover:-translate-y-1 hover:border-cyan-500/50 transition-all shadow-lg group">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="bg-cyan-900/50 text-cyan-300 text-sm font-bold px-3 py-1.5 rounded">Step 3</span>
+                                                <span className="text-cyan-500/70 text-sm font-bold">3 mins</span>
+                                            </div>
+                                            <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-list text-[20px] mr-3 text-cyan-400" />規則說明</div>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">快速講解 AP 消耗、傳統與工業兩大路徑，以及學徒機制的運作。</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="relative pl-12 md:pl-16">
+                                    <div className="absolute top-0 left-[0px] md:left-[8px] w-10 h-10 bg-[#011410] border-[4px] border-emerald-400 rounded-full z-10 shadow-[0_0_20px_rgba(52,211,153,0.8)] flex items-center justify-center animate-glow" style={{ transform: 'translateZ(0)', animationDelay: '1s' }}>
+                                        <div className="w-3 h-3 bg-emerald-300 rounded-full"></div>
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
+                                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">10:00 - 45:00</span>
+                                        <span>第二段：遊戲體驗 (精選月份)</span>
+                                    </h4>
+
+                                    <div className="bg-[#011a14] p-8 rounded-3xl border border-emerald-800/40 shadow-inner overflow-x-auto hide-scrollbar">
+                                        <div className="flex items-start gap-2 min-w-[800px] py-4">
+                                            {[
+                                                { m: '1月', name: '預警', time: '5m', active: true, icon: <i className="fas fa-exclamation-triangle text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '2月', name: '禁令', time: '6m', active: true, icon: <i className="fas fa-book-open text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '3-4月', name: '快速跳過', time: '3m', active: false },
+                                                { m: '5月', name: '腐壞', time: '5m', active: true, icon: <i className="fas fa-exclamation-triangle text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '6-9月', name: '快速跳過', time: '5m', active: false },
+                                                { m: '10月', name: '等待', time: '5m', active: true, icon: <i className="fas fa-check-circle text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '11月', name: '快速跳過', time: '2m', active: false },
+                                                { m: '12月', name: '衝刺', time: '4m', active: true, icon: <i className="fas fa-trophy text-[20px] text-emerald-300 mb-2" /> }
+                                            ].map((step, idx, arr) => (
+                                                <div className="relative flex flex-col items-center w-28 shrink-0 group" key={idx}>
+                                                    {idx < arr.length - 1 && (
+                                                        <div className={`absolute top-8 left-1/2 w-full h-[3px] z-0 ${step.active && arr[idx + 1].active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-white/10'}`}></div>
+                                                    )}
+                                                    <div className={`relative z-10 flex flex-col items-center justify-center w-16 h-16 rounded-full border-2 transition-all duration-300 ${step.active
+                                                            ? 'bg-emerald-950 border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)] group-hover:scale-110 group-hover:bg-emerald-900 cursor-pointer'
+                                                            : 'bg-black border-white/10 text-white/30 grayscale hover:grayscale-0'
+                                                        }`} style={{ transform: 'translateZ(0)' }}>
+                                                        {step.active && step.icon}
+                                                        <span className={`font-bold tracking-wider leading-none ${step.active ? 'text-white text-base' : 'text-sm'}`}>{step.m}</span>
+                                                    </div>
+                                                    <span className={`mt-4 text-base font-bold tracking-widest ${step.active ? 'text-emerald-300' : 'text-white/30'}`}>{step.name}</span>
+                                                    <span className={`mt-1.5 px-3 py-1 rounded text-xs ${step.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'text-white/20'}`}>{step.time}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 bg-emerald-900/20 p-5 rounded-xl text-base text-emerald-100/90 border border-emerald-500/30 flex items-start shadow-lg">
+                                        <i className="far fa-dot-circle text-[24px] mr-4 mt-0.5 text-emerald-400 flex-shrink-0 animate-pulseSlow" />
+                                        <p className="leading-relaxed">
+                                            <strong className="text-emerald-300 tracking-wide text-lg">主持節奏控制：</strong><br />
+                                            上方發光的圓形節點代表<strong className="text-white mx-1 text-lg border-b border-emerald-500/50">必須暫停計時，進行腳本朗讀與引導</strong>的回合；灰暗的節點則代表<strong className="text-white mx-1 text-lg border-b border-emerald-500/50">快速宣告環境限制後，讓小組自行決策</strong>的流暢回合。
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="relative pl-12 md:pl-16 pb-4">
+                                    <div className="absolute top-0 left-[0px] md:left-[8px] w-10 h-10 bg-[#011410] border-[4px] border-amber-400 rounded-full z-10 shadow-[0_0_20px_rgba(251,191,36,0.8)] flex items-center justify-center animate-glow" style={{ transform: 'translateZ(0)', animationDelay: '2s' }}>
+                                        <div className="w-3 h-3 bg-amber-300 rounded-full"></div>
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
+                                        <span className="bg-amber-950/60 text-amber-400 border border-amber-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">45:00 - 60:00</span>
+                                        <span>第三段：結算與反思討論</span>
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 1</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">3m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">分數結算</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">依各組得分，由高至低朗讀五大結局文本。</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 2</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">3m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">事實層討論</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">檢討「傳統工法難拿高分」的遊戲機制原因。</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 3</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">4m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">機制層討論</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">探討「樹脂路徑」造成的不可修復與去技能化。</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 4</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">5m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">價值層總結</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">引導青年反饋：文化知識存在於人的身體裡。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection2 = () => (
+                <div className="space-y-8 animate-fadeIn">
+                    <GlassCard className="p-8 md:p-10" delay="delay-100">
+                        <SectionTitle icon={<i className="fas fa-users text-[28px] text-emerald-400" />} title="第一段：導入與角色分配（00:00 – 10:00）" />
+
+                        <div className="mb-14">
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
+                                <StepBadge num="2-1" />全班開場引言（約 3 分鐘）
+                            </h3>
+                            <div className="ml-14 border-l-2 border-emerald-800/50 pl-8 pb-2">
+                                <ScriptButton
+                                    icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                    title="主持人開場引言"
+                                    content={<>
+                                        「今天你們不是學生，你們是蘭嶼的工匠。<br /><br />
+                                        這一年，你們必須完成一艘拼板舟。這艘船不只是交通工具，它是你們和祖先、和海洋之間的對話。<br /><br />
+                                        但在這一年裡，你們會不斷面對一個問題：走傳統的路，還是走快的路？<br /><br />
+                                        傳統的路，需要等待季節、跟著耆老學習，每一步都有它的節奏。快的路，是去商店買化學樹脂，幾個動作就能完工。兩條路都能讓你造好一艘船，但這兩艘船是不一樣的。<br /><br />
+                                        今天你們的選擇，會決定你留下什麼。」
+                                    </>}
+                                    theme="emerald"
+                                />
+                                <p className="text-base text-amber-200/80 mt-4 flex items-center bg-amber-900/20 inline-block px-5 py-3 rounded-xl border border-amber-800/30">
+                                    <i className="fas fa-info-circle text-[18px] mr-3 text-amber-400" />
+                                    教學提示：朗讀時不要搭配投影片說明。讓語言單獨產生作用，讓學生先感受情境。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mb-14">
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
+                                <StepBadge num="2-2" />角色分牌儀式（約 4 分鐘）
+                            </h3>
+                            <div className="ml-14 border-l-2 border-cyan-800/50 pl-8 pb-2">
+                                <p className="text-lg text-emerald-100/70 mb-5">將角色卡正面朝下分發，請學生先不要翻開。主持人說：</p>
+                                <ScriptButton
+                                    icon={<i className="fas fa-play-circle text-[28px] text-cyan-400" />}
+                                    title="分牌前台詞"
+                                    content={<>
+                                        「手上這張卡，是你在蘭嶼的身份。在你翻開它之前，我只想告訴你一件事——<br /><br />
+                                        在傳統社會裡，沒有人可以選擇自己的出身，你被賦予了一個位置，你就在那個位置上承擔責任。<br /><br />
+                                        現在，翻開你的牌。」
+                                    </>}
+                                    theme="cyan"
+                                />
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+                                    <div className="bg-[#1c1202] rounded-2xl border border-amber-700/50 overflow-hidden flex flex-col shadow-lg hover:-translate-y-2 transition-transform duration-300 hover:shadow-amber-500/20 group">
+                                        <div className="h-2 bg-amber-500 w-full group-hover:shadow-[0_0_15px_#f59e0b] transition-shadow"></div>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h4 className="font-bold text-2xl text-amber-400 mb-6 tracking-wider flex items-center">
+                                                <i className="fas fa-trophy text-[24px] mr-3" />資深工匠 (耆老)
+                                            </h4>
+                                            <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-amber-900/50">
+                                                <p className="flex justify-between text-amber-100/80"><span>AP：</span> <span className="font-bold text-white">6點 / 回合</span></p>
+                                                <p className="flex justify-between text-amber-100/80"><span>KP：</span> <span className="font-bold text-emerald-400">10點（初始）</span></p>
+                                            </div>
+                                            <div className="mb-6 flex-1">
+                                                <p className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4">特殊能力</p>
+                                                <ul className="text-base text-amber-100/90 space-y-3 pl-5 list-disc marker:text-amber-500 leading-relaxed">
+                                                    <li><strong className="text-amber-300">【傳承者】</strong>執行「填縫」不耗 AP。</li>
+                                                    <li><strong className="text-amber-300">【遠程指導】</strong>不在同一區域時可耗 1 AP 使青年 KP+1。</li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => openModal("耆老：角色旁白", "「你擁有最多的技術知識，但體力有限。你的存在意義，不是完成速度最快的船，而是確保知識不在你這一代斷掉。你的聲望，來自於你教會了多少人。」", <i className="fas fa-users text-[28px] text-amber-400" />, "amber")}
+                                                className="mt-auto w-full py-4 rounded-xl border border-amber-500/40 text-amber-300 text-base font-bold hover:bg-amber-900/50 hover:text-white transition-colors flex justify-center items-center"
+                                            >
+                                                <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />閱讀角色旁白
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-[#021816] rounded-2xl border border-teal-700/50 overflow-hidden flex flex-col shadow-lg hover:-translate-y-2 transition-transform duration-300 hover:shadow-teal-500/20 group">
+                                        <div className="h-2 bg-teal-400 w-full group-hover:shadow-[0_0_15px_#2dd4bf] transition-shadow"></div>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h4 className="font-bold text-2xl text-teal-300 mb-6 tracking-wider flex items-center">
+                                                <i className="fas fa-bullseye text-[24px] mr-3" />文化復振青年
+                                            </h4>
+                                            <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-teal-900/50">
+                                                <p className="flex justify-between text-teal-100/80"><span>AP：</span> <span className="font-bold text-white">12點 / 回合</span></p>
+                                                <p className="flex justify-between text-teal-100/80"><span>KP：</span> <span className="font-bold text-slate-400">0點（初始）</span></p>
+                                            </div>
+                                            <div className="mb-6 flex-1">
+                                                <p className="text-sm font-bold text-teal-600 uppercase tracking-widest mb-4">特殊能力</p>
+                                                <ul className="text-base text-teal-100/90 space-y-3 pl-5 list-disc marker:text-teal-400 leading-relaxed">
+                                                    <li><strong className="text-teal-300">【學徒】</strong>移動不消耗 AP。</li>
+                                                    <li><strong className="text-teal-300">【快速學習】</strong>主動向耆老請益，獲得 3 點 KP。</li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => openModal("青年：角色旁白", "「你移動不耗體力，學習能力最強，但你現在什麼都不會——KP 是零。你能走到哪裡、能做什麼，很大程度上取決於你願不願意跟著耆老。沒有人會強迫你，但知識只在靠近的地方發生。」", <i className="fas fa-users text-[28px] text-teal-400" />, "cyan")}
+                                                className="mt-auto w-full py-4 rounded-xl border border-teal-500/40 text-teal-300 text-base font-bold hover:bg-teal-900/50 hover:text-white transition-colors flex justify-center items-center"
+                                            >
+                                                <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />閱讀角色旁白
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-[#0b121c] rounded-2xl border border-slate-700/50 overflow-hidden flex flex-col shadow-lg hover:-translate-y-2 transition-transform duration-300 hover:shadow-slate-500/20 group">
+                                        <div className="h-2 bg-slate-400 w-full group-hover:shadow-[0_0_15px_#94a3b8] transition-shadow"></div>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h4 className="font-bold text-2xl text-slate-300 mb-6 tracking-wider flex items-center">
+                                                <i className="fas fa-users text-[24px] mr-3" />中生代工匠
+                                            </h4>
+                                            <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-slate-800/50">
+                                                <p className="flex justify-between text-slate-200/80"><span>AP：</span> <span className="font-bold text-white">8點 / 回合</span></p>
+                                                <p className="flex justify-between text-slate-200/80"><span>KP：</span> <span className="font-bold text-emerald-400">5點（初始）</span></p>
+                                            </div>
+                                            <div className="mb-6 flex-1">
+                                                <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">特殊能力</p>
+                                                <ul className="text-base text-slate-200/90 space-y-3 pl-5 list-disc marker:text-slate-400 leading-relaxed">
+                                                    <li><strong className="text-slate-300">【協商者】</strong>用工業材料完工時得分提升，且無「去技能化」懲罰。</li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => openModal("中生代：角色旁白", "「你是橋樑，也是矛盾最深的人。你用工業材料不會被懲罰，但你也清楚，這條路走到底，船造好了，技術也死了。你有能力在現實與傳統之間找到縫隙——問題是你想不想找。」", <i className="fas fa-users text-[28px] text-slate-400" />, "slate")}
+                                                className="mt-auto w-full py-4 rounded-xl border border-slate-500/40 text-slate-300 text-base font-bold hover:bg-slate-800/50 hover:text-white transition-colors flex justify-center items-center"
+                                            >
+                                                <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />閱讀角色旁白
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
+                                <StepBadge num="2-3" />規則快速說明（約 3 分鐘）
+                            </h3>
+                            <div className="ml-14 border-l-2 border-emerald-800/50 pl-8 pb-2">
+                                <div className="bg-[#04281f] p-8 rounded-2xl border border-emerald-900 shadow-inner hover:shadow-emerald-900/30 transition-shadow">
+                                    <ul className="text-emerald-50/90 space-y-6 list-decimal pl-6 marker:text-emerald-500 marker:font-bold text-lg leading-relaxed">
+                                        <li className="pl-3">每回合翻開一張月份卡，月份卡決定本回合的環境限制。</li>
+                                        <li className="pl-3">每位玩家每回合有固定 <strong className="text-white tracking-wide text-xl">AP</strong>，用完為止。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 A（傳統工法）：</strong>採集 → 剝麻 → 刮絲 → 捻線（需 KP 3）→ 填縫（需 KP 8）。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 B（工業替代）：</strong>去商店買樹脂，直接完工，但取得「不可修復」標記。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">學徒機制：</strong>青年與耆老同區域時，回合結束自動獲得 1 KP。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection3 = () => (
+                <div className="flex flex-col lg:flex-row gap-8 animate-fadeIn h-full">
+                    <div className="lg:w-1/3 flex flex-col space-y-4">
+                        <GlassCard className="p-8 h-full" delay="delay-100">
+                            <h2 className="text-2xl font-bold text-emerald-400 mb-5 tracking-wider flex items-center">
+                                <i className="fas fa-book-open text-[24px] mr-3 animate-float" />第二段：精選月份
+                            </h2>
+                            <p className="text-base text-emerald-100/70 leading-relaxed mb-8 border-b border-white/10 pb-8">
+                                不跑完全部 12 回合，精選五個關鍵月份作為「劇情節點」。
+                            </p>
+                            <div className="space-y-4 flex-1 flex flex-col">
+                                {months.map((m, idx) => (
+                                    <button
+                                        key={m.id}
+                                        onClick={() => setActiveMonth(m.id)}
+                                        className={`w-full text-left p-5 rounded-2xl transition-all duration-300 border-l-[5px] flex flex-col hover:translate-x-2 ${activeMonth === m.id
+                                                ? 'bg-[#063529] border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.2)]'
+                                                : 'bg-black/20 border-transparent hover:bg-[#03241b] text-emerald-100/60'
+                                            }`}
+                                        style={{ animationDelay: `${idx * 100}ms` }}
+                                    >
+                                        <div className={`font-bold text-xl tracking-wider ${activeMonth === m.id ? 'text-white text-shadow-glow' : 'text-emerald-200/80'}`}>
+                                            {m.name}
+                                        </div>
+                                        <div className={`text-base mt-2 flex justify-between ${activeMonth === m.id ? 'text-emerald-300' : 'text-emerald-400/50'}`}>
+                                            <span>{m.subtitle}</span>
+                                            <span className="opacity-70 tracking-widest">{m.duration}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </GlassCard>
+                    </div>
+
+                    <GlassCard className="lg:w-2/3 flex flex-col min-h-[600px]" delay="delay-200">
+                        {activeMonth === 1 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    第 1 月：Kashyman
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg hover:shadow-emerald-500/10 transition-shadow">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> 教學目的</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">讓學生從遊戲第一回合就進入「預判未來、提前規劃」的思維，模擬文化知識中的預備行為邏輯。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="第 1 月 主持人台詞"
+                                        content={<>
+                                            「月份卡說——本回合移動不耗 AP，這是立春的禮物。
+                                            <br /><br />
+                                            （停頓兩秒）
+                                            <br /><br />
+                                            但我要提醒你們一件事：下個月是 Kapowan，招魚祭的月份，山林會封閉整整一個月。你現在手上的 Avaka 原料還夠嗎？
+                                            <br /><br />
+                                            你現在的每一個決定，都在替下個月的自己鋪路。」
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">主持人操作提示</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">說完後不要繼續解釋，給學生 30 秒的安靜決策時間。觀察哪些組的青年開始快速往山林移動採集，哪些組忽略了這個預警。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 2 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    第 2 月：Kapowan
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg hover:shadow-emerald-500/10 transition-shadow">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> 教學目的</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">讓學生感受「沒有選擇」的緊迫感，理解文化禁令背後的社會邏輯。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="第 2 月 環境旁白"
+                                        content={<>
+                                            （燈光可稍暗，或主持人拿起月份卡展示給全場看）<br /><br />
+                                            「灘頭起了白煙。招魚祭開始了。<br /><br />
+                                            所有男人禁止進入山林，門戶關閉——這叫做 Paneneb，是禁忌。<br /><br />
+                                            （停頓）<br /><br />
+                                            現在，山林封閉，你無法執行採集行動。如果你上個月沒有存夠材料，你面臨三個選擇：」
+                                        </>}
+                                    />
+                                    <div className="ml-3 my-10 px-5 border-l-4 border-cyan-800/50">
+                                        <ul className="space-y-6 text-base text-emerald-50">
+                                            <li className="bg-cyan-950/20 p-6 rounded-xl border border-teal-800/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-teal-400 block mb-3 tracking-widest text-xl">選擇一：向同組玩家求援</strong><span className="opacity-90">消耗 1 AP。尋求團隊支援。</span></li>
+                                            <li className="bg-slate-900/40 p-6 rounded-xl border border-slate-700/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-slate-300 block mb-3 tracking-widest text-xl">選擇二：前往商店購買尼初繩</strong><span className="opacity-90">消耗 2 AP，獲得「不可修復」標記。</span></li>
+                                            <li className="bg-amber-950/20 p-6 rounded-xl border border-amber-800/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-amber-400 block mb-3 tracking-widest text-xl">選擇三：枯坐一個月</strong><span className="opacity-90">放棄行動。默默承受時間壓力。</span></li>
+                                        </ul>
+                                    </div>
+                                    <ScriptButton
+                                        icon={<i className="fas fa-users text-[28px] text-cyan-400" />}
+                                        title="第 2 月 角色對白"
+                                        content={<>
+                                            青年：「糟了！我的 Avaka 原料用完了，但現在上山會觸犯禁忌……」
+                                            <br /><br />
+                                            中生代：「這就是為什麼老人家說 Kashyman 月要拼命存貨。現在你只能跟我去商店買尼龍繩，或者枯等一個月，看著進度落後。」
+                                            <br /><br />
+                                            耆老：「飛魚隨著黑潮而來，而我們則順應時節。這是海洋的規矩，我們要好好遵守。」
+                                        </>}
+                                        theme="cyan"
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">主持人操作提示（班級快問）</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">主持人問全班：「有哪一組選擇了枯坐一個月的？為什麼？」讓不同組分享決策邏輯。觀察課堂中「接受限制」與「繞過限制」的比例——這個比例本身就是教學素材。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 5 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    第 5 月：Pipilapila
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> 教學目的</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">讓學生體驗 AP 資源管理的壓力，同時感受工業材料的「便利誘惑」。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="第 5 月 環境與角色旁白"
+                                        content={<>
+                                            「天空陰雲密佈。 突如其來的降雨，讓你在灘頭曝曬的 Avaka 纖維陷入腐爛危機。<br /><br />
+                                            規則說：曝曬中的材料，若你沒有預留 1 AP 進行維護，下回合自動報廢。」
+                                            <br /><br />
+                                            耆老（突然抬頭看天）：「孩子，做船不能只看地上的麻，要看天上的雲。快收起來！」
+                                            <br /><br />
+                                            （停頓）
+                                            <br /><br />
+                                            「如果你的 AP 已經用完了——那些材料，就從你的存貨裡劃掉吧。」
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">主持人操作提示</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">執行報廢處理後，主持人指著商店方向說：<strong className="text-amber-200 tracking-wide text-lg">「商店的化學樹脂今天不受天氣影響，它不怕濕，也不需要曝曬。」</strong>這句話不需特別強調，只是讓誘惑自然存在於遊戲場域中。接著繼續讓學生完成本回合行動，不做評論。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 10 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    第 10 月：Kaneman
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> 教學目的</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">這是最容易引發挫折感的月份。讓學生在「幾乎完成」的時刻被強制暫停，體驗「儀式時間」的邏輯。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="第 10 月 旁白與台詞"
+                                        content={<>
+                                            「這是蘭嶼夜曆中最不吉祥的月份。這個月，專門製作貝灰，不允許舉行婚禮、造屋，也不允許落成禮。 即便你的材料已齊備，KP 已達標——現在也絕對不能動工填縫。」
+                                            <br /><br />
+                                            中生代（看著材料）：「這就是『儀式時間』的邏輯。你得學會等待。如果你現在強行完工，這艘船在部落眼中將失去靈魂。」
+                                            <br /><br />
+                                            青年（緊張地）：「但我只剩兩個月就要結算了！如果不現在做，我怕來不及完成……」
+                                            <br /><br />
+                                            耆老（平靜地）：「你現在可以去學你還沒學到的東西。等待，不是什麼都不做。」
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">主持人操作提示（全班暫停討論）</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">主持人問全班：「你在現代生活中，有沒有一種等待是有意義的？還是所有的等待對你來說都只是浪費時間？」等待 2-3 位學生發言後繼續。這個問題不需要標準答案，目標是讓學生的生命經驗與遊戲機制產生對話。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 12 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    第 12 月：Kaowan
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> 教學目的</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">讓堅持傳統路徑的玩家在最後一刻獲得加速感，感受到「順應時序的回報」。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="第 12 月 旁白與台詞"
+                                        content={<>
+                                            「這是屬於手工藝的月份。 男人冶鐵織繩，女人織布——整個部落都在做手工。<br /><br />
+                                            本月，執行『捻線』不再消耗任何 AP。<br /><br />
+                                            你發現自己的手感前所未有的流暢。不是因為你突然變厲害了，是因為你整年都在積累，而現在，土地給了你最後的補償。」
+                                            <br /><br />
+                                            耆老（展露出笑意）：「看吧，只要你順應時序，土地會給你最後的補償。快動手，讓這條船趕在明年飛魚祭前下水！」
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">主持人操作提示</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">讓這個回合跑完整。不要催促，讓各組自行完成最後行動與完工計算。主持人保持安靜，只在必要時回答規則問題。讓結局自然發生。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection4 = () => (
+                <div className="space-y-8 animate-fadeIn">
+                    <GlassCard className="p-8 md:p-12" delay="delay-100">
+                        <SectionTitle icon={<i className="fas fa-trophy text-[32px] text-amber-400" />} title="第三段：結算與反思討論（45:00 – 60:00）" />
+
+                        <div className="mb-16">
+                            <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
+                                <StepBadge num="4-1" />分數結算（從高分到低分唸出文本）
+                            </h3>
+
+                            <div className="ml-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-amber-400" />}
+                                    title="傳承之靈 (18-25分)"
+                                    buttonText="閱讀結局"
+                                    theme="amber"
+                                    content={<>
+                                        「這艘船是活的。不僅僅是一種比喻，而是真的活著。你花了整整一年，跟著走過祖先的同一條山路，身體記住了採集時該繞開哪棵樹、Avaka 的纖維要朝哪個方向捻才不會斷。這些動作可能沒有被文字記錄，卻藏在族人身體的記憶之中，等待被喚醒。<br /><br />
+                                        後來，透過科學資料，證實了 Avaka 纖維吸水之後會膨脹。你忽然明白，老人說『讓船呼吸』不只是一種想像，是造船的學問。當海水滲進縫隙，纖維膨脹後，船反而變得更緊實。可以拆，可以修，可以一塊一塊換掉，再一次出海。<br /><br />
+                                        那些你以為早已斷裂的記憶，其實只是靜靜地等著願意承接的人。而這艘船會繼續航行，帶著耆老們說過的話，也帶著你找回的那些記憶。」
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-cyan-400" />}
+                                    title="協商之光 (11-17分)"
+                                    buttonText="閱讀結局"
+                                    theme="cyan"
+                                    content={<>
+                                        「你沒辦法只活在傳統裡，這你很清楚。<br /><br />
+                                        孩子要上學，油費要繳，時間不等人，你在這些現實壓力裡嘗試找到縫隙，幾塊工業材料省了些工夫，但你沒有就此撒手。你還是去敲了耆老的門，還是問了那幾個不問不會有人主動說的問題：材料要怎麼選、哪道工序不能跳過。<br /><br />
+                                        船造好的時候，你自己也說不清它到底是傳統還是現代。但或許這才是最誠實的答案，蘭嶼從來就不是一座博物館，人們在這裡過的是真實的生活，傳統也一直在真實的生活裡摩擦、磨損、又重新長出新的樣子。」
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-slate-300" />}
+                                    title="效率之重 (6-10分)"
+                                    buttonText="閱讀結局"
+                                    theme="slate"
+                                    content={<>
+                                        「船造好了。但有什麼東西卻悄然失去了。<br /><br />
+                                        南寶樹脂把縫填得密不透風，不用等木材慢慢漲開，不用對著日曆算季節，省下了大半時間。船下水的那一刻，看起來和其他船沒什麼兩樣。<br /><br />
+                                        只是壞了就壞了，沒辦法修。那種嵌接的方式、那種拆開再組回去的可能，在你選擇跳過的那幾道工序裡，也連帶消失了。手指也忘了。忘了纖維來回時的阻力，忘了怎麼判斷木材的品種。<br /><br />
+                                        這艘船能用，但卻沒辦法教會你任何事。它只是一件時代下的商品。」
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-rose-400" />}
+                                    title="失落之魂 (1-5分)"
+                                    buttonText="閱讀結局"
+                                    theme="rose"
+                                    content={<>
+                                        「船下水了。你應該覺得完成了什麼，但內心是空的。<br /><br />
+                                        你沒有上山採集過那些 Avaka，不知道採集時要說什麼、要避開哪些日子。你繞過了所有看起來麻煩的環節，也繞過了所有真正重要的事。<br /><br />
+                                        這艘船和這片海沒有關係，和山也沒有關係。它只是一個形狀，一件可以賣給觀光客拍照的道具。沒有人會想修它，壞了就丟，再做一艘新的。那些採集時吟唱的歌，那些老人家說只有動手做才能理解的身體知識——不是被你反對，是被你忽略了。」
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-red-500" />}
+                                    title="文化斷裂 (失敗)"
+                                    buttonText="閱讀結局"
+                                    theme="red"
+                                    content={<>
+                                        「一年過去了，灘頭的木材還散在那裡。<br /><br />
+                                        始終沒有開始，好像哪裡卡住了，也許是不知道下一步該問誰，也許是繞了太多遠路，隨時間一天一天過去，而你還沒準備好。<br /><br />
+                                        一艘船的誕生需要一整年，不是因為工序真的那麼複雜，是因為它必須跟著季節走：採集、乾燥、等待、修整，每一步都有它自己的時間。你的節奏和這個節奏對不上，船就停在那裡，等一個不會來的時機。<br /><br />
+                                        那些纖維會腐爛。那些還沒說出口的技術知識，也會隨著保有記憶的人慢慢老去，而跟著消失。」
+                                    </>}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
+                                <StepBadge num="4-2" />三層次反思討論（約 12 分鐘）
+                            </h3>
+                            <div className="ml-14 grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
+                                    <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">層次一：事實層</span>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「為什麼路徑 A（傳統工法）這麼難拿高分？從遊戲規則面說說看。」</p>
+                                    <p className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
+                                        <strong className="text-emerald-300 tracking-widest">引導方向：</strong>AP 不足、月份禁令限制、KP 門檻高等。
+                                    </p>
+                                    <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
+                                        主持人：「每一個門檻都對應著真實的文化現象——這是知識的連鎖性。」
+                                    </p>
+                                </div>
+
+                                <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
+                                    <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">層次二：機制層</span>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「樹脂路徑雖然快，但在遊戲裡，『去技能化』是怎麼發生的？」</p>
+                                    <div className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
+                                        <p><strong className="text-emerald-300 tracking-widest">引導方向：</strong>不可修復標記的意涵，以及跳過工序後技術知識的消失。</p>
+                                    </div>
+                                    <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
+                                        保持中立，讓學生互相回應，不要評判答案優劣。
+                                    </p>
+                                </div>
+
+                                <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
+                                    <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">層次三：價值層</span>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「如果你是蘭嶼的青年，你今天會選哪條路？」</p>
+                                    <div className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
+                                        <p><strong className="text-emerald-300 tracking-widest">最終提問：</strong>「在遊戲裡，你跟著耆老學習的那幾個回合帶給你什麼？」</p>
+                                    </div>
+                                    <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
+                                        主持人收尾：「文化傳承不是把知識存在書裡，是存在人的身體裡。」
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection5 = () => (
+                <div className="space-y-8 animate-fadeIn">
+                    <GlassCard className="p-8 md:p-12" delay="delay-100">
+                        <SectionTitle icon={<i className="fas fa-list text-[32px] text-emerald-400" />} title="附錄：快速參考表" />
+
+                        <div className="mb-14">
+                            <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
+                                <StepBadge num="5-1" />行動一覽表
+                            </h3>
+                            <div className="ml-14 overflow-x-auto rounded-2xl border border-white/10 bg-black/40 shadow-inner">
+                                <table className="min-w-full divide-y divide-white/10 text-base">
+                                    <thead className="bg-[#03241b]">
+                                        <tr>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">行動名稱</th>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">消耗 AP</th>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">需求 KP</th>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">說明</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">移動</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP（青年免費）</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">在山林、灘頭、商店間移動</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">捻線</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
+                                            <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 3</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">須在灘頭執行</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">填縫（完工）</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP（耆老免費）</td>
+                                            <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 8</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">須在灘頭執行；Kaneman 月禁止</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">請益</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">向同區域耆老請益，獲得 3 KP</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            return (
+                <div className={`min-h-screen text-emerald-50 relative selection:bg-emerald-500/30 selection:text-white pb-20 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                    <div className="fixed inset-0 z-[-1] bg-gradient-to-br from-[#011410] via-[#021f18] to-[#010e0b]"></div>
+                    <div className="fixed inset-0 z-[-1] opacity-[0.08] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+
+                    <header className="sticky top-0 z-40 bg-[#011410]/90 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
+                        <div className="max-w-[90rem] mx-auto px-8 py-5 flex flex-col md:flex-row justify-between items-center">
+                            <div className="flex items-center space-x-5 mb-5 md:mb-0">
+                                <div className="bg-emerald-900/50 p-3 rounded-2xl border border-emerald-500/30 flex-shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-pulseSlow">
+                                    <i className="fas fa-map text-[28px] text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-bold tracking-widest text-white text-shadow-glow whitespace-nowrap">Avaka：島嶼的維度</h1>
+                                    <p className="text-sm text-emerald-400/80 tracking-widest mt-1">數位主持人儀表板 ✧ 60分鐘課堂版</p>
+                                </div>
+                            </div>
+                            <nav className="flex space-x-3 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex items-center space-x-3 px-6 py-3 rounded-full text-base font-bold transition-all duration-300 whitespace-nowrap border ${activeTab === tab.id
+                                                ? 'bg-emerald-700 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105'
+                                                : 'bg-white/5 border-transparent text-emerald-200/60 hover:bg-white/10 hover:text-white'
+                                            }`}
+                                    >
+                                        {tab.icon}
+                                        <span className="tracking-wide">{tab.name}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                    </header>
+
+                    <main className="max-w-[90rem] mx-auto px-8 py-12 relative z-10">
+                        {activeTab === 'section1' && renderSection1()}
+                        {activeTab === 'section2' && renderSection2()}
+                        {activeTab === 'section3' && renderSection3()}
+                        {activeTab === 'section4' && renderSection4()}
+                        {activeTab === 'section5' && renderSection5()}
+                    </main>
+
+                    {modal.isOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 animate-fadeIn">
+                            <div className="absolute inset-0 bg-[#010a08]/90 backdrop-blur-sm cursor-pointer" onClick={closeModal}></div>
+
+                            <div className={`relative w-full max-w-4xl bg-[#031c15] rounded-3xl border-2 border-${modal.theme}-500/50 shadow-[0_0_60px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh] animate-slideUp`}>
+                                <div className={`bg-${modal.theme}-950/80 px-8 py-6 border-b border-${modal.theme}-500/30 flex justify-between items-center`}>
+                                    <div className="flex items-center space-x-4">
+                                        <div className={`p-3 rounded-full bg-black/30 border border-${modal.theme}-500/30 shadow-inner flex items-center justify-center`}>
+                                            {modal.icon}
+                                        </div>
+                                        <h3 className={`text-2xl font-bold text-${modal.theme}-300 tracking-wider`}>
+                                            {modal.title}
+                                        </h3>
+                                    </div>
+                                    <button onClick={closeModal} className="p-3 rounded-full hover:bg-white/10 transition-colors text-white/50 hover:text-white">
+                                        <i className="fas fa-times text-[28px]" />
+                                    </button>
+                                </div>
+
+                                <div className="p-10 overflow-y-auto custom-scrollbar relative">
+                                    <div className={`absolute top-0 right-0 w-64 h-64 bg-${modal.theme}-500/5 blur-[50px] pointer-events-none rounded-full`}></div>
+                                    <div className={`text-2xl md:text-3xl text-emerald-50 leading-[2.4] tracking-wide border-l-[6px] border-${modal.theme}-500/80 pl-8 py-2 whitespace-pre-wrap`}>
+                                        {modal.content}
+                                    </div>
+                                </div>
+
+                                <div className="px-8 py-5 bg-black/40 border-t border-white/5 flex justify-end">
+                                    <button onClick={closeModal} className={`px-10 py-3 rounded-xl bg-${modal.theme}-700 hover:bg-${modal.theme}-600 text-white text-lg font-bold transition-colors shadow-lg hover:shadow-${modal.theme}-500/30 tracking-widest`}>
+                                        關閉腳本
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

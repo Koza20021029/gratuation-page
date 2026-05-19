@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaka：島嶼的維度</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: 思源宋體 (Noto Serif TC) 作為明體呈現 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        /* 全局設定使用明體 */
+        body {
+            font-family: 'Noto Serif TC', serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #01120d;
+            /* 博物館深墨綠基底 */
+        }
+
+        /* 背景動畫設定 */
+        .bg-avaka-leaves {
+            /* 使用熱帶蕉葉/馬尼拉麻意象的高畫質圖片 */
+            background-image: url('https://images.unsplash.com/photo-1595859702816-0498db2579df?auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            /* 呼吸般的緩慢縮放動畫，增添神秘與生命力 */
+            animation: breathe 20s infinite alternate ease-in-out;
+            transform-origin: center;
+        }
+
+        @keyframes breathe {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* 文字發光效果 */
+        .text-glow {
+            text-shadow: 0px 0px 20px rgba(253, 230, 138, 0.4), 0px 4px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .subtitle-glow {
+            text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        /* 漸層遮罩，讓文字更清晰 */
+        .overlay-gradient {
+            background: radial-gradient(circle at center, rgba(1, 18, 13, 0.5) 0%, rgba(1, 18, 13, 0.95) 100%);
+        }
+
+        /* 按鈕 hover 動畫 */
+        .btn-enter {
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-enter::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .btn-enter:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+
+<body class="relative w-screen h-screen flex items-center justify-center select-none">
+
+    <!-- 動態蕉葉背景 -->
+    <div class="absolute inset-0 bg-avaka-leaves opacity-60 z-0"></div>
+
+    <!-- 漸層暗色遮罩 (陸地森林色調) -->
+    <div class="absolute inset-0 overlay-gradient z-10"></div>
+
+    <!-- 海洋深藍漸層遮罩 (初始透明，隨滾輪往下滾動浮現) -->
+    <div id="oceanOverlay" class="absolute inset-0 z-[15] pointer-events-none transition-opacity duration-300 ease-out" 
+         style="opacity: 0; background: radial-gradient(circle at bottom, rgba(14, 116, 144, 0.75) 0%, rgba(8, 47, 73, 0.85) 45%, rgba(2, 6, 23, 0.98) 100%);">
+    </div>
+
+    <!-- 粒子特效畫布 -->
+    <canvas id="particleCanvas" class="absolute inset-0 z-20 pointer-events-none"></canvas>
+
+    <!-- 內容區域 -->
+    <div class="relative z-30 flex flex-col items-center justify-center text-center px-4 w-full max-w-5xl">
+
+        <!-- 副標題 / 引言 -->
+        <p
+            class="text-amber-100/70 text-lg md:text-xl tracking-[0.3em] font-light mb-6 subtitle-glow opacity-0 animate-[fadeIn_2s_ease-out_0.5s_forwards]">
+            順應夜曆，還是追求效率？
+        </p>
+
+        <!-- 主標題 -->
+        <h1
+            class="text-5xl md:text-7xl lg:text-8xl font-black text-amber-50 tracking-widest text-glow mb-4 opacity-0 animate-[fadeInUp_2s_ease-out_1s_forwards]">
+            Avaka
+        </h1>
+        <h2
+            class="text-4xl md:text-5xl lg:text-6xl font-bold text-amber-100/90 tracking-[0.2em] text-glow mb-12 opacity-0 animate-[fadeInUp_2s_ease-out_1.5s_forwards]">
+            島嶼的維度
+        </h2>
+
+        <!-- 遊戲核心理念 -->
+        <div class="h-px w-24 bg-amber-200/30 mb-8 opacity-0 animate-[fadeIn_2s_ease-out_2s_forwards]"></div>
+        <p
+            class="text-emerald-50/80 text-base md:text-lg tracking-[0.15em] font-light max-w-2xl leading-relaxed subtitle-glow opacity-0 animate-[fadeIn_2s_ease-out_2.5s_forwards]">
+            身為蘭嶼的工匠，你必須在 12 個月內完成一艘拼板舟。<br>
+            在「傳統馬尼拉蕉麻」與「現代化學樹脂」之間，<br>
+            決定你要留下什麼樣的文化認同。
+        </p>
+
+        <!-- 進入按鈕 (連結至本地規則書頁面) -->
+        <a href="./規則書.html" id="enter-btn"
+            class="inline-block mt-16 px-10 py-4 border border-amber-200/40 text-amber-100 text-lg tracking-[0.2em] font-medium rounded-sm btn-enter hover:bg-amber-900/40 hover:border-amber-200 hover:text-white hover:shadow-[0_0_15px_rgba(253,230,138,0.3)] opacity-0 animate-[fadeIn_2s_ease-out_3s_forwards] no-underline cursor-pointer transition-colors duration-500">
+            進入山林採集
+        </a>
+
+    </div>
+
+    <!-- 簡單的動畫 Keyframes -->
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <!-- 粒子特效腳本 (模擬林間的孢子、靈力或螢火蟲) -->
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', setCanvasSize);
+        setCanvasSize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * -1 - 0.2; // 向上漂浮
+                // 顏色設定為帶點金黃、翠綠的光點
+                const colors = ['rgba(253, 230, 138, 0.6)', 'rgba(167, 243, 208, 0.4)', 'rgba(252, 211, 77, 0.5)'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                // 從頂部消失後，從底部重生
+                if (this.y < 0 - this.size) {
+                    this.y = canvas.height + this.size;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 增加一點微光暈
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+            }
+        }
+        
+        function initParticles() {
+            particlesArray = [];
+            for (let i = 0; i < 60; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+        initParticles();
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- 滾動切換海洋動畫邏輯 ---
+        const oceanOverlay = document.getElementById('oceanOverlay');
+        const enterBtn = document.getElementById('enter-btn');
+        let scrollProgress = 0;
+
+        function updateOceanState() {
+            // 限制進度在 0 到 1 之間
+            if (scrollProgress > 1) scrollProgress = 1;
+            if (scrollProgress < 0) scrollProgress = 0;
+            
+            // 更新海洋遮罩透明度
+            oceanOverlay.style.opacity = scrollProgress;
+            
+            // 當滾動超過一半時，切換按鈕視覺為「海洋主題」
+            if (scrollProgress > 0.5) {
+                enterBtn.classList.add('border-cyan-400/50', 'text-cyan-100', 'hover:shadow-[0_0_15px_rgba(34,211,238,0.4)]', 'hover:bg-cyan-900/40');
+                enterBtn.classList.remove('border-amber-200/40', 'text-amber-100', 'hover:shadow-[0_0_15px_rgba(253,230,138,0.3)]', 'hover:bg-amber-900/40');
+                if(enterBtn.innerHTML.indexOf("揚帆出海航行") === -1) {
+                    enterBtn.innerHTML = "揚帆出海航行";
+                }
+            } else {
+                enterBtn.classList.add('border-amber-200/40', 'text-amber-100', 'hover:shadow-[0_0_15px_rgba(253,230,138,0.3)]', 'hover:bg-amber-900/40');
+                enterBtn.classList.remove('border-cyan-400/50', 'text-cyan-100', 'hover:shadow-[0_0_15px_rgba(34,211,238,0.4)]', 'hover:bg-cyan-900/40');
+                if(enterBtn.innerHTML.indexOf("進入山林採集") === -1) {
+                    enterBtn.innerHTML = "進入山林採集";
+                }
+            }
+        }
+
+        // 電腦版滾輪事件
+        window.addEventListener('wheel', (e) => {
+            scrollProgress += e.deltaY * 0.0015; // 調整靈敏度
+            updateOceanState();
+        });
+
+        // 手機版滑動事件
+        let startY = 0;
+        window.addEventListener('touchstart', e => {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        window.addEventListener('touchmove', e => {
+            let deltaY = startY - e.touches[0].clientY;
+            scrollProgress += deltaY * 0.003;
+            startY = e.touches[0].clientY;
+            updateOceanState();
+        }, { passive: true });
+
+    </script>
+</body>
+
+</html>
