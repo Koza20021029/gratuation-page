@@ -212,10 +212,10 @@
             background-image:
                 repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.015) 0px, rgba(212, 175, 55, 0.015) 1px, transparent 1px, transparent 6px),
                 repeating-linear-gradient(-45deg, rgba(212, 175, 55, 0.015) 0px, rgba(212, 175, 55, 0.015) 1px, transparent 1px, transparent 6px),
-                radial-gradient(circle at 30% 20%, rgba(0, 180, 160, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 70% 60%, rgba(0, 200, 180, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 50% 0%, rgba(0, 139, 99, 0.12) 0%, transparent 60%),
-                radial-gradient(circle at 50% 100%, rgba(212, 175, 55, 0.04) 0%, rgba(0, 139, 99, 0.12) 30%, transparent 70%),
+                radial-gradient(circle at 30% 20%, rgba(0, 210, 180, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(0, 220, 200, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 50% 30%, rgba(0, 200, 140, 0.24) 0%, transparent 65%),
+                radial-gradient(circle at 50% 100%, rgba(212, 175, 55, 0.04) 0%, rgba(0, 200, 140, 0.20) 30%, transparent 70%),
                 linear-gradient(to bottom, transparent 40%, rgba(2, 36, 27, 0.7) 100%);
             background-attachment: fixed;
         }
@@ -223,6 +223,10 @@
 </head>
 
 <body class="global-fiber-dark text-avaka-textmain antialiased font-serif">
+    <!-- 頂部與底部漸變模糊毛玻璃效果 -->
+    <gradual-blur preset="page-header" style="z-index: 30;"></gradual-blur>
+    <gradual-blur preset="page-footer" style="z-index: 30;"></gradual-blur>
+
     <!-- 流光特效背景 (Beams) -->
     <div id="beams-container" class="fixed inset-0 pointer-events-none" style="opacity: 0.75; z-index: 1; background: transparent;"></div>
 
@@ -1716,6 +1720,8 @@
 
     <!-- Three.js (本地端，避免 CDN 被封鎖) -->
     <script src="./three.min.js"></script>
+    <!-- 載入漸變模糊效果組件 -->
+    <script src="./gradual-blur.js?v=3"></script>
 
     <!-- AVAKA_BEAMS_STANDALONE_ONLY: 此腳本在 SPA 模式中會被略過，由 index.html 的全域版本取代 -->
     <script>
@@ -1741,7 +1747,7 @@
                 renderer.setSize(window.innerWidth,window.innerHeight);
                 renderer.domElement.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;';
                 container.innerHTML='';container.appendChild(renderer.domElement);
-                var lc=new THREE.Color('#34d399');
+                var lc=new THREE.Color('#48f7b5');
                 var mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uSpeed:{value:2},uNoiseIntensity:{value:1.5},uScale:{value:0.25},uLightPos:{value:new THREE.Vector3(0,3,10)},uLightColor:{value:lc}},transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,vertexShader:['uniform float uTime,uSpeed,uScale;','varying vec3 vNormal,vViewPosition;varying vec2 vUv;',noise,'float getPos(vec3 p,vec2 u){return cnoise(vec3(p.x*0.,p.y-u.y,p.z+uTime*uSpeed*3.)*uScale);}','vec3 curP(vec3 p,vec2 u){vec3 n=p;n.z+=getPos(p,u);return n;}','void main(){vUv=uv;vec3 cp=curP(position,uv);','vec3 nx=curP(position+vec3(0.01,0.,0.),uv+vec2(0.01,0.));','vec3 ny=curP(position+vec3(0.,-0.01,0.),uv+vec2(0.,-0.01));','vNormal=normalMatrix*normalize(cross(normalize(ny-cp),normalize(nx-cp)));','vec4 mv=modelViewMatrix*vec4(cp,1.);vViewPosition=-mv.xyz;','gl_Position=projectionMatrix*mv;}'].join('\n'),fragmentShader:['uniform float uNoiseIntensity;uniform vec3 uLightPos,uLightColor;','varying vec3 vNormal,vViewPosition;varying vec2 vUv;',noise,'void main(){vec3 n=normalize(vNormal);vec3 v=normalize(vViewPosition);','vec3 l=normalize(uLightPos);vec3 r=reflect(-l,n);','float spec=pow(max(dot(v,r),0.),16.);','vec3 fc=uLightColor*spec*2.0;','float rim=1.-max(dot(v,n),0.);fc+=uLightColor*pow(rim,2.)*.5;','float rn=noise(gl_FragCoord.xy);fc-=rn/20.*uNoiseIntensity;','vec3 cc=max(vec3(0.),fc);float a=max(cc.r,max(cc.g,cc.b));','gl_FragColor=vec4(cc,a);}'].join('\n')});
                 var geo=createGeom(12,2,15,0,100);
                 var grp=new THREE.Group();

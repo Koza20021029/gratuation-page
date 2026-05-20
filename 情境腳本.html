@@ -17,6 +17,8 @@
 
     <!-- 引入 Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 載入漸變模糊效果組件 -->
+    <script src="./gradual-blur.js?v=3"></script>
 
     <style>
         /* 自訂樣式與動畫 */
@@ -79,6 +81,9 @@
 
 <body id="main-body"
     class="min-h-screen bg-[#01120d] text-emerald-50 selection:bg-emerald-500/30 relative overflow-x-hidden">
+    <!-- 頂部與底部漸變模糊毛玻璃效果 -->
+    <gradual-blur preset="page-header" style="z-index: 30;"></gradual-blur>
+    <gradual-blur preset="page-footer" style="z-index: 30;"></gradual-blur>
 
     <!-- 全域固定背景 (純深綠山林意象 + 星塵紋理) -->
     <div class="fixed inset-0 pointer-events-none z-0">

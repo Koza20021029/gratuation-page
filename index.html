@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -20,6 +20,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
 
     <!-- ===== 全站共用：Tailwind 設定 ===== -->
     <script>
@@ -193,11 +194,23 @@
             user-select: none;
         }
         .bg-avaka-leaves {
-            background-image: url('https://images.unsplash.com/photo-1595859702816-0498db2579df?auto=format&fit=crop&w=2000&q=80');
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(10, 80, 40, 0.8) 0%, transparent 55%),
+                radial-gradient(ellipse at 75% 70%, rgba(5, 55, 25, 0.7) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(2, 40, 20, 0.6) 0%, transparent 70%),
+                linear-gradient(160deg, #020e08 0%, #041a0d 30%, #062415 60%, #021208 100%);
             background-size: cover;
             background-position: center;
             animation: breathe 20s infinite alternate ease-in-out;
             transform-origin: center;
+        }
+        .bg-avaka-leaves::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(135deg, transparent 0px, transparent 40px, rgba(4,60,25,0.08) 40px, rgba(4,60,25,0.08) 42px),
+                repeating-linear-gradient(45deg, transparent 0px, transparent 60px, rgba(6,80,35,0.06) 60px, rgba(6,80,35,0.06) 62px);
         }
         @keyframes breathe {
             0% { transform: scale(1); }
@@ -436,7 +449,7 @@
                 const beams = document.getElementById('beams-container');
                 if (beams) {
                     if (pageId === 'rulebook') {
-                        beams.style.opacity = '0.35';
+                        beams.style.opacity = '0.65';
                     } else {
                         beams.style.opacity = '0';
                     }
@@ -479,57 +492,160 @@
     <script>
         (function initCover() {
             const canvas = document.getElementById('particleCanvas');
-            const ctx = canvas.getContext('2d');
-            let particlesArray = [];
+            let scrollProgress = 0;
 
-            function setCanvasSize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', setCanvasSize);
-            setCanvasSize();
+            // ===== Canvas 2D 粒子系統（高相容性，保證可用）=====
+            try {
+                const ctx = canvas.getContext('2d');
+                if (!ctx) throw new Error('2D context not supported');
 
-            class Particle {
-                constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
-                    this.size = Math.random() * 2.5 + 0.5;
-                    this.speedX = Math.random() * 1 - 0.5;
-                    this.speedY = Math.random() * -1 - 0.2;
-                    const colors = ['rgba(253,230,138,0.6)', 'rgba(167,243,208,0.4)', 'rgba(252,211,77,0.5)'];
-                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                // --- 粒子設定 ---
+                const COUNT = 200;
+                const particles = [];
+
+                // 預先計算螢幕尺寸與縮放
+                let W = 0, H = 0;
+
+                function resizeCanvas() {
+                    const dpr = window.devicePixelRatio || 1;
+                    W = window.innerWidth;
+                    H = window.innerHeight;
+                    canvas.width  = W * dpr;
+                    canvas.height = H * dpr;
+                    canvas.style.width  = W + 'px';
+                    canvas.style.height = H + 'px';
+                    ctx.scale(dpr, dpr);
                 }
-                update() {
-                    this.x += this.speedX;
-                    this.y += this.speedY;
-                    if (this.y < 0 - this.size) {
-                        this.y = canvas.height + this.size;
-                        this.x = Math.random() * canvas.width;
+                window.addEventListener('resize', () => { resizeCanvas(); });
+                resizeCanvas();
+
+                // --- 色彩定義 ---
+                const LAND_COLORS = [
+                    [253, 230, 138], // 金黃
+                    [167, 243, 208], // 翠綠
+                    [252, 211, 77],  // 琥珀
+                    [254, 243, 199], // 奶白金
+                    [110, 231, 183], // 薄荷綠
+                ];
+                const OCEAN_COLORS = [
+                    [34, 211, 238],  // 深海青
+                    [56, 189, 248],  // 天藍
+                    [207, 250, 254], // 冰白
+                    [14, 165, 233],  // 海藍
+                    [125, 211, 252], // 淺藍
+                ];
+
+                function lerp(a, b, t) { return a + (b - a) * t; }
+                function lerpColor(ca, cb, t) {
+                    return [
+                        lerp(ca[0], cb[0], t),
+                        lerp(ca[1], cb[1], t),
+                        lerp(ca[2], cb[2], t),
+                    ];
+                }
+
+                // --- 建立粒子 ---
+                for (let i = 0; i < COUNT; i++) {
+                    const li = Math.floor(Math.random() * LAND_COLORS.length);
+                    const oi = Math.floor(Math.random() * OCEAN_COLORS.length);
+                    particles.push({
+                        x: Math.random() * 1.4 - 0.2,  // -0.2 ~ 1.2 (稍微超出邊緣)
+                        y: Math.random() * 1.4 - 0.2,
+                        z: Math.random(),               // 深度 0~1
+                        vx: (Math.random() - 0.5) * 0.00015,
+                        vy: (Math.random() - 0.5) * 0.00015,
+                        vz: (Math.random() - 0.5) * 0.0002,
+                        px: 0, py: 0, // 快取的螢幕坐標
+                        baseR: 1.5 + Math.random() * 3, // 基礎半徑
+                        phase: Math.random() * Math.PI * 2,
+                        speed: 0.3 + Math.random() * 0.7,
+                        landColor: LAND_COLORS[li],
+                        oceanColor: OCEAN_COLORS[oi],
+                        alpha: 0.4 + Math.random() * 0.6,
+                    });
+                }
+
+                // --- 滑鼠慣性 ---
+                let mouseNX = 0.5, mouseNY = 0.5;
+                let targetNX = 0.5, targetNY = 0.5;
+                window.addEventListener('mousemove', e => {
+                    targetNX = e.clientX / window.innerWidth;
+                    targetNY = e.clientY / window.innerHeight;
+                });
+
+                // --- 渲染迴圈 ---
+                let lastT = performance.now();
+                function tick(now) {
+                    requestAnimationFrame(tick);
+                    const coverSection = document.getElementById('page-cover');
+                    if (!coverSection || !coverSection.classList.contains('page-active')) return;
+
+                    const dt = Math.min(now - lastT, 50);
+                    lastT = now;
+                    const t = now * 0.001;
+
+                    // 慣性滑鼠跟隨
+                    mouseNX += (targetNX - mouseNX) * 0.04;
+                    mouseNY += (targetNY - mouseNY) * 0.04;
+                    const offX = (mouseNX - 0.5) * 60;
+                    const offY = (mouseNY - 0.5) * 40;
+
+                    // 清空畫布
+                    ctx.clearRect(0, 0, W, H);
+
+                    // 更新並繪製粒子
+                    for (let i = 0; i < COUNT; i++) {
+                        const p = particles[i];
+
+                        // 位置更新（緩慢漂浮）
+                        p.x += p.vx * dt + Math.sin(t * p.speed * 0.7 + p.phase) * 0.00008;
+                        p.y += p.vy * dt + Math.cos(t * p.speed * 0.5 + p.phase) * 0.00006;
+                        p.z += p.vz * dt + Math.sin(t * p.speed * 0.3 + p.phase * 1.3) * 0.00015;
+
+                        // 邊界循環
+                        if (p.x < -0.3) p.x = 1.3;
+                        if (p.x >  1.3) p.x = -0.3;
+                        if (p.y < -0.3) p.y = 1.3;
+                        if (p.y >  1.3) p.y = -0.3;
+                        p.z = ((p.z % 1) + 1) % 1;
+
+                        // 3D 深度透視
+                        const depth = 0.3 + p.z * 0.7; // 0.3~1.0
+                        const sx = (p.x - 0.5) * W * depth + W * 0.5 + offX * depth;
+                        const sy = (p.y - 0.5) * H * depth + H * 0.5 + offY * depth;
+                        const r  = p.baseR * depth * (0.9 + 0.2 * Math.sin(t * p.speed + p.phase));
+
+                        // 顏色插值（陸地↔海洋）
+                        const col = lerpColor(p.landColor, p.oceanColor, scrollProgress);
+                        const a   = p.alpha * depth;
+
+                        // 發光效果
+                        const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3.5);
+                        glow.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${a})`);
+                        glow.addColorStop(0.4, `rgba(${col[0]},${col[1]},${col[2]},${a * 0.35})`);
+                        glow.addColorStop(1,   `rgba(${col[0]},${col[1]},${col[2]},0)`);
+
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, r * 3.5, 0, Math.PI * 2);
+                        ctx.fillStyle = glow;
+                        ctx.fill();
+
+                        // 亮核心
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${Math.min(1, a * 1.5)})`;
+                        ctx.fill();
                     }
                 }
-                draw() {
-                    ctx.fillStyle = this.color;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = this.color;
-                }
-            }
+                requestAnimationFrame(tick);
 
-            for (let i = 0; i < 60; i++) particlesArray.push(new Particle());
-
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particlesArray.forEach(p => { p.update(); p.draw(); });
-                requestAnimationFrame(animate);
+            } catch (e) {
+                console.error('Particle init failed:', e);
             }
-            animate();
 
             // --- 海洋滾動切換邏輯 ---
             const oceanOverlay  = document.getElementById('oceanOverlay');
             const coverEnterBtn = document.getElementById('cover-enter-btn');
-            let scrollProgress  = 0;
             let startY          = 0;
 
             function updateOceanState() {
@@ -922,6 +1038,8 @@
 
     <!-- 載入本地 Three.js（避免 CDN 被 Edge 追蹤防護封鎖） -->
     <script src="./three.min.js"></script>
+    <!-- 載入漸變模糊效果組件 -->
+    <script src="./gradual-blur.js?v=3"></script>
 
     <!-- 3D 光束背景 (Beams) - 全域版 -->
     <script>
@@ -931,7 +1049,7 @@
             try {
                 var noise = ['float random(in vec2 st){return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);}','float noise(in vec2 st){vec2 i=floor(st);vec2 f=fract(st);float a=random(i);float b=random(i+vec2(1.,0.));float c=random(i+vec2(0.,1.));float d=random(i+vec2(1.,1.));vec2 u=f*f*(3.-2.*f);return mix(a,b,u.x)+(c-a)*u.y*(1.-u.x)+(d-b)*u.x*u.y;}','vec4 permute(vec4 x){return mod(((x*34.)+1.)*x,289.);}','vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}','vec3 fade(vec3 t){return t*t*t*(t*(t*6.-15.)+10.);}','float cnoise(vec3 P){vec3 Pi0=floor(P);vec3 Pi1=Pi0+vec3(1.);Pi0=mod(Pi0,289.);Pi1=mod(Pi1,289.);vec3 Pf0=fract(P);vec3 Pf1=Pf0-vec3(1.);vec4 ix=vec4(Pi0.x,Pi1.x,Pi0.x,Pi1.x);vec4 iy=vec4(Pi0.yy,Pi1.yy);vec4 iz0=Pi0.zzzz;vec4 iz1=Pi1.zzzz;vec4 ixy=permute(permute(ix)+iy);vec4 ixy0=permute(ixy+iz0);vec4 ixy1=permute(ixy+iz1);vec4 gx0=ixy0/7.;vec4 gy0=fract(floor(gx0)/7.)-.5;gx0=fract(gx0);vec4 gz0=vec4(.5)-abs(gx0)-abs(gy0);vec4 sz0=step(gz0,vec4(0.));gx0-=sz0*(step(0.,gx0)-.5);gy0-=sz0*(step(0.,gy0)-.5);vec4 gx1=ixy1/7.;vec4 gy1=fract(floor(gx1)/7.)-.5;gx1=fract(gx1);vec4 gz1=vec4(.5)-abs(gx1)-abs(gy1);vec4 sz1=step(gz1,vec4(0.));gx1-=sz1*(step(0.,gx1)-.5);gy1-=sz1*(step(0.,gy1)-.5);vec3 g000=vec3(gx0.x,gy0.x,gz0.x);vec3 g100=vec3(gx0.y,gy0.y,gz0.y);vec3 g010=vec3(gx0.z,gy0.z,gz0.z);vec3 g110=vec3(gx0.w,gy0.w,gz0.w);vec3 g001=vec3(gx1.x,gy1.x,gz1.x);vec3 g101=vec3(gx1.y,gy1.y,gz1.y);vec3 g011=vec3(gx1.z,gy1.z,gz1.z);vec3 g111=vec3(gx1.w,gy1.w,gz1.w);vec4 norm0=taylorInvSqrt(vec4(dot(g000,g000),dot(g010,g010),dot(g100,g100),dot(g110,g110)));g000*=norm0.x;g010*=norm0.y;g100*=norm0.z;g110*=norm0.w;vec4 norm1=taylorInvSqrt(vec4(dot(g001,g001),dot(g011,g011),dot(g101,g101),dot(g111,g111)));g001*=norm1.x;g011*=norm1.y;g101*=norm1.z;g111*=norm1.w;float n000=dot(g000,Pf0);float n100=dot(g100,vec3(Pf1.x,Pf0.yz));float n010=dot(g010,vec3(Pf0.x,Pf1.y,Pf0.z));float n110=dot(g110,vec3(Pf1.xy,Pf0.z));float n001=dot(g001,vec3(Pf0.xy,Pf1.z));float n101=dot(g101,vec3(Pf1.x,Pf0.y,Pf1.z));float n011=dot(g011,vec3(Pf0.x,Pf1.yz));float n111=dot(g111,Pf1);vec3 fade_xyz=fade(Pf0);vec4 n_z=mix(vec4(n000,n100,n010,n110),vec4(n001,n101,n011,n111),fade_xyz.z);vec2 n_yz=mix(n_z.xy,n_z.zw,fade_xyz.y);float n_xyz=mix(n_yz.x,n_yz.y,fade_xyz.x);return 2.2*n_xyz;}'].join('');
                 function createGeom(n,w,h,sp,hs){var geo=new THREE.BufferGeometry();var nv=n*(hs+1)*2,nf=n*hs*2;var pos=new Float32Array(nv*3),idx=new Uint32Array(nf*3),uvs=new Float32Array(nv*2);var vo=0,io=0,uo=0,tw=n*w+(n-1)*sp,xb=-tw/2;for(var i=0;i<n;i++){var xo=xb+i*(w+sp),ux=Math.random()*300,uy=Math.random()*300;for(var j=0;j<=hs;j++){var y=h*(j/hs-.5);pos.set([xo,y,0,xo+w,y,0],vo*3);uvs.set([ux,j/hs+uy,ux+1,j/hs+uy],uo);if(j<hs){var a=vo,b=vo+1,c=vo+2,d=vo+3;idx.set([a,b,c,c,b,d],io);io+=6;}vo+=2;uo+=4;}}geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.BufferAttribute(uvs,2));geo.setIndex(new THREE.BufferAttribute(idx,1));geo.computeVertexNormals();return geo;}
-                var lc=new THREE.Color('#34d399');
+                var lc=new THREE.Color('#48f7b5');
                 var scene=new THREE.Scene();
                 var camera=new THREE.PerspectiveCamera(30,window.innerWidth/window.innerHeight,0.1,1000);
                 camera.position.set(0,0,20);

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avaka：島嶼的維度 - 數位主持人儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入漸變模糊效果組件 -->
+    <script src="./gradual-blur.js?v=3"></script>
     <!-- 全面引入 Noto Serif TC (明體) -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700;900&display=swap"
         rel="stylesheet">
@@ -220,6 +222,9 @@
 </head>
 
 <body class="antialiased selection:bg-brand-accent selection:text-white pb-24">
+    <!-- 頂部與底部漸變模糊毛玻璃效果 -->
+    <gradual-blur preset="page-header" style="z-index: 30;"></gradual-blur>
+    <gradual-blur preset="page-footer" style="z-index: 30;"></gradual-blur>
 
     <!-- 全域系統導覽列 -->
     <div class="w-full bg-[#010a08] border-b border-emerald-900/50 flex justify-center py-2.5 z-[100] relative text-emerald-500/80 font-sans">

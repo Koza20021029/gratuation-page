@@ -7,6 +7,7 @@
     <title>Avaka：島嶼的維度</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- 引入 Google Fonts: 思源宋體 (Noto Serif TC) 作為明體呈現 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,70 +162,222 @@
     <!-- 粒子特效腳本 (模擬林間的孢子、靈力或螢火蟲) -->
     <script>
         const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-        let particlesArray = [];
+        let scrollProgress = 0;
+        try {
+            const glCtx = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false }) ||
+                           canvas.getContext('experimental-webgl', { alpha: true });
+            if (glCtx) {
+                const gl = glCtx;
+                gl.clearColor(0, 0, 0, 0);
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
 
-        function setCanvasSize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', setCanvasSize);
-        setCanvasSize();
+                const hexToRgb = hex => {
+                    hex = hex.replace(/^#/, '');
+                    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+                    const int = parseInt(hex, 16);
+                    return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255];
+                };
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2.5 + 0.5;
-                this.speedX = Math.random() * 1 - 0.5;
-                this.speedY = Math.random() * -1 - 0.2; // 向上漂浮
-                // 顏色設定為帶點金黃、翠綠的光點
-                const colors = ['rgba(253, 230, 138, 0.6)', 'rgba(167, 243, 208, 0.4)', 'rgba(252, 211, 77, 0.5)'];
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                // 從頂部消失後，從底部重生
-                if (this.y < 0 - this.size) {
-                    this.y = canvas.height + this.size;
-                    this.x = Math.random() * canvas.width;
+                const colorsLand  = ['#fde68a', '#a7f3d0', '#fcd34d'];
+                const colorsOcean = ['#22d3ee', '#38bdf8', '#cffafe'];
+
+                const compileShader = (src, type) => {
+                    const s = gl.createShader(type);
+                    gl.shaderSource(s, src);
+                    gl.compileShader(s);
+                    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+                        console.error('Shader error:', gl.getShaderInfoLog(s));
+                        return null;
+                    }
+                    return s;
+                };
+
+                const vsrc = `
+                    attribute vec3 aPos;
+                    attribute vec4 aRnd;
+                    attribute vec3 aColorLand;
+                    attribute vec3 aColorOcean;
+                    uniform float uTime;
+                    uniform float uOceanProg;
+                    uniform float uOffX;
+                    uniform float uOffY;
+                    uniform float uRotX;
+                    uniform float uRotY;
+                    uniform float uRotZ;
+                    uniform float uAspect;
+                    varying vec4 vRnd;
+                    varying vec3 vColor;
+
+                    vec3 rotateX(vec3 p, float a) {
+                        float c = cos(a), s = sin(a);
+                        return vec3(p.x, c*p.y - s*p.z, s*p.y + c*p.z);
+                    }
+                    vec3 rotateY(vec3 p, float a) {
+                        float c = cos(a), s = sin(a);
+                        return vec3(c*p.x + s*p.z, p.y, -s*p.x + c*p.z);
+                    }
+                    vec3 rotateZ(vec3 p, float a) {
+                        float c = cos(a), s = sin(a);
+                        return vec3(c*p.x - s*p.y, s*p.x + c*p.y, p.z);
+                    }
+
+                    void main() {
+                        vRnd = aRnd;
+                        vColor = mix(aColorLand, aColorOcean, uOceanProg);
+
+                        vec3 pos = aPos * 3.0;
+                        pos.x += sin(uTime * aRnd.z + 6.28 * aRnd.w) * mix(0.05, 0.4, aRnd.x);
+                        pos.y += sin(uTime * aRnd.y + 6.28 * aRnd.x) * mix(0.05, 0.4, aRnd.w);
+                        pos.z += sin(uTime * aRnd.w + 6.28 * aRnd.y) * mix(0.05, 0.4, aRnd.z);
+
+                        pos = rotateX(pos, uRotX);
+                        pos = rotateY(pos, uRotY);
+                        pos = rotateZ(pos, uRotZ);
+
+                        pos.x += uOffX;
+                        pos.y += uOffY;
+
+                        float fov = 0.26;
+                        float z = pos.z + 5.0;
+                        vec2 proj = pos.xy * fov / z;
+                        proj.x /= uAspect;
+
+                        float sz = (80.0 * (1.0 + 0.6 * (aRnd.x - 0.5))) / z;
+                        gl_PointSize = clamp(sz, 1.0, 30.0);
+                        gl_Position = vec4(proj, 0.0, 1.0);
+                    }
+                `;
+
+                const fsrc = `
+                    precision mediump float;
+                    uniform float uTime;
+                    varying vec4 vRnd;
+                    varying vec3 vColor;
+                    void main() {
+                        vec2 uv = gl_PointCoord - vec2(0.5);
+                        float d = length(uv);
+                        float alpha = smoothstep(0.5, 0.3, d) * 0.9;
+                        vec3 col = vColor + 0.15 * sin(uv.yyx + uTime + vRnd.y * 6.28);
+                        gl_FragColor = vec4(col, alpha);
+                    }
+                `;
+
+                const vs = compileShader(vsrc, gl.VERTEX_SHADER);
+                const fs = compileShader(fsrc, gl.FRAGMENT_SHADER);
+                if (!vs || !fs) throw new Error('Shader compile failed');
+
+                const prog = gl.createProgram();
+                gl.attachShader(prog, vs);
+                gl.attachShader(prog, fs);
+                gl.linkProgram(prog);
+                if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('Program link failed');
+                gl.useProgram(prog);
+
+                const COUNT = 300;
+                const posData  = new Float32Array(COUNT * 3);
+                const rndData  = new Float32Array(COUNT * 4);
+                const landData = new Float32Array(COUNT * 3);
+                const oceanData= new Float32Array(COUNT * 3);
+
+                for (let i = 0; i < COUNT; i++) {
+                    let x, y, z, len;
+                    do {
+                        x = Math.random() * 2 - 1;
+                        y = Math.random() * 2 - 1;
+                        z = Math.random() * 2 - 1;
+                        len = x*x + y*y + z*z;
+                    } while (len > 1 || len === 0);
+                    const r = Math.cbrt(Math.random());
+                    posData.set([x*r, y*r, z*r], i*3);
+                    rndData.set([Math.random(), Math.random(), Math.random(), Math.random()], i*4);
+                    landData.set(hexToRgb(colorsLand[Math.floor(Math.random()*colorsLand.length)]), i*3);
+                    oceanData.set(hexToRgb(colorsOcean[Math.floor(Math.random()*colorsOcean.length)]), i*3);
                 }
-            }
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
 
-                // 增加一點微光暈
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-            }
-        }
-        
-        function initParticles() {
-            particlesArray = [];
-            for (let i = 0; i < 60; i++) {
-                particlesArray.push(new Particle());
-            }
-        }
-        initParticles();
+                const mkBuf = data => {
+                    const b = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+                    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+                    return b;
+                };
 
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particlesArray.length; i++) {
-                particlesArray[i].update();
-                particlesArray[i].draw();
+                const posBuf   = mkBuf(posData);
+                const rndBuf   = mkBuf(rndData);
+                const landBuf  = mkBuf(landData);
+                const oceanBuf = mkBuf(oceanData);
+
+                const bindAttr = (buf, name, size) => {
+                    const loc = gl.getAttribLocation(prog, name);
+                    if (loc < 0) return;
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+                    gl.enableVertexAttribArray(loc);
+                    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+                };
+                bindAttr(posBuf,   'aPos',       3);
+                bindAttr(rndBuf,   'aRnd',       4);
+                bindAttr(landBuf,  'aColorLand', 3);
+                bindAttr(oceanBuf, 'aColorOcean',3);
+
+                const uTime      = gl.getUniformLocation(prog, 'uTime');
+                const uOceanProg = gl.getUniformLocation(prog, 'uOceanProg');
+                const uOffX      = gl.getUniformLocation(prog, 'uOffX');
+                const uOffY      = gl.getUniformLocation(prog, 'uOffY');
+                const uRotX      = gl.getUniformLocation(prog, 'uRotX');
+                const uRotY      = gl.getUniformLocation(prog, 'uRotY');
+                const uRotZ      = gl.getUniformLocation(prog, 'uRotZ');
+                const uAspect    = gl.getUniformLocation(prog, 'uAspect');
+
+                const resizeCanvas = () => {
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.width  = window.innerWidth  * dpr;
+                    canvas.height = window.innerHeight * dpr;
+                    canvas.style.width  = window.innerWidth  + 'px';
+                    canvas.style.height = window.innerHeight + 'px';
+                    gl.viewport(0, 0, canvas.width, canvas.height);
+                };
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                let targetOffX = 0, targetOffY = 0;
+                let currOffX   = 0, currOffY   = 0;
+                window.addEventListener('mousemove', e => {
+                    targetOffX = -((e.clientX / window.innerWidth)  * 2 - 1) * 0.4;
+                    targetOffY =  ((e.clientY / window.innerHeight) * 2 - 1) * 0.4;
+                });
+
+                let startTime = performance.now();
+                let rotZ = 0;
+
+                const render = now => {
+                    requestAnimationFrame(render);
+                    const t = (now - startTime) * 0.001;
+                    currOffX += (targetOffX - currOffX) * 0.04;
+                    currOffY += (targetOffY - currOffY) * 0.04;
+                    rotZ += 0.0006;
+
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    gl.uniform1f(uTime,      t);
+                    gl.uniform1f(uOceanProg, scrollProgress);
+                    gl.uniform1f(uOffX,      currOffX);
+                    gl.uniform1f(uOffY,      currOffY);
+                    gl.uniform1f(uRotX,      Math.sin(t * 0.05) * 0.15);
+                    gl.uniform1f(uRotY,      Math.cos(t * 0.07) * 0.18);
+                    gl.uniform1f(uRotZ,      rotZ);
+                    gl.uniform1f(uAspect,    canvas.width / canvas.height);
+                    gl.drawArrays(gl.POINTS, 0, COUNT);
+                };
+                requestAnimationFrame(render);
+            } else {
+                console.warn('WebGL not supported. Falling back to static background.');
             }
-            requestAnimationFrame(animate);
+        } catch (e) {
+            console.error('Failed to initialize WebGL particles:', e);
         }
-        animate();
 
         // --- 滾動切換海洋動畫邏輯 ---
         const oceanOverlay = document.getElementById('oceanOverlay');
         const enterBtn = document.getElementById('enter-btn');
-        let scrollProgress = 0;
 
         function updateOceanState() {
             // 限制進度在 0 到 1 之間
