@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avaka：島嶼的維度 | 數位規則書</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 僅引入 Noto Serif TC (思源明體)，包含多種字重以呈現細緻排版 -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300..900&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -70,12 +69,12 @@
 
         /* 玻璃擬物化 (Glassmorphism) 共用類別 */
         .museum-glass {
-            background: var(--tw-colors-avaka-glass);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(52, 211, 153, 0.15);
+            background: rgba(1, 15, 12, 0.90);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(52, 211, 153, 0.25);
             /* 微弱的翠綠邊框 */
-            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(4, 47, 33, 0.5);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.85), inset 0 0 20px rgba(4, 47, 33, 0.6);
         }
 
         /* 發光邊框效果 */
@@ -209,11 +208,13 @@
 
         /* 全域暗綠色麻草紋理與底部深度漸層 */
         .global-fiber-dark {
-            background-color: #01120d;
+            background-color: #021a16;
             background-image:
                 repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.015) 0px, rgba(212, 175, 55, 0.015) 1px, transparent 1px, transparent 6px),
                 repeating-linear-gradient(-45deg, rgba(212, 175, 55, 0.015) 0px, rgba(212, 175, 55, 0.015) 1px, transparent 1px, transparent 6px),
-                radial-gradient(circle at 50% 0%, rgba(0, 139, 99, 0.1) 0%, transparent 60%),
+                radial-gradient(circle at 30% 20%, rgba(0, 180, 160, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(0, 200, 180, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 50% 0%, rgba(0, 139, 99, 0.12) 0%, transparent 60%),
                 radial-gradient(circle at 50% 100%, rgba(212, 175, 55, 0.04) 0%, rgba(0, 139, 99, 0.12) 30%, transparent 70%),
                 linear-gradient(to bottom, transparent 40%, rgba(2, 36, 27, 0.7) 100%);
             background-attachment: fixed;
@@ -223,7 +224,7 @@
 
 <body class="global-fiber-dark text-avaka-textmain antialiased font-serif">
     <!-- 流光特效背景 (Beams) -->
-    <div id="beams-container" class="fixed inset-0 z-0 pointer-events-none overflow-hidden mix-blend-screen opacity-80" style="background: transparent;"></div>
+    <div id="beams-container" class="fixed inset-0 pointer-events-none" style="opacity: 0.75; z-index: 1; background: transparent;"></div>
 
     <!-- 全域系統導覽列 -->
     <div class="fixed top-0 left-0 w-full bg-[#010a08] border-b border-emerald-900/50 flex justify-center py-2.5 z-[100] text-emerald-500/80 font-sans">
@@ -254,7 +255,7 @@
     <!-- Sidebar Navigation -->
     <aside id="sidebar"
         class="hidden md:block w-full md:w-64 lg:w-72 border-r border-emerald-800/30 fixed top-[44px] left-0 h-[calc(100vh-44px)] overflow-y-auto z-40 shadow-[5px_0_30px_rgba(0,0,0,0.5)] transition-transform transform"
-        style="background: rgba(2, 24, 18, 0.7); backdrop-filter: blur(20px);">
+        style="background: rgba(2, 24, 18, 0.92); backdrop-filter: blur(20px);">
         <div class="p-6 relative">
             <!-- 裝飾性光暈 -->
             <div class="absolute top-0 left-0 w-full h-32 bg-emerald-600/10 blur-3xl pointer-events-none"></div>
@@ -1713,268 +1714,46 @@
         });
     </script>
 
-    <!-- 載入 Vanilla Three.js 實作的 3D 光束背景 (Beams) -->
-    <script type="module">
-        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    <!-- Three.js (本地端，避免 CDN 被封鎖) -->
+    <script src="./three.min.js"></script>
 
-        // 噪音函數 (與原版完全一致)
-        const noise = `
-        float random (in vec2 st) {
-            return fract(sin(dot(st.xy, vec2(12.9898,78.233)))* 43758.5453123);
-        }
-        float noise (in vec2 st) {
-            vec2 i = floor(st);
-            vec2 f = fract(st);
-            float a = random(i);
-            float b = random(i + vec2(1.0, 0.0));
-            float c = random(i + vec2(0.0, 1.0));
-            float d = random(i + vec2(1.0, 1.0));
-            vec2 u = f * f * (3.0 - 2.0 * f);
-            return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-        }
-        vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-        vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
-        vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
-        float cnoise(vec3 P){
-          vec3 Pi0 = floor(P);
-          vec3 Pi1 = Pi0 + vec3(1.0);
-          Pi0 = mod(Pi0, 289.0);
-          Pi1 = mod(Pi1, 289.0);
-          vec3 Pf0 = fract(P);
-          vec3 Pf1 = Pf0 - vec3(1.0);
-          vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
-          vec4 iy = vec4(Pi0.yy, Pi1.yy);
-          vec4 iz0 = Pi0.zzzz;
-          vec4 iz1 = Pi1.zzzz;
-          vec4 ixy = permute(permute(ix) + iy);
-          vec4 ixy0 = permute(ixy + iz0);
-          vec4 ixy1 = permute(ixy + iz1);
-          vec4 gx0 = ixy0 / 7.0;
-          vec4 gy0 = fract(floor(gx0) / 7.0) - 0.5;
-          gx0 = fract(gx0);
-          vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
-          vec4 sz0 = step(gz0, vec4(0.0));
-          gx0 -= sz0 * (step(0.0, gx0) - 0.5);
-          gy0 -= sz0 * (step(0.0, gy0) - 0.5);
-          vec4 gx1 = ixy1 / 7.0;
-          vec4 gy1 = fract(floor(gx1) / 7.0) - 0.5;
-          gx1 = fract(gx1);
-          vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
-          vec4 sz1 = step(gz1, vec4(0.0));
-          gx1 -= sz1 * (step(0.0, gx1) - 0.5);
-          gy1 -= sz1 * (step(0.0, gy1) - 0.5);
-          vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
-          vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
-          vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
-          vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
-          vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
-          vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
-          vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
-          vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
-          vec4 norm0 = taylorInvSqrt(vec4(dot(g000,g000),dot(g010,g010),dot(g100,g100),dot(g110,g110)));
-          g000 *= norm0.x; g010 *= norm0.y; g100 *= norm0.z; g110 *= norm0.w;
-          vec4 norm1 = taylorInvSqrt(vec4(dot(g001,g001),dot(g011,g011),dot(g101,g101),dot(g111,g111)));
-          g001 *= norm1.x; g011 *= norm1.y; g101 *= norm1.z; g111 *= norm1.w;
-          float n000 = dot(g000, Pf0);
-          float n100 = dot(g100, vec3(Pf1.x,Pf0.yz));
-          float n010 = dot(g010, vec3(Pf0.x,Pf1.y,Pf0.z));
-          float n110 = dot(g110, vec3(Pf1.xy,Pf0.z));
-          float n001 = dot(g001, vec3(Pf0.xy,Pf1.z));
-          float n101 = dot(g101, vec3(Pf1.x,Pf0.y,Pf1.z));
-          float n011 = dot(g011, vec3(Pf0.x,Pf1.yz));
-          float n111 = dot(g111, Pf1);
-          vec3 fade_xyz = fade(Pf0);
-          vec4 n_z = mix(vec4(n000,n100,n010,n110),vec4(n001,n101,n011,n111),fade_xyz.z);
-          vec2 n_yz = mix(n_z.xy,n_z.zw,fade_xyz.y);
-          float n_xyz = mix(n_yz.x,n_yz.y,fade_xyz.x);
-          return 2.2 * n_xyz;
-        }
-        `;
-
-        function createStackedPlanesBufferGeometry(n, width, height, spacing, heightSegments) {
-            const geometry = new THREE.BufferGeometry();
-            const numVertices = n * (heightSegments + 1) * 2;
-            const numFaces = n * heightSegments * 2;
-            const positions = new Float32Array(numVertices * 3);
-            const indices = new Uint32Array(numFaces * 3);
-            const uvs = new Float32Array(numVertices * 2);
-
-            let vertexOffset = 0;
-            let indexOffset = 0;
-            let uvOffset = 0;
-            const totalWidth = n * width + (n - 1) * spacing;
-            const xOffsetBase = -totalWidth / 2;
-
-            for (let i = 0; i < n; i++) {
-                const xOffset = xOffsetBase + i * (width + spacing);
-                const uvXOffset = Math.random() * 300;
-                const uvYOffset = Math.random() * 300;
-
-                for (let j = 0; j <= heightSegments; j++) {
-                    const y = height * (j / heightSegments - 0.5);
-                    const v0 = [xOffset, y, 0];
-                    const v1 = [xOffset + width, y, 0];
-                    positions.set([...v0, ...v1], vertexOffset * 3);
-
-                    const uvY = j / heightSegments;
-                    uvs.set([uvXOffset, uvY + uvYOffset, uvXOffset + 1, uvY + uvYOffset], uvOffset);
-
-                    if (j < heightSegments) {
-                        const a = vertexOffset,
-                            b = vertexOffset + 1,
-                            c = vertexOffset + 2,
-                            d = vertexOffset + 3;
-                        indices.set([a, b, c, c, b, d], indexOffset);
-                        indexOffset += 6;
-                    }
-                    vertexOffset += 2;
-                    uvOffset += 4;
-                }
-            }
-
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-            geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-            geometry.computeVertexNormals();
-            return geometry;
-        }
-
-        const beamWidth = 2;
-        const beamHeight = 15;
-        const beamNumber = 12;
-        const lightColor = new THREE.Color("#08b830");
-        const speed = 2;
-        const noiseIntensity = 3.0;
-        const scale = 0.25;
-        const rotation = 0;
-
-        const container = document.getElementById('beams-container');
-        if (container) {
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.innerHTML = '';
-            container.appendChild(renderer.domElement);
-
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 0, 20);
-
-            // 完全獨立的自訂 3D 著色器材質，不依賴 Three.js 內建光照渲染管線，保證發光效果
-            const beamMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    uTime: { value: 0 },
-                    uSpeed: { value: speed },
-                    uNoiseIntensity: { value: noiseIntensity },
-                    uScale: { value: scale },
-                    uLightPos: { value: new THREE.Vector3(0, 3, 10) },
-                    uLightColor: { value: lightColor }
-                },
-                transparent: true,
-                blending: THREE.AdditiveBlending, // 螢幕發光疊加
-                depthWrite: false,
-                vertexShader: `
-                    uniform float uTime;
-                    uniform float uSpeed;
-                    uniform float uScale;
-                    varying vec3 vNormal;
-                    varying vec3 vViewPosition;
-                    varying vec2 vUv;
-                    ${noise}
-                    
-                    float getPos(vec3 pos, vec2 uvCoord) {
-                        vec3 noisePos = vec3(pos.x * 0.0, pos.y - uvCoord.y, pos.z + uTime * uSpeed * 3.0) * uScale;
-                        return cnoise(noisePos);
-                    }
-                    
-                    vec3 getCurrentPos(vec3 pos, vec2 uvCoord) {
-                        vec3 newpos = pos;
-                        newpos.z += getPos(pos, uvCoord);
-                        return newpos;
-                    }
-                    
-                    void main() {
-                        vUv = uv;
-                        vec3 curpos = getCurrentPos(position, uv);
-                        
-                        // 計算動態微擾法線 (3D 立體感來源)
-                        vec3 nextposX = getCurrentPos(position + vec3(0.01, 0.0, 0.0), uv + vec2(0.01, 0.0));
-                        vec3 nextposY = getCurrentPos(position + vec3(0.0, -0.01, 0.0), uv + vec2(0.0, -0.01)); // 向下取樣
-                        
-                        vec3 tangentX = normalize(nextposX - curpos);
-                        vec3 tangentY = normalize(nextposY - curpos);
-                        vec3 objectNormal = normalize(cross(tangentY, tangentX)); // 法線朝外
-                        
-                        // 轉換法線與視角向量
-                        vNormal = normalMatrix * objectNormal;
-                        vec4 mvPosition = modelViewMatrix * vec4(curpos, 1.0);
-                        vViewPosition = -mvPosition.xyz;
-                        
-                        gl_Position = projectionMatrix * mvPosition;
-                    }
-                `,
-                fragmentShader: `
-                    uniform float uNoiseIntensity;
-                    uniform vec3 uLightPos;
-                    uniform vec3 uLightColor;
-                    varying vec3 vNormal;
-                    varying vec3 vViewPosition;
-                    varying vec2 vUv;
-                    ${noise}
-                    
-                    void main() {
-                        vec3 normal = normalize(vNormal);
-                        vec3 viewDir = normalize(vViewPosition);
-                        vec3 lightDir = normalize(uLightPos); // 光源方向
-                        
-                        // 漫反射極弱 (因為材質基底是黑的)
-                        float diff = max(dot(normal, lightDir), 0.0);
-                        
-                        // 鏡面高光 (這是 3D 流光視覺的主體)
-                        vec3 reflectDir = reflect(-lightDir, normal);
-                        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0); // 範圍
-                        
-                        vec3 finalColor = uLightColor * spec * 3.0; // 加強亮度
-                        
-                        // 邊緣泛光 (Rim Light) 讓暗部保持微微的綠光立體感
-                        float rim = 1.0 - max(dot(viewDir, normal), 0.0);
-                        finalColor += uLightColor * pow(rim, 3.0) * 0.8;
-                        
-                        // 加入 React 原版的噪聲消除效果
-                        float randomNoise = noise(gl_FragCoord.xy);
-                        finalColor -= randomNoise / 15.0 * uNoiseIntensity;
-                        
-                        // 最終輸出
-                        gl_FragColor = vec4(max(vec3(0.0), finalColor), 1.0);
-                    }
-                `
-            });
-
-            const geometry = createStackedPlanesBufferGeometry(beamNumber, beamWidth, beamHeight, 0, 100);
-            const group = new THREE.Group();
-            group.rotation.z = THREE.MathUtils.degToRad(rotation);
-            
-            const mesh = new THREE.Mesh(geometry, beamMaterial);
-            group.add(mesh);
-            scene.add(group);
-
-            const clock = new THREE.Clock();
-            let animationId;
-            function animate() {
-                animationId = requestAnimationFrame(animate);
-                const delta = clock.getDelta();
-                beamMaterial.uniforms.uTime.value += 0.1 * delta;
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
+    <!-- AVAKA_BEAMS_STANDALONE_ONLY: 此腳本在 SPA 模式中會被略過，由 index.html 的全域版本取代 -->
+    <script>
+        // AVAKA_BEAMS_STANDALONE_ONLY - SPA 模式下此腳本會被 index.html 自動略過
+        window.addEventListener('load', function() {
+            var container = document.getElementById('beams-container');
+            if (!container || typeof THREE === 'undefined') return;
+            try {
+                var noise = [
+                  'float random(in vec2 st){return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);}',
+                  'float noise(in vec2 st){vec2 i=floor(st);vec2 f=fract(st);float a=random(i);float b=random(i+vec2(1.,0.));float c=random(i+vec2(0.,1.));float d=random(i+vec2(1.,1.));vec2 u=f*f*(3.-2.*f);return mix(a,b,u.x)+(c-a)*u.y*(1.-u.x)+(d-b)*u.x*u.y;}',
+                  'vec4 permute(vec4 x){return mod(((x*34.)+1.)*x,289.);}',
+                  'vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}',
+                  'vec3 fade(vec3 t){return t*t*t*(t*(t*6.-15.)+10.);}',
+                  'float cnoise(vec3 P){vec3 Pi0=floor(P);vec3 Pi1=Pi0+vec3(1.);Pi0=mod(Pi0,289.);Pi1=mod(Pi1,289.);vec3 Pf0=fract(P);vec3 Pf1=Pf0-vec3(1.);vec4 ix=vec4(Pi0.x,Pi1.x,Pi0.x,Pi1.x);vec4 iy=vec4(Pi0.yy,Pi1.yy);vec4 iz0=Pi0.zzzz;vec4 iz1=Pi1.zzzz;vec4 ixy=permute(permute(ix)+iy);vec4 ixy0=permute(ixy+iz0);vec4 ixy1=permute(ixy+iz1);vec4 gx0=ixy0/7.;vec4 gy0=fract(floor(gx0)/7.)-.5;gx0=fract(gx0);vec4 gz0=vec4(.5)-abs(gx0)-abs(gy0);vec4 sz0=step(gz0,vec4(0.));gx0-=sz0*(step(0.,gx0)-.5);gy0-=sz0*(step(0.,gy0)-.5);vec4 gx1=ixy1/7.;vec4 gy1=fract(floor(gx1)/7.)-.5;gx1=fract(gx1);vec4 gz1=vec4(.5)-abs(gx1)-abs(gy1);vec4 sz1=step(gz1,vec4(0.));gx1-=sz1*(step(0.,gx1)-.5);gy1-=sz1*(step(0.,gy1)-.5);vec3 g000=vec3(gx0.x,gy0.x,gz0.x);vec3 g100=vec3(gx0.y,gy0.y,gz0.y);vec3 g010=vec3(gx0.z,gy0.z,gz0.z);vec3 g110=vec3(gx0.w,gy0.w,gz0.w);vec3 g001=vec3(gx1.x,gy1.x,gz1.x);vec3 g101=vec3(gx1.y,gy1.y,gz1.y);vec3 g011=vec3(gx1.z,gy1.z,gz1.z);vec3 g111=vec3(gx1.w,gy1.w,gz1.w);vec4 norm0=taylorInvSqrt(vec4(dot(g000,g000),dot(g010,g010),dot(g100,g100),dot(g110,g110)));g000*=norm0.x;g010*=norm0.y;g100*=norm0.z;g110*=norm0.w;vec4 norm1=taylorInvSqrt(vec4(dot(g001,g001),dot(g011,g011),dot(g101,g101),dot(g111,g111)));g001*=norm1.x;g011*=norm1.y;g101*=norm1.z;g111*=norm1.w;float n000=dot(g000,Pf0);float n100=dot(g100,vec3(Pf1.x,Pf0.yz));float n010=dot(g010,vec3(Pf0.x,Pf1.y,Pf0.z));float n110=dot(g110,vec3(Pf1.xy,Pf0.z));float n001=dot(g001,vec3(Pf0.xy,Pf1.z));float n101=dot(g101,vec3(Pf1.x,Pf0.y,Pf1.z));float n011=dot(g011,vec3(Pf0.x,Pf1.yz));float n111=dot(g111,Pf1);vec3 fade_xyz=fade(Pf0);vec4 n_z=mix(vec4(n000,n100,n010,n110),vec4(n001,n101,n011,n111),fade_xyz.z);vec2 n_yz=mix(n_z.xy,n_z.zw,fade_xyz.y);float n_xyz=mix(n_yz.x,n_yz.y,fade_xyz.x);return 2.2*n_xyz;}'
+                ].join('\n');
+                function createGeom(n,w,h,sp,hs){var geo=new THREE.BufferGeometry();var nv=n*(hs+1)*2,nf=n*hs*2;var pos=new Float32Array(nv*3),idx=new Uint32Array(nf*3),uvs=new Float32Array(nv*2);var vo=0,io=0,uo=0,tw=n*w+(n-1)*sp,xb=-tw/2;for(var i=0;i<n;i++){var xo=xb+i*(w+sp),ux=Math.random()*300,uy=Math.random()*300;for(var j=0;j<=hs;j++){var y=h*(j/hs-.5);pos.set([xo,y,0,xo+w,y,0],vo*3);uvs.set([ux,j/hs+uy,ux+1,j/hs+uy],uo);if(j<hs){var a=vo,b=vo+1,c=vo+2,d=vo+3;idx.set([a,b,c,c,b,d],io);io+=6;}vo+=2;uo+=4;}}geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.BufferAttribute(uvs,2));geo.setIndex(new THREE.BufferAttribute(idx,1));geo.computeVertexNormals();return geo;}
+                var scene=new THREE.Scene();
+                var camera=new THREE.PerspectiveCamera(30,window.innerWidth/window.innerHeight,0.1,1000);
+                camera.position.set(0,0,20);
+                var renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth,window.innerHeight);
+                renderer.domElement.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;';
+                container.innerHTML='';container.appendChild(renderer.domElement);
+                var lc=new THREE.Color('#34d399');
+                var mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uSpeed:{value:2},uNoiseIntensity:{value:1.5},uScale:{value:0.25},uLightPos:{value:new THREE.Vector3(0,3,10)},uLightColor:{value:lc}},transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,vertexShader:['uniform float uTime,uSpeed,uScale;','varying vec3 vNormal,vViewPosition;varying vec2 vUv;',noise,'float getPos(vec3 p,vec2 u){return cnoise(vec3(p.x*0.,p.y-u.y,p.z+uTime*uSpeed*3.)*uScale);}','vec3 curP(vec3 p,vec2 u){vec3 n=p;n.z+=getPos(p,u);return n;}','void main(){vUv=uv;vec3 cp=curP(position,uv);','vec3 nx=curP(position+vec3(0.01,0.,0.),uv+vec2(0.01,0.));','vec3 ny=curP(position+vec3(0.,-0.01,0.),uv+vec2(0.,-0.01));','vNormal=normalMatrix*normalize(cross(normalize(ny-cp),normalize(nx-cp)));','vec4 mv=modelViewMatrix*vec4(cp,1.);vViewPosition=-mv.xyz;','gl_Position=projectionMatrix*mv;}'].join('\n'),fragmentShader:['uniform float uNoiseIntensity;uniform vec3 uLightPos,uLightColor;','varying vec3 vNormal,vViewPosition;varying vec2 vUv;',noise,'void main(){vec3 n=normalize(vNormal);vec3 v=normalize(vViewPosition);','vec3 l=normalize(uLightPos);vec3 r=reflect(-l,n);','float spec=pow(max(dot(v,r),0.),16.);','vec3 fc=uLightColor*spec*2.0;','float rim=1.-max(dot(v,n),0.);fc+=uLightColor*pow(rim,2.)*.5;','float rn=noise(gl_FragCoord.xy);fc-=rn/20.*uNoiseIntensity;','vec3 cc=max(vec3(0.),fc);float a=max(cc.r,max(cc.g,cc.b));','gl_FragColor=vec4(cc,a);}'].join('\n')});
+                var geo=createGeom(12,2,15,0,100);
+                var grp=new THREE.Group();
+                var mesh=new THREE.Mesh(geo,mat);
+                grp.add(mesh);scene.add(grp);
+                var clock=new THREE.Clock();
+                (function animate(){requestAnimationFrame(animate);mat.uniforms.uTime.value+=0.1*clock.getDelta();renderer.render(scene,camera);})();
+                window.addEventListener('resize',function(){camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+            } catch(e){console.error('[BEAMS] Error:',e.message);}
+        });
     </script>
+
 </body>
 
 </html>

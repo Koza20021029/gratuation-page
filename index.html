@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300..900&display=swap" rel="stylesheet">
     <!-- Lucide Icons（規則書 / 情境腳本使用） -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Font Awesome（課堂版使用） -->
@@ -96,19 +96,26 @@
 
     <!-- ===== 全站共用 CSS ===== -->
     <style>
+        @font-face {
+            font-family: 'Compressa VF';
+            src: url('https://res.cloudinary.com/dr6lvwubh/raw/upload/v1529908256/CompressaPRO-GX.woff2') format('woff2');
+            font-style: normal;
+            font-weight: 100 900;
+        }
+
         /* --- 根基設定 --- */
         html { font-size: 17px; scroll-behavior: smooth; }
 
         body {
             font-family: 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
-            background-color: #01120d;
+            background-color: #021a16;
             color: #ecfdf5;
             margin: 0;
         }
 
         /* --- 全站捲軸 --- */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #01120d; }
+        ::-webkit-scrollbar-track { background: #021a16; }
         ::-webkit-scrollbar-thumb { background: #054432; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #008b63; }
 
@@ -223,16 +230,50 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes blurTextFromTop {
+            0% {
+                filter: blur(12px);
+                opacity: 0;
+                transform: translateY(-40px);
+            }
+            50% {
+                filter: blur(4px);
+                opacity: 0.5;
+                transform: translateY(4px);
+            }
+            100% {
+                filter: blur(0px);
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes blurTextFromBottom {
+            0% {
+                filter: blur(12px);
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            50% {
+                filter: blur(4px);
+                opacity: 0.5;
+                transform: translateY(-4px);
+            }
+            100% {
+                filter: blur(0px);
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* ==========================================
            通用玻璃效果 (規則書 / 課堂等共用)
         ========================================== */
         .museum-glass {
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            background: rgba(1, 18, 13, 0.55);
-            border: 1px solid rgba(52, 211, 153, 0.15);
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.7), inset 0 0 20px rgba(4,47,33,0.5);
+            background: rgba(1, 15, 12, 0.90);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.85), inset 0 0 20px rgba(4, 47, 33, 0.6);
         }
         .glow-border { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .glow-border:hover {
@@ -240,10 +281,18 @@
             box-shadow: 0 0 25px rgba(52,211,153,0.2), inset 0 0 15px rgba(52,211,153,0.1);
             transform: translateY(-2px);
         }
+
+        /* 規則書背景透明化，使全域 3D 流光背景可透出 */
+        #page-rulebook.global-fiber-dark {
+            background-color: transparent !important;
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- 全域流光特效背景 (Beams) - 僅在規則書頁面顯示 -->
+    <div id="beams-container" class="fixed inset-0 pointer-events-none overflow-hidden transition-opacity duration-500" style="opacity: 0; z-index: 1; background: transparent;"></div>
 
     <!-- ===================================================
          全域系統導覽列 (封面頁進入後顯示，封面本身隱藏)
@@ -281,25 +330,25 @@
 
         <!-- 封面內容 -->
         <div class="relative z-30 flex flex-col items-center justify-center text-center px-4 w-full max-w-5xl">
-            <p class="text-amber-100/70 text-lg md:text-xl tracking-[0.3em] font-light mb-6 cover-subtitle-glow opacity-0 animate-[fadeIn_2s_ease-out_0.5s_forwards]">
+            <p id="cover-subtitle" class="text-amber-100/70 text-lg md:text-xl tracking-[0.3em] font-light mb-6 cover-subtitle-glow opacity-0">
                 順應夜曆，還是追求效率？
             </p>
-            <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-amber-50 tracking-widest cover-text-glow mb-4 opacity-0 animate-[fadeInUp_2s_ease-out_1s_forwards]">
-                Avaka
+            <h1 id="cover-title-en" class="text-5xl md:text-7xl lg:text-8xl text-amber-50 tracking-widest cover-text-glow mb-4 opacity-0" style="font-family: 'Compressa VF', 'Noto Serif TC', serif; font-weight: 700; text-transform: uppercase;">
+                AVAKA
             </h1>
-            <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-amber-100/90 tracking-[0.2em] cover-text-glow mb-12 opacity-0 animate-[fadeInUp_2s_ease-out_1.5s_forwards]">
+            <h2 id="cover-title-zh" class="text-4xl md:text-5xl lg:text-6xl text-amber-100/90 tracking-[0.2em] cover-text-glow mb-12 opacity-0" style="font-family: 'Noto Serif TC', serif; font-weight: 300;">
                 島嶼的維度
             </h2>
-            <div class="h-px w-24 bg-amber-200/30 mb-8 opacity-0 animate-[fadeIn_2s_ease-out_2s_forwards]"></div>
-            <p class="text-emerald-50/80 text-base md:text-lg tracking-[0.15em] font-light max-w-2xl leading-relaxed cover-subtitle-glow opacity-0 animate-[fadeIn_2s_ease-out_2.5s_forwards]">
-                身為蘭嶼的工匠，你必須在 12 個月內完成一艘拼板舟。<br>
-                在「傳統馬尼拉蕉麻」與「現代化學樹脂」之間，<br>
-                決定你要留下什麼樣的文化認同。
+            <div class="h-px w-24 bg-amber-200/30 mb-8 opacity-0 animate-[fadeIn_2s_ease-out_2.2s_forwards]"></div>
+            <p id="cover-desc" class="text-emerald-50/80 text-base md:text-lg tracking-[0.15em] font-light max-w-2xl leading-relaxed cover-subtitle-glow flex flex-col items-center">
+                <span class="cover-desc-line block opacity-0">身為蘭嶼的工匠，你必須在 12 個月內完成一艘拼板舟。</span>
+                <span class="cover-desc-line block mt-2 opacity-0">在「傳統馬尼拉蕉麻」與「現代化學樹脂」之間，</span>
+                <span class="cover-desc-line block mt-2 opacity-0">決定你要留下什麼樣的文化認同。</span>
             </p>
             <!-- 進入按鈕：點擊後切換至規則書頁 -->
             <button id="cover-enter-btn"
                 onclick="router.go('rulebook')"
-                class="mt-16 px-10 py-4 border border-amber-200/40 text-amber-100 text-lg tracking-[0.2em] font-medium rounded-sm btn-enter hover:bg-amber-900/40 hover:border-amber-200 hover:text-white hover:shadow-[0_0_15px_rgba(253,230,138,0.3)] opacity-0 animate-[fadeIn_2s_ease-out_3s_forwards] cursor-pointer transition-colors duration-500 bg-transparent">
+                class="mt-16 px-10 py-4 border border-amber-200/40 text-amber-100 text-lg tracking-[0.2em] font-medium rounded-sm btn-enter hover:bg-amber-900/40 hover:border-amber-200 hover:text-white hover:shadow-[0_0_15px_rgba(253,230,138,0.3)] opacity-0 animate-[fadeIn_2s_ease-out_4.8s_forwards] cursor-pointer transition-colors duration-500 bg-transparent">
                 進入山林採集
             </button>
         </div>
@@ -382,6 +431,16 @@
                 currentPage = pageId;
                 const next = pages[pageId];
                 next.classList.add('page-active');
+
+                // 控制 3D 流光背景動畫顯示狀態
+                const beams = document.getElementById('beams-container');
+                if (beams) {
+                    if (pageId === 'rulebook') {
+                        beams.style.opacity = '0.35';
+                    } else {
+                        beams.style.opacity = '0';
+                    }
+                }
 
                 // 初始化（只執行一次）
                 if (!initialized[pageId]) {
@@ -471,6 +530,7 @@
             const oceanOverlay  = document.getElementById('oceanOverlay');
             const coverEnterBtn = document.getElementById('cover-enter-btn');
             let scrollProgress  = 0;
+            let startY          = 0;
 
             function updateOceanState() {
                 scrollProgress = Math.max(0, Math.min(1, scrollProgress));
@@ -492,13 +552,174 @@
                 updateOceanState();
             });
 
-            let startY = 0;
             window.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
             window.addEventListener('touchmove', e => {
                 scrollProgress += (startY - e.touches[0].clientY) * 0.003;
                 startY = e.touches[0].clientY;
                 updateOceanState();
             }, { passive: true });
+
+            // --- 封面文字 Blur 動態載入效果 (相容 React 版 BlurText 機制) ---
+            function applyBlurText(elementId, options = {}) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                
+                const text = el.textContent.trim();
+                el.textContent = ''; // 清空原本內容
+                el.classList.remove('opacity-0'); // 移除隱藏 class
+                el.style.display = 'flex';
+                el.style.flexWrap = 'wrap';
+                el.style.justifyContent = 'center';
+                
+                const animateBy = options.animateBy || 'chars';
+                const direction = options.direction || 'top';
+                const delay = options.delay || 40;
+                const baseDelay = options.baseDelay || 0;
+                
+                const segments = animateBy === 'words' ? text.split(/\s+/) : text.split('');
+                
+                segments.forEach((seg, idx) => {
+                    const span = document.createElement('span');
+                    span.className = 'inline-block will-change-[transform,filter,opacity]';
+                    span.style.opacity = '0';
+                    
+                    if (seg === ' ') {
+                        span.innerHTML = '&nbsp;';
+                    } else {
+                        span.textContent = seg;
+                    }
+                    
+                    if (animateBy === 'words' && idx < segments.length - 1) {
+                        span.innerHTML += '&nbsp;';
+                    }
+                    
+                    span.style.animationName = direction === 'top' ? 'blurTextFromTop' : 'blurTextFromBottom';
+                    span.style.animationDuration = '0.7s';
+                    span.style.animationTimingFunction = 'cubic-bezier(0.25, 1, 0.5, 1)';
+                    span.style.animationFillMode = 'forwards';
+                    span.style.animationDelay = `${(baseDelay + idx * delay) / 1000}s`;
+                    
+                    el.appendChild(span);
+                });
+            }
+
+            // 執行文字分割與模糊動態進入
+            applyBlurText('cover-subtitle', { direction: 'top', baseDelay: 400, delay: 50 });
+            applyBlurText('cover-title-en', { direction: 'bottom', baseDelay: 1200, delay: 90 });
+            applyBlurText('cover-title-zh', { direction: 'bottom', baseDelay: 1800, delay: 70 });
+            
+            // 說明文字各行獨立進行文字分割動畫，以維持排版
+            const descLines = document.querySelectorAll('.cover-desc-line');
+            descLines.forEach((line, lineIdx) => {
+                const lineId = `cover-desc-line-${lineIdx}`;
+                line.id = lineId;
+                applyBlurText(lineId, { direction: 'bottom', baseDelay: 2500 + lineIdx * 700, delay: 35 });
+            });
+
+            // ==========================================
+            // --- 封面文字互動壓力特效 (TextPressure) ---
+            // ==========================================
+            const mouse = { x: 0, y: 0 };
+            const cursor = { x: 0, y: 0 };
+            let pressureInitialized = false;
+
+            function initPressureEvents() {
+                if (pressureInitialized) return;
+                pressureInitialized = true;
+
+                window.addEventListener('mousemove', e => {
+                    cursor.x = e.clientX;
+                    cursor.y = e.clientY;
+                });
+                window.addEventListener('touchmove', e => {
+                    const t = e.touches[0];
+                    cursor.x = t.clientX;
+                    cursor.y = t.clientY;
+                }, { passive: true });
+
+                // 初始化滑鼠感應起點為螢幕中心
+                mouse.x = window.innerWidth / 2;
+                mouse.y = window.innerHeight / 2;
+                cursor.x = mouse.x;
+                cursor.y = mouse.y;
+
+                requestAnimationFrame(animatePressure);
+            }
+
+            const dist = (a, b) => {
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            };
+
+            const getAttr = (distance, maxDist, minVal, maxVal) => {
+                // 距離越近，越往最大值 (maxVal) 靠攏
+                const val = maxVal - Math.abs((maxVal * distance) / maxDist);
+                return Math.max(minVal, val + minVal);
+            };
+
+            function animatePressure() {
+                // 透過緩動阻尼 (Damping / Lerp) 提供優雅的物理滯後感
+                mouse.x += (cursor.x - mouse.x) / 12;
+                mouse.y += (cursor.y - mouse.y) / 12;
+
+                // 1. 處理英文標題 "AVAKA" (Compressa VF: 支援 wght, wdth, ital)
+                const titleEn = document.getElementById('cover-title-en');
+                if (titleEn) {
+                    const spans = titleEn.querySelectorAll('span');
+                    if (spans.length > 0) {
+                        const rect = titleEn.getBoundingClientRect();
+                        const maxDist = Math.max(rect.width / 2, 250);
+
+                        spans.forEach(span => {
+                            const spanRect = span.getBoundingClientRect();
+                            const charCenter = {
+                                x: spanRect.left + spanRect.width / 2,
+                                y: spanRect.top + spanRect.height / 2
+                            };
+
+                            const d = dist(mouse, charCenter);
+
+                            // wght 範圍 700~900 (預設粗體), wdth 範圍 20~200, ital 範圍 0~1
+                            const wght = Math.floor(getAttr(d, maxDist, 700, 200));
+                            const wdth = Math.floor(getAttr(d, maxDist, 20, 180));
+                            const ital = getAttr(d, maxDist, 0, 1).toFixed(2);
+
+                            span.style.fontVariationSettings = `'wght' ${wght}, 'wdth' ${wdth}, 'ital' ${ital}`;
+                        });
+                    }
+                }
+
+                // 2. 處理中文標題 "島嶼的維度" (Noto Serif TC: 僅支援 wght)
+                const titleZh = document.getElementById('cover-title-zh');
+                if (titleZh) {
+                    const spans = titleZh.querySelectorAll('span');
+                    if (spans.length > 0) {
+                        const rect = titleZh.getBoundingClientRect();
+                        const maxDist = Math.max(rect.width / 2, 250);
+
+                        spans.forEach(span => {
+                            const spanRect = span.getBoundingClientRect();
+                            const charCenter = {
+                                x: spanRect.left + spanRect.width / 2,
+                                y: spanRect.top + spanRect.height / 2
+                            };
+
+                            const d = dist(mouse, charCenter);
+
+                            // Noto Serif TC Variable wght 規格為 300~900
+                            const wght = Math.floor(getAttr(d, maxDist, 300, 600));
+
+                            span.style.fontVariationSettings = `'wght' ${wght}`;
+                        });
+                    }
+                }
+
+                requestAnimationFrame(animatePressure);
+            }
+
+            // 啟動感應
+            initPressureEvents();
         })();
     </script>
 
@@ -570,7 +791,7 @@
             }
         }
 
-        // 從原始 HTML 檔案中萃取 <head> 的 style 與 <body> 的內容
+        // 從原始 HTML 檔案中萃取 <head> 的 style 與 <body> 的內容和屬性
         function extractBody(htmlText) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlText, 'text/html');
@@ -592,8 +813,24 @@
                 }
             });
 
+            // 移除規則書自帶的 beams-container 與動畫腳本，因為 SPA 內有全域優化版本
+            const inlineBeams = doc.querySelector('#beams-container');
+            if (inlineBeams) inlineBeams.remove();
+            
+            doc.querySelectorAll('script').forEach(scr => {
+                const text = scr.textContent || '';
+                const src = scr.getAttribute('src') || '';
+                if (text.includes('AVAKA_BEAMS_STANDALONE_ONLY') || src.includes('three.min.js') || text.includes('three.module.js')) {
+                    scr.remove();
+                }
+            });
+
             const bodyHTML = doc.body ? doc.body.innerHTML : htmlText;
-            return headStyles + bodyHTML;
+            const bodyClass = doc.body ? doc.body.className : '';
+            return {
+                html: headStyles + bodyHTML,
+                bodyClass: bodyClass
+            };
         }
 
         async function initPage(pageId) {
@@ -618,8 +855,15 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const html = await res.text();
 
-                // 注入 body 內容（去除舊導覽列）
-                section.innerHTML = extractBody(html);
+                // 注入 body 內容與其樣式類別（並去除舊導覽列）
+                const extracted = extractBody(html);
+                section.innerHTML = extracted.html;
+                if (extracted.bodyClass) {
+                    const classesToAdd = extracted.bodyClass.split(/\s+/).filter(Boolean);
+                    classesToAdd.forEach(cls => {
+                        section.classList.add(cls);
+                    });
+                }
 
                 // 補上該頁面需要的 padding-top 以避免被全域導覽列遮住
                 section.style.paddingTop = '44px';
@@ -674,6 +918,37 @@
                 document.body.appendChild(banner);
             });
         }
+    </script>
+
+    <!-- 載入本地 Three.js（避免 CDN 被 Edge 追蹤防護封鎖） -->
+    <script src="./three.min.js"></script>
+
+    <!-- 3D 光束背景 (Beams) - 全域版 -->
+    <script>
+        window.addEventListener('load', function() {
+            var container = document.getElementById('beams-container');
+            if (!container || typeof THREE === 'undefined') return;
+            try {
+                var noise = ['float random(in vec2 st){return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);}','float noise(in vec2 st){vec2 i=floor(st);vec2 f=fract(st);float a=random(i);float b=random(i+vec2(1.,0.));float c=random(i+vec2(0.,1.));float d=random(i+vec2(1.,1.));vec2 u=f*f*(3.-2.*f);return mix(a,b,u.x)+(c-a)*u.y*(1.-u.x)+(d-b)*u.x*u.y;}','vec4 permute(vec4 x){return mod(((x*34.)+1.)*x,289.);}','vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}','vec3 fade(vec3 t){return t*t*t*(t*(t*6.-15.)+10.);}','float cnoise(vec3 P){vec3 Pi0=floor(P);vec3 Pi1=Pi0+vec3(1.);Pi0=mod(Pi0,289.);Pi1=mod(Pi1,289.);vec3 Pf0=fract(P);vec3 Pf1=Pf0-vec3(1.);vec4 ix=vec4(Pi0.x,Pi1.x,Pi0.x,Pi1.x);vec4 iy=vec4(Pi0.yy,Pi1.yy);vec4 iz0=Pi0.zzzz;vec4 iz1=Pi1.zzzz;vec4 ixy=permute(permute(ix)+iy);vec4 ixy0=permute(ixy+iz0);vec4 ixy1=permute(ixy+iz1);vec4 gx0=ixy0/7.;vec4 gy0=fract(floor(gx0)/7.)-.5;gx0=fract(gx0);vec4 gz0=vec4(.5)-abs(gx0)-abs(gy0);vec4 sz0=step(gz0,vec4(0.));gx0-=sz0*(step(0.,gx0)-.5);gy0-=sz0*(step(0.,gy0)-.5);vec4 gx1=ixy1/7.;vec4 gy1=fract(floor(gx1)/7.)-.5;gx1=fract(gx1);vec4 gz1=vec4(.5)-abs(gx1)-abs(gy1);vec4 sz1=step(gz1,vec4(0.));gx1-=sz1*(step(0.,gx1)-.5);gy1-=sz1*(step(0.,gy1)-.5);vec3 g000=vec3(gx0.x,gy0.x,gz0.x);vec3 g100=vec3(gx0.y,gy0.y,gz0.y);vec3 g010=vec3(gx0.z,gy0.z,gz0.z);vec3 g110=vec3(gx0.w,gy0.w,gz0.w);vec3 g001=vec3(gx1.x,gy1.x,gz1.x);vec3 g101=vec3(gx1.y,gy1.y,gz1.y);vec3 g011=vec3(gx1.z,gy1.z,gz1.z);vec3 g111=vec3(gx1.w,gy1.w,gz1.w);vec4 norm0=taylorInvSqrt(vec4(dot(g000,g000),dot(g010,g010),dot(g100,g100),dot(g110,g110)));g000*=norm0.x;g010*=norm0.y;g100*=norm0.z;g110*=norm0.w;vec4 norm1=taylorInvSqrt(vec4(dot(g001,g001),dot(g011,g011),dot(g101,g101),dot(g111,g111)));g001*=norm1.x;g011*=norm1.y;g101*=norm1.z;g111*=norm1.w;float n000=dot(g000,Pf0);float n100=dot(g100,vec3(Pf1.x,Pf0.yz));float n010=dot(g010,vec3(Pf0.x,Pf1.y,Pf0.z));float n110=dot(g110,vec3(Pf1.xy,Pf0.z));float n001=dot(g001,vec3(Pf0.xy,Pf1.z));float n101=dot(g101,vec3(Pf1.x,Pf0.y,Pf1.z));float n011=dot(g011,vec3(Pf0.x,Pf1.yz));float n111=dot(g111,Pf1);vec3 fade_xyz=fade(Pf0);vec4 n_z=mix(vec4(n000,n100,n010,n110),vec4(n001,n101,n011,n111),fade_xyz.z);vec2 n_yz=mix(n_z.xy,n_z.zw,fade_xyz.y);float n_xyz=mix(n_yz.x,n_yz.y,fade_xyz.x);return 2.2*n_xyz;}'].join('');
+                function createGeom(n,w,h,sp,hs){var geo=new THREE.BufferGeometry();var nv=n*(hs+1)*2,nf=n*hs*2;var pos=new Float32Array(nv*3),idx=new Uint32Array(nf*3),uvs=new Float32Array(nv*2);var vo=0,io=0,uo=0,tw=n*w+(n-1)*sp,xb=-tw/2;for(var i=0;i<n;i++){var xo=xb+i*(w+sp),ux=Math.random()*300,uy=Math.random()*300;for(var j=0;j<=hs;j++){var y=h*(j/hs-.5);pos.set([xo,y,0,xo+w,y,0],vo*3);uvs.set([ux,j/hs+uy,ux+1,j/hs+uy],uo);if(j<hs){var a=vo,b=vo+1,c=vo+2,d=vo+3;idx.set([a,b,c,c,b,d],io);io+=6;}vo+=2;uo+=4;}}geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.BufferAttribute(uvs,2));geo.setIndex(new THREE.BufferAttribute(idx,1));geo.computeVertexNormals();return geo;}
+                var lc=new THREE.Color('#34d399');
+                var scene=new THREE.Scene();
+                var camera=new THREE.PerspectiveCamera(30,window.innerWidth/window.innerHeight,0.1,1000);
+                camera.position.set(0,0,20);
+                var renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth,window.innerHeight);
+                renderer.domElement.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;';
+                container.innerHTML='';container.appendChild(renderer.domElement);
+                var mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uSpeed:{value:2},uNoiseIntensity:{value:1.5},uScale:{value:0.25},uLightPos:{value:new THREE.Vector3(0,3,10)},uLightColor:{value:lc}},transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,vertexShader:['uniform float uTime,uSpeed,uScale;','varying vec3 vNormal,vViewPosition;varying vec2 vUv;',noise,'float getPos(vec3 p,vec2 u){return cnoise(vec3(p.x*0.,p.y-u.y,p.z+uTime*uSpeed*3.)*uScale);}','vec3 curP(vec3 p,vec2 u){vec3 n=p;n.z+=getPos(p,u);return n;}','void main(){vUv=uv;vec3 cp=curP(position,uv);','vec3 nx=curP(position+vec3(0.01,0.,0.),uv+vec2(0.01,0.));','vec3 ny=curP(position+vec3(0.,-0.01,0.),uv+vec2(0.,-0.01));','vNormal=normalMatrix*normalize(cross(normalize(ny-cp),normalize(nx-cp)));','vec4 mv=modelViewMatrix*vec4(cp,1.);vViewPosition=-mv.xyz;','gl_Position=projectionMatrix*mv;}'].join(''),fragmentShader:['uniform float uNoiseIntensity;uniform vec3 uLightPos,uLightColor;','varying vec3 vNormal,vViewPosition;varying vec2 vUv;',noise,'void main(){vec3 n=normalize(vNormal);vec3 v=normalize(vViewPosition);','vec3 l=normalize(uLightPos);vec3 r=reflect(-l,n);','float spec=pow(max(dot(v,r),0.),16.);','vec3 fc=uLightColor*spec*2.0;','float rim=1.-max(dot(v,n),0.);fc+=uLightColor*pow(rim,2.)*.5;','float rn=noise(gl_FragCoord.xy);fc-=rn/20.*uNoiseIntensity;','vec3 cc=max(vec3(0.),fc);float a=max(cc.r,max(cc.g,cc.b));','gl_FragColor=vec4(cc,a);}'].join('')});
+                var geo=createGeom(12,2,15,0,100);
+                var mesh=new THREE.Mesh(geo,mat);
+                scene.add(mesh);
+                var clock=new THREE.Clock();
+                (function animate(){requestAnimationFrame(animate);mat.uniforms.uTime.value+=0.1*clock.getDelta();renderer.render(scene,camera);})();
+                window.addEventListener('resize',function(){camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+            } catch(e){console.error('[Beams] Error:',e.message);}
+        });
     </script>
 
 </body>
