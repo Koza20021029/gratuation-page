@@ -115,11 +115,170 @@
             outline: none !important;
             -webkit-tap-highlight-color: transparent;
         }
+
+        /* ============ sub-GooeyNav ============ */
+        :root {
+            --color-1: #34d399;   /* emerald */
+            --color-2: #fcd34d;   /* gold */
+            --color-3: #38bdf8;   /* sky */
+            --color-4: #ffffff;   /* white */
+        }
+        #sub-nav-container {
+            position: relative;
+            background: rgba(10, 39, 30, 0.45);
+            border: 1px solid rgba(18, 63, 49, 0.55);
+            border-radius: 100vw;
+            padding: 4px;
+        }
+        #sub-nav-container nav {
+            display: flex;
+            position: relative;
+            transform: translate3d(0,0,0.01px);
+            padding: 38px 0;
+            margin: -38px 0;
+            align-items: center;
+        }
+        #sub-nav-container nav ul {
+            display: flex;
+            gap: 0.3em;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            z-index: 3;
+            color: #84b8a4; /* brand-textMuted */
+        }
+        #sub-nav-container nav ul li {
+            border-radius: 100vw;
+            position: relative;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            color: #84b8a4;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        #sub-nav-container nav ul li a {
+            display: flex;
+            align-items: center;
+            padding: 0.6em 1.2em;
+            text-decoration: none;
+            color: inherit;
+        }
+        #sub-nav-container nav ul li::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 100vw;
+            background: #047857; /* active color matching bg-emerald-700 */
+            opacity: 0;
+            transform: scale(0);
+            z-index: -1;
+            display: none !important; /* Hide fallback to prevent transition jump */
+        }
+        #sub-nav-container nav ul li.active {
+            color: #ffffff;
+        }
+        #sub-nav-container nav ul li.active::after {
+            opacity: 0;
+            transform: scale(0);
+            display: none !important; /* Hide fallback to prevent transition jump */
+        }
+        /* effect spans */
+        #sub-nav-container .effect {
+            position: absolute;
+            left: 0; top: 0;
+            width: 0; height: 0;
+            opacity: 1;
+            pointer-events: none;
+            display: grid;
+            place-items: center;
+            z-index: 1;
+            will-change: left, top, width, height;
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        top 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #sub-nav-container .effect.text {
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sub-nav-container .effect.text.active { color: #ffffff; }
+        #sub-nav-container .effect.filter {
+            filter: url(#goo-nav-filter);
+        }
+        #sub-nav-container .effect.filter::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #047857;
+            transform: scale(0);
+            opacity: 0;
+            z-index: -1;
+            border-radius: 100vw;
+        }
+        #sub-nav-container .effect.active::after {
+            animation: sub-gooey-pill 0.3s ease both;
+        }
+        @keyframes sub-gooey-pill {
+            to { transform: scale(1); opacity: 1; }
+        }
+        .gooey-particle, .gooey-point {
+            display: block;
+            opacity: 0;
+            width: 20px; height: 20px;
+            border-radius: 100%;
+            transform-origin: center;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
+        }
+        .gooey-particle {
+            --time: 5s;
+            position: absolute;
+            top: calc(50% - 8px);
+            left: calc(50% - 8px);
+            animation: gooey-particle calc(var(--time)) ease 1 -350ms;
+        }
+        .gooey-point {
+            background: var(--color);
+            opacity: 1;
+            animation: gooey-point calc(var(--time)) ease 1 -350ms;
+        }
+        @keyframes gooey-particle {
+            0%   { transform: rotate(0deg) translate(var(--start-x), var(--start-y)); opacity:1; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            70%  { transform: rotate(calc(var(--rotate)*.5)) translate(calc(var(--end-x)*1.2),calc(var(--end-y)*1.2)); opacity:1; animation-timing-function:ease; }
+            85%  { transform: rotate(calc(var(--rotate)*.66)) translate(var(--end-x),var(--end-y)); opacity:1; }
+            100% { transform: rotate(calc(var(--rotate)*1.2)) translate(calc(var(--end-x)*.5),calc(var(--end-y)*.5)); opacity:1; }
+        }
+        @keyframes gooey-point {
+            0%   { transform:scale(0); opacity:0; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            25%  { transform:scale(calc(var(--scale)*.25)); }
+            38%  { opacity:1; }
+            65%  { transform:scale(var(--scale)); opacity:1; animation-timing-function:ease; }
+            85%  { transform:scale(var(--scale)); opacity:1; }
+            100% { transform:scale(0); opacity:0; }
+        }
     </style>
 
 </head>
 
 <body>
+    <!-- SVG Gooey Filter -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display: block; height: 0; width: 0; position: absolute; pointer-events: none;">
+      <defs>
+        <filter id="goo-nav-filter" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
 
     <div id="root">
         <!-- 預載畫面 (Preloader) - 提供即時回饋，避免 Babel 編譯與加載時的短暫黑屏卡頓感 -->
@@ -140,6 +299,176 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
+
+        const GooeyNav = ({ tabs, activeTab, setActiveTab }) => {
+            const containerRef = React.useRef(null);
+            const filterRef = React.useRef(null);
+            const textRef = React.useRef(null);
+            const listRef = React.useRef(null);
+            const [subActiveIndex, setSubActiveIndex] = useState(0);
+
+            const noise = (n = 1) => n / 2 - Math.random() * n;
+
+            const getXY = (distance, pointIndex, totalPoints) => {
+                const angle = ((360 + noise(8)) / totalPoints) * pointIndex * (Math.PI / 180);
+                return [distance * Math.cos(angle), distance * Math.sin(angle)];
+            };
+
+            const createParticle = (i, t, d, r) => {
+                let rotate = noise(r / 10);
+                return {
+                    start: getXY(d[0], 15 - i, 15),
+                    end: getXY(d[1] + noise(7), 15 - i, 15),
+                    time: t,
+                    scale: 1 + noise(0.2),
+                    color: [1, 2, 3, 1, 2, 3, 1, 4][Math.floor(Math.random() * 8)],
+                    rotate: rotate > 0 ? (rotate + r / 20) * 10 : (rotate - r / 20) * 10
+                };
+            };
+
+            const makeSubParticles = (el) => {
+                const bubbleTime = 1200 + 300;
+                el.style.setProperty('--time', `${bubbleTime}ms`);
+
+                for (let i = 0; i < 15; i++) {
+                    const t = 1200 + noise(600);
+                    const p = createParticle(i, t, [40, 5], 100);
+                    el.classList.remove('active');
+
+                    setTimeout(() => {
+                        const particle = document.createElement('span');
+                        const point = document.createElement('span');
+                        particle.className = 'gooey-particle';
+                        particle.style.setProperty('--start-x', `${p.start[0]}px`);
+                        particle.style.setProperty('--start-y', `${p.start[1]}px`);
+                        particle.style.setProperty('--end-x', `${p.end[0]}px`);
+                        particle.style.setProperty('--end-y', `${p.end[1]}px`);
+                        particle.style.setProperty('--time', `${p.time}ms`);
+                        particle.style.setProperty('--scale', `${p.scale}`);
+                        particle.style.setProperty('--color', `var(--color-${p.color}, white)`);
+                        particle.style.setProperty('--rotate', `${p.rotate}deg`);
+                        point.className = 'gooey-point';
+                        particle.appendChild(point);
+                        el.appendChild(particle);
+                        requestAnimationFrame(() => el.classList.add('active'));
+                        setTimeout(() => {
+                            try { el.removeChild(particle); } catch(e) {}
+                        }, t);
+                    }, 30);
+                }
+            };
+
+            const updateSubEffectPosition = (liEl) => {
+                const filterEl = filterRef.current;
+                const textEl = textRef.current;
+                if (!filterEl || !textEl || !liEl) return;
+
+                const styles = {
+                    left: `${liEl.offsetLeft}px`,
+                    top: `${liEl.offsetTop}px`,
+                    width: `${liEl.offsetWidth}px`,
+                    height: `${liEl.offsetHeight}px`
+                };
+                Object.assign(filterEl.style, styles);
+                Object.assign(textEl.style, styles);
+
+                const spanEl = liEl.querySelector('span');
+                const iconEl = liEl.querySelector('i');
+                if (spanEl && textEl) {
+                    textEl.innerHTML = '';
+                    if (iconEl) {
+                        const newIcon = iconEl.cloneNode(true);
+                        textEl.appendChild(newIcon);
+                    }
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'tracking-wide ml-3';
+                    textSpan.innerText = spanEl.innerText;
+                    textEl.appendChild(textSpan);
+                }
+            };
+
+            useEffect(() => {
+                // Initialize active tab position on mount after layout settles
+                const activeLi = listRef.current ? listRef.current.querySelector(`li.active`) : null;
+                if (activeLi) {
+                    const timer = setTimeout(() => {
+                        updateSubEffectPosition(activeLi);
+                    }, 150);
+                    return () => clearTimeout(timer);
+                }
+            }, []);
+
+            useEffect(() => {
+                // Keep in sync synchronously if activeTab changes programmatically
+                const activeLi = listRef.current ? listRef.current.querySelector(`li.active`) : null;
+                if (activeLi) {
+                    updateSubEffectPosition(activeLi);
+                }
+            }, [activeTab]);
+
+            // Resize listener
+            useEffect(() => {
+                const handleResize = () => {
+                    const activeLi = listRef.current ? listRef.current.querySelector(`li.active`) : null;
+                    if (activeLi) {
+                        updateSubEffectPosition(activeLi);
+                    }
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            const handleTabClick = (e, tabId, idx) => {
+                e.preventDefault();
+                const liEl = e.currentTarget.closest('li');
+                if (tabId === activeTab) return;
+
+                setActiveTab(tabId);
+                setSubActiveIndex(idx);
+
+                // Smoothly scroll the clicked tab to the center of the list
+                liEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+                const filterEl = filterRef.current;
+                const textEl = textRef.current;
+                if (filterEl && textEl) {
+                    // remove old particles
+                    filterEl.querySelectorAll('.gooey-particle').forEach(p => {
+                        try { filterEl.removeChild(p); } catch(e) {}
+                    });
+
+                    textEl.classList.remove('active');
+                    void textEl.offsetWidth;
+                    textEl.classList.add('active');
+
+                    updateSubEffectPosition(liEl);
+                    makeSubParticles(filterEl);
+                }
+            };
+
+            return (
+                <div className="gooey-nav-container" ref={containerRef} id="sub-nav-container">
+                    <nav className="overflow-x-auto hide-scrollbar">
+                        <ul className="flex gap-2 relative" ref={listRef} id="sub-nav-list">
+                            {tabs.map((tab, idx) => (
+                                <li
+                                    key={tab.id}
+                                    id={`btn-${tab.id}`}
+                                    className={activeTab === tab.id ? 'active' : ''}
+                                >
+                                    <a href="#" onClick={(e) => handleTabClick(e, tab.id, idx)}>
+                                        {tab.icon}
+                                        <span className="tracking-wide ml-3">{tab.name}</span>
+                                    </a>
+                                </li>
+                            ))}
+                            <span className="effect filter" ref={filterRef} id="sub-gooey-filter"></span>
+                            <span className="effect text" ref={textRef} id="sub-gooey-text"></span>
+                        </ul>
+                    </nav>
+                </div>
+            );
+        };
 
         const App = () => {
             const [activeTab, setActiveTab] = useState('section1');
@@ -187,8 +516,8 @@
                 setModal(prev => ({ ...prev, isOpen: false }));
             };
 
-            const GlassCard = ({ children, className = "", delay = "" }) => (
-                <div className={`bg-[#021812]/85 backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden animate-slideUp ${delay} ${className}`}>
+            const GlassCard = ({ children, className = "", delay = "", isActive = true }) => (
+                <div className={`bg-[#021812]/85 backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden ${isActive ? 'animate-slideUp' : 'opacity-0'} ${delay} ${className}`}>
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[50px] pointer-events-none rounded-full"></div>
                     <div className="relative z-10">{children}</div>
                 </div>
@@ -237,9 +566,9 @@
                 );
             };
 
-            const renderSection1 = () => (
+            const renderSection1 = (isActive) => (
                 <div className="space-y-8">
-                    <GlassCard className="p-8 md:p-10" delay="delay-100">
+                    <GlassCard className="p-8 md:p-10" delay="delay-100" isActive={isActive}>
                         <SectionTitle icon={<i className="fas fa-file-alt text-[28px] text-emerald-400" />} title="腳本概覽" />
 
                         <p className="text-emerald-100/90 leading-relaxed mb-10 bg-[#04281f] p-6 rounded-xl border border-emerald-900 tracking-wide shadow-inner text-lg">
@@ -294,7 +623,7 @@
                         </div>
                     </GlassCard>
 
-                    <GlassCard className="p-8 md:p-12" delay="delay-200">
+                    <GlassCard className="p-8 md:p-12" delay="delay-200" isActive={isActive}>
                         <h3 className="font-bold text-cyan-300 mb-8 flex items-center text-3xl tracking-wider border-b border-white/10 pb-6">
                             <i className="fas fa-clock text-[32px] mr-4 animate-spinSlow" />
                             60 分鐘 課堂操作流程圖
@@ -447,9 +776,9 @@
                 </div>
             );
 
-            const renderSection2 = () => (
+            const renderSection2 = (isActive) => (
                 <div className="space-y-8 animate-fadeIn">
-                    <GlassCard className="p-8 md:p-10" delay="delay-100">
+                    <GlassCard className="p-8 md:p-10" delay="delay-100" isActive={isActive}>
                         <SectionTitle icon={<i className="fas fa-users text-[28px] text-emerald-400" />} title="第一段：導入與角色分配（00:00 – 10:00）" />
 
                         <div className="mb-14">
@@ -594,10 +923,10 @@
                 </div>
             );
 
-            const renderSection3 = () => (
+            const renderSection3 = (isActive) => (
                 <div className="flex flex-col lg:flex-row gap-8 animate-fadeIn h-full">
                     <div className="lg:w-1/3 flex flex-col space-y-4">
-                        <GlassCard className="p-8 h-full" delay="delay-100">
+                        <GlassCard className="p-8 h-full" delay="delay-100" isActive={isActive}>
                             <h2 className="text-2xl font-bold text-emerald-400 mb-5 tracking-wider flex items-center">
                                 <i className="fas fa-book-open text-[24px] mr-3 animate-float" />第二段：精選月份
                             </h2>
@@ -628,7 +957,7 @@
                         </GlassCard>
                     </div>
 
-                    <GlassCard className="lg:w-2/3 flex flex-col min-h-[600px]" delay="delay-200">
+                    <GlassCard className="lg:w-2/3 flex flex-col min-h-[600px]" delay="delay-200" isActive={isActive}>
                         {activeMonth === 1 && (
                             <div className="p-8 md:p-12 animate-fadeIn">
                                 <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
@@ -995,7 +1324,7 @@
 
 
 
-                    <header className="sticky top-0 z-40 bg-[#01120d]/90 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
+                    <header className="sticky top-[60px] z-40 bg-[#01120d]/90 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
                         <div className="max-w-[90rem] mx-auto px-8 py-5 flex flex-col md:flex-row justify-between items-center">
                             <div className="flex items-center space-x-5 mb-5 md:mb-0">
                                 <div className="bg-emerald-900/50 p-3 rounded-2xl border border-emerald-500/30 flex-shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-pulseSlow">
@@ -1006,21 +1335,7 @@
                                     <p className="text-sm text-emerald-400/80 tracking-widest mt-1">數位主持人儀表板 ✧ 60分鐘課堂版</p>
                                 </div>
                             </div>
-                            <nav className="flex space-x-3 overflow-x-auto w-full md:w-auto py-4 px-4 hide-scrollbar">
-                                {tabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`flex items-center space-x-3 px-6 py-3 rounded-full text-base font-bold transition-all duration-300 whitespace-nowrap border outline-none focus:outline-none focus:ring-0 ${activeTab === tab.id
-                                            ? 'bg-emerald-700 border-emerald-400 text-white shadow-lg shadow-emerald-500/40 scale-105 relative z-10'
-                                            : 'bg-white/5 border-transparent text-emerald-200/60 hover:bg-white/10 hover:text-white'
-                                            }`}
-                                    >
-                                        {tab.icon}
-                                        <span className="tracking-wide">{tab.name}</span>
-                                    </button>
-                                ))}
-                            </nav>
+                            <GooeyNav tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
                         </div>
                     </header>
 

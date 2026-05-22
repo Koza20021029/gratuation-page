@@ -142,40 +142,166 @@
         #global-nav {
             position: fixed;
             top: 0; left: 0; width: 100%;
-            background: #010a08;
-            border-bottom: 1px solid rgba(6, 78, 59, 0.5);
+            height: 60px;
+            background: rgba(1, 8, 6, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(6, 78, 59, 0.4);
             display: flex;
             justify-content: center;
-            padding: 10px 16px;
-            z-index: 200;
-        }
-        #global-nav nav {
-            display: flex;
             align-items: center;
-            gap: 12px;
-            width: 100%;
-            max-width: 900px;
-            justify-content: center;
-            overflow-x: auto;
+            z-index: 9999;
         }
-        #global-nav nav::-webkit-scrollbar { display: none; }
-        #global-nav a {
-            color: rgba(52, 211, 153, 0.8);
-            font-size: 0.75rem;
+
+        /* ============ GooeyNav ============ */
+        :root {
+            --gooey-ease: linear(
+                0, 0.068, 0.19 2.7%, 0.804 8.1%, 1.037,
+                1.199 13.2%, 1.245, 1.27 15.8%, 1.274,
+                1.272 17.4%, 1.249 19.1%, 0.996 28%, 0.949,
+                0.928 33.3%, 0.926, 0.933 36.8%, 1.001 45.6%,
+                1.013, 1.019 50.8%, 1.018 54.4%, 1 63.1%,
+                0.995 68%, 1.001 85%, 1
+            );
+            /* 粒子色盤（配合 Avaka 主題）*/
+            --color-1: #34d399;   /* emerald */
+            --color-2: #fcd34d;   /* gold */
+            --color-3: #38bdf8;   /* sky */
+            --color-4: #ffffff;   /* white */
+        }
+
+        .gooey-nav-container {
+            position: relative;
+        }
+        .gooey-nav-container nav {
+            display: flex;
+            position: relative;
+            transform: translate3d(0,0,0.01px);
+        }
+        .gooey-nav-container nav ul {
+            display: flex;
+            gap: 0.4em;
+            list-style: none;
+            padding: 0 0.5em;
+            margin: 0;
+            position: relative;
+            z-index: 3;
+            color: rgba(167,243,208,0.9);
+            text-shadow: 0 1px 1px hsl(165deg 90% 5% / 0.5);
+        }
+        .gooey-nav-container nav ul li {
+            border-radius: 100vw;
+            position: relative;
+            cursor: pointer;
+            transition: color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 0.5px 1.5px transparent;
+            color: rgba(167,243,208,0.9);
+            font-size: 0.72rem;
             font-weight: 700;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            text-decoration: none;
             white-space: nowrap;
-            transition: color 0.2s;
         }
-        #global-nav a:hover { color: #ecfdf5; }
-        #global-nav a.nav-current { color: #a7f3d0; border-bottom: 1px solid rgba(52, 211, 153, 0.4); }
-        #global-nav .dot {
-            width: 4px; height: 4px;
-            border-radius: 50%;
-            background: rgba(6, 78, 59, 0.5);
-            flex-shrink: 0;
+        .gooey-nav-container nav ul li a {
+            display: inline-block;
+            padding: 0.55em 1.1em;
+            text-decoration: none;
+            color: inherit;
+        }
+        .gooey-nav-container nav ul li:focus-within:has(:focus-visible) {
+            box-shadow: 0 0 0.5px 1.5px #34d399;
+        }
+        .gooey-nav-container nav ul li::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 100vw;
+            background: #34d399;
+            opacity: 0;
+            transform: scale(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: -1;
+        }
+        .gooey-nav-container nav ul li.active {
+            color: #01120d;
+            text-shadow: none;
+        }
+        .gooey-nav-container nav ul li.active::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+        /* effect spans */
+        .gooey-nav-container .effect {
+            position: absolute;
+            left: 0; top: 0;
+            width: 0; height: 0;
+            opacity: 1;
+            pointer-events: none;
+            display: grid;
+            place-items: center;
+            z-index: 1;
+        }
+        .gooey-nav-container .effect.text {
+            color: rgba(167,243,208,0.9);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+            white-space: nowrap;
+        }
+        .gooey-nav-container .effect.text.active { color: #01120d; }
+        .gooey-nav-container .effect.filter {
+            filter: url(#goo-nav-filter);
+        }
+        .gooey-nav-container .effect.filter::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #34d399;
+            transform: scale(0);
+            opacity: 0;
+            z-index: -1;
+            border-radius: 100vw;
+        }
+        .gooey-nav-container .effect.active::after {
+            animation: gooey-pill 0.3s ease both;
+        }
+        @keyframes gooey-pill {
+            to { transform: scale(1); opacity: 1; }
+        }
+        .gooey-particle, .gooey-point {
+            display: block;
+            opacity: 0;
+            width: 20px; height: 20px;
+            border-radius: 100%;
+            transform-origin: center;
+        }
+        .gooey-particle {
+            --time: 5s;
+            position: absolute;
+            top: calc(50% - 8px);
+            left: calc(50% - 8px);
+            animation: gooey-particle calc(var(--time)) ease 1 -350ms;
+        }
+        .gooey-point {
+            background: var(--color);
+            opacity: 1;
+            animation: gooey-point calc(var(--time)) ease 1 -350ms;
+        }
+        @keyframes gooey-particle {
+            0%   { transform: rotate(0deg) translate(var(--start-x), var(--start-y)); opacity:1; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            70%  { transform: rotate(calc(var(--rotate)*.5)) translate(calc(var(--end-x)*1.2),calc(var(--end-y)*1.2)); opacity:1; animation-timing-function:ease; }
+            85%  { transform: rotate(calc(var(--rotate)*.66)) translate(var(--end-x),var(--end-y)); opacity:1; }
+            100% { transform: rotate(calc(var(--rotate)*1.2)) translate(calc(var(--end-x)*.5),calc(var(--end-y)*.5)); opacity:1; }
+        }
+        @keyframes gooey-point {
+            0%   { transform:scale(0); opacity:0; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            25%  { transform:scale(calc(var(--scale)*.25)); }
+            38%  { opacity:1; }
+            65%  { transform:scale(var(--scale)); opacity:1; animation-timing-function:ease; }
+            85%  { transform:scale(var(--scale)); opacity:1; }
+            100% { transform:scale(0); opacity:0; }
         }
 
         /* --- 按鈕全域無外框 --- */
@@ -304,6 +430,17 @@
 
 <body>
 
+    <!-- SVG Gooey Filter -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display: block; height: 0; width: 0; position: absolute; pointer-events: none;">
+      <defs>
+        <filter id="goo-nav-filter">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+
     <!-- 全域流光特效背景 (Beams) - 僅在規則書頁面顯示 -->
     <div id="beams-container" class="fixed inset-0 pointer-events-none overflow-hidden transition-opacity duration-500" style="opacity: 0; z-index: 1; background: transparent;"></div>
 
@@ -311,18 +448,149 @@
          全域系統導覽列 (封面頁進入後顯示，封面本身隱藏)
     ==================================================== -->
     <div id="global-nav" style="display:none;">
-        <nav>
-            <a href="#" onclick="router.go('cover'); return false;" id="gnav-cover">首頁</a>
-            <span class="dot"></span>
-            <a href="#" onclick="router.go('rulebook'); return false;" id="gnav-rulebook">規則書</a>
-            <span class="dot"></span>
-            <a href="#" onclick="router.go('scenario'); return false;" id="gnav-scenario">情境腳本</a>
-            <span class="dot"></span>
-            <a href="#" onclick="router.go('fieldwork'); return false;" id="gnav-fieldwork">走讀版</a>
-            <span class="dot"></span>
-            <a href="#" onclick="router.go('classroom'); return false;" id="gnav-classroom">課堂版</a>
-        </nav>
+        <div class="gooey-nav-container" id="gooey-nav-container">
+            <nav>
+                <ul id="gooey-nav-list">
+                    <li data-page="cover"    id="gnav-cover"><a href="#" onclick="gooeyNavClick(event,'cover');return false;">首頁</a></li>
+                    <li data-page="rulebook" id="gnav-rulebook"><a href="#" onclick="gooeyNavClick(event,'rulebook');return false;">規則書</a></li>
+                    <li data-page="scenario" id="gnav-scenario"><a href="#" onclick="gooeyNavClick(event,'scenario');return false;">情境腳本</a></li>
+                    <li data-page="fieldwork" id="gnav-fieldwork"><a href="#" onclick="gooeyNavClick(event,'fieldwork');return false;">走讀版</a></li>
+                    <li data-page="classroom" id="gnav-classroom"><a href="#" onclick="gooeyNavClick(event,'classroom');return false;">課堂版</a></li>
+                </ul>
+            </nav>
+            <span class="effect filter" id="gooey-filter"></span>
+            <span class="effect text"   id="gooey-text"></span>
+        </div>
     </div>
+
+    <!-- GooeyNav 純 JS 實作 -->
+    <script>
+    (function () {
+        const PARTICLE_COUNT     = 15;
+        const PARTICLE_DISTANCES = [90, 10];
+        const PARTICLE_R         = 100;
+        const ANIMATION_TIME     = 600;
+        const TIME_VARIANCE      = 300;
+        const COLORS             = [1, 2, 3, 1, 2, 3, 1, 4];
+
+        let activeIndex = -1; // -1 = 尚未初始化
+
+        const noise = (n = 1) => n / 2 - Math.random() * n;
+
+        function getXY(distance, pointIndex, totalPoints) {
+            const angle = ((360 + noise(8)) / totalPoints) * pointIndex * (Math.PI / 180);
+            return [distance * Math.cos(angle), distance * Math.sin(angle)];
+        }
+
+        function createParticle(i, t, d, r) {
+            const rotate = noise(r / 10);
+            return {
+                start: getXY(d[0], PARTICLE_COUNT - i, PARTICLE_COUNT),
+                end:   getXY(d[1] + noise(7), PARTICLE_COUNT - i, PARTICLE_COUNT),
+                time:  t,
+                scale: 1 + noise(0.2),
+                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                rotate: rotate > 0 ? (rotate + r / 20) * 10 : (rotate - r / 20) * 10
+            };
+        }
+
+        function makeParticles(el) {
+            const bubbleTime = ANIMATION_TIME * 2 + TIME_VARIANCE;
+            el.style.setProperty('--time', `${bubbleTime}ms`);
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const t = ANIMATION_TIME * 2 + noise(TIME_VARIANCE * 2);
+                const p = createParticle(i, t, PARTICLE_DISTANCES, PARTICLE_R);
+                el.classList.remove('active');
+
+                setTimeout(() => {
+                    const particle = document.createElement('span');
+                    const point    = document.createElement('span');
+                    particle.classList.add('gooey-particle');
+                    particle.style.setProperty('--start-x', `${p.start[0]}px`);
+                    particle.style.setProperty('--start-y', `${p.start[1]}px`);
+                    particle.style.setProperty('--end-x',   `${p.end[0]}px`);
+                    particle.style.setProperty('--end-y',   `${p.end[1]}px`);
+                    particle.style.setProperty('--time',    `${p.time}ms`);
+                    particle.style.setProperty('--scale',   `${p.scale}`);
+                    particle.style.setProperty('--color',   `var(--color-${p.color}, white)`);
+                    particle.style.setProperty('--rotate',  `${p.rotate}deg`);
+                    point.classList.add('gooey-point');
+                    particle.appendChild(point);
+                    el.appendChild(particle);
+                    requestAnimationFrame(() => el.classList.add('active'));
+                    setTimeout(() => { try { el.removeChild(particle); } catch {} }, t);
+                }, 30);
+            }
+        }
+
+        function updateEffectPosition(liEl) {
+            const container = document.getElementById('gooey-nav-container');
+            const filterEl  = document.getElementById('gooey-filter');
+            const textEl    = document.getElementById('gooey-text');
+            if (!container || !filterEl || !textEl) return;
+
+            const cRect = container.getBoundingClientRect();
+            const pRect = liEl.getBoundingClientRect();
+            const styles = {
+                left:   `${pRect.x - cRect.x}px`,
+                top:    `${pRect.y - cRect.y}px`,
+                width:  `${pRect.width}px`,
+                height: `${pRect.height}px`
+            };
+            Object.assign(filterEl.style, styles);
+            Object.assign(textEl.style,   styles);
+            textEl.innerText = liEl.querySelector('a').innerText;
+        }
+
+        // 公開函式：供 a 標籤的 onclick 呼叫
+        window.gooeyNavClick = function (e, page) {
+            e.preventDefault();
+            const liEl = e.currentTarget.closest('li') || e.target.closest('li');
+            const items = Array.from(document.querySelectorAll('#gooey-nav-list li'));
+            const idx   = items.indexOf(liEl);
+            if (idx === activeIndex) { router.go(page); return; }
+
+            activeIndex = idx;
+
+            // 更新 active class
+            items.forEach((el, i) => el.classList.toggle('active', i === idx));
+
+            updateEffectPosition(liEl);
+
+            const filterEl = document.getElementById('gooey-filter');
+            const textEl   = document.getElementById('gooey-text');
+
+            // 清除舊粒子
+            filterEl.querySelectorAll('.gooey-particle').forEach(p => filterEl.removeChild(p));
+
+            // 重播文字閃現動畫
+            textEl.classList.remove('active');
+            void textEl.offsetWidth;
+            textEl.classList.add('active');
+
+            // 爆破粒子
+            makeParticles(filterEl);
+
+            // 執行路由切換
+            router.go(page);
+        };
+
+        // 供 router 呼叫：同步高亮正確項目（不再重觸發粒子）
+        window.gooeyNavSetActive = function (page) {
+            const items = Array.from(document.querySelectorAll('#gooey-nav-list li'));
+            const target = items.find(li => li.dataset.page === page);
+            if (!target) return;
+            const idx = items.indexOf(target);
+            if (idx === activeIndex) return;
+            activeIndex = idx;
+            items.forEach((el, i) => el.classList.toggle('active', i === idx));
+            updateEffectPosition(target);
+            document.getElementById('gooey-text').innerText = target.querySelector('a').innerText;
+            document.getElementById('gooey-text').classList.add('active');
+        };
+    })();
+    </script>
 
     <!-- ===================================================
          頁面容器區
@@ -436,9 +704,8 @@
                     window.scrollTo(0, 0);
                 }
 
-                // 更新 nav active 狀態
-                Object.values(navLinks).forEach(a => a && a.classList.remove('nav-current'));
-                if (navLinks[pageId]) navLinks[pageId].classList.add('nav-current');
+                // 更新 GooeyNav 高亮狀態
+                if (typeof gooeyNavSetActive === 'function') gooeyNavSetActive(pageId);
 
                 // 顯示目標頁
                 currentPage = pageId;
@@ -1107,7 +1374,7 @@
                 }
 
                 // 補上該頁面需要的 padding-top 以避免被全域導覽列遮住
-                section.style.paddingTop = '44px';
+                section.style.paddingTop = '60px';
 
                 // 執行頁面內的 script（非同步依序，Babel 轉譯完成後才繼續）
                 await runInjectedScripts(section);

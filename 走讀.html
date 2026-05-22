@@ -209,19 +209,169 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 139, 99, 0.3);
         }
 
-        /* 確保活躍的按鈕在最上層，陰影不被相鄰按鈕遮擋，並移除預設外框 */
-        .tab-btn {
-            position: relative;
-            outline: none !important;
-            -webkit-tap-highlight-color: transparent;
+        /* ============ sub-GooeyNav ============ */
+        :root {
+            --color-1: #34d399;   /* emerald */
+            --color-2: #fcd34d;   /* gold */
+            --color-3: #38bdf8;   /* sky */
+            --color-4: #ffffff;   /* white */
         }
-        .tab-btn.active {
-            z-index: 20;
+        #sub-nav-container {
+            position: relative;
+            background: rgba(10, 39, 30, 0.45);
+            border: 1px solid rgba(18, 63, 49, 0.55);
+            border-radius: 100vw;
+            padding: 4px;
+        }
+        #sub-nav-container nav {
+            display: flex;
+            position: relative;
+            transform: translate3d(0,0,0.01px);
+            padding: 38px 0;
+            margin: -38px 0;
+            align-items: center;
+        }
+        #sub-nav-container nav ul {
+            display: flex;
+            gap: 0.3em;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            z-index: 3;
+            color: #84b8a4; /* brand-textMuted */
+        }
+        #sub-nav-container nav ul li {
+            border-radius: 100vw;
+            position: relative;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            color: #84b8a4;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        #sub-nav-container nav ul li a {
+            display: flex;
+            align-items: center;
+            padding: 0.6em 1.2em;
+            text-decoration: none;
+            color: inherit;
+        }
+        #sub-nav-container nav ul li::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 100vw;
+            background: #008b63; /* brand-accent */
+            opacity: 0;
+            transform: scale(0);
+            z-index: -1;
+            display: none !important; /* Hide fallback to prevent transition jump */
+        }
+        #sub-nav-container nav ul li.active {
+            color: #ffffff;
+        }
+        #sub-nav-container nav ul li.active::after {
+            opacity: 0;
+            transform: scale(0);
+            display: none !important; /* Hide fallback to prevent transition jump */
+        }
+        /* effect spans */
+        #sub-nav-container .effect {
+            position: absolute;
+            left: 0; top: 0;
+            width: 0; height: 0;
+            opacity: 1;
+            pointer-events: none;
+            display: grid;
+            place-items: center;
+            z-index: 1;
+            will-change: left, top, width, height;
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        top 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #sub-nav-container .effect.text {
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sub-nav-container .effect.text.active { color: #ffffff; }
+        #sub-nav-container .effect.filter {
+            filter: url(#goo-nav-filter);
+        }
+        #sub-nav-container .effect.filter::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #008b63;
+            transform: scale(0);
+            opacity: 0;
+            z-index: -1;
+            border-radius: 100vw;
+        }
+        #sub-nav-container .effect.active::after {
+            animation: sub-gooey-pill 0.3s ease both;
+        }
+        @keyframes sub-gooey-pill {
+            to { transform: scale(1); opacity: 1; }
+        }
+        .gooey-particle, .gooey-point {
+            display: block;
+            opacity: 0;
+            width: 20px; height: 20px;
+            border-radius: 100%;
+            transform-origin: center;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
+        }
+        .gooey-particle {
+            --time: 5s;
+            position: absolute;
+            top: calc(50% - 8px);
+            left: calc(50% - 8px);
+            animation: gooey-particle calc(var(--time)) ease 1 -350ms;
+        }
+        .gooey-point {
+            background: var(--color);
+            opacity: 1;
+            animation: gooey-point calc(var(--time)) ease 1 -350ms;
+        }
+        @keyframes gooey-particle {
+            0%   { transform: rotate(0deg) translate(var(--start-x), var(--start-y)); opacity:1; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            70%  { transform: rotate(calc(var(--rotate)*.5)) translate(calc(var(--end-x)*1.2),calc(var(--end-y)*1.2)); opacity:1; animation-timing-function:ease; }
+            85%  { transform: rotate(calc(var(--rotate)*.66)) translate(var(--end-x),var(--end-y)); opacity:1; }
+            100% { transform: rotate(calc(var(--rotate)*1.2)) translate(calc(var(--end-x)*.5),calc(var(--end-y)*.5)); opacity:1; }
+        }
+        @keyframes gooey-point {
+            0%   { transform:scale(0); opacity:0; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            25%  { transform:scale(calc(var(--scale)*.25)); }
+            38%  { opacity:1; }
+            65%  { transform:scale(var(--scale)); opacity:1; animation-timing-function:ease; }
+            85%  { transform:scale(var(--scale)); opacity:1; }
+            100% { transform:scale(0); opacity:0; }
         }
     </style>
 </head>
 
 <body class="antialiased selection:bg-brand-accent selection:text-white pb-24">
+    <!-- SVG Gooey Filter -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display: block; height: 0; width: 0; position: absolute; pointer-events: none;">
+      <defs>
+        <filter id="goo-nav-filter" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+
     <!-- 頂部與底部漸變模糊毛玻璃效果 -->
     <gradual-blur preset="page-header" style="z-index: 30;"></gradual-blur>
     <gradual-blur preset="page-footer" style="z-index: 30;"></gradual-blur>
@@ -241,9 +391,8 @@
         </nav>
     </div>
 
-    <!-- Top Navigation / Dashboard Header -->
     <header
-        class="w-full flex flex-col xl:flex-row xl:items-center justify-between px-6 py-5 border-b border-brand-border bg-brand-bg/95 backdrop-blur-md sticky top-0 z-40 gap-4 transition-all">
+        class="w-full flex flex-col xl:flex-row xl:items-center justify-between px-6 py-5 border-b border-brand-border bg-brand-bg/95 backdrop-blur-md sticky top-[60px] z-40 gap-4 transition-all">
         <!-- Logo & Title -->
         <div class="flex items-center gap-4 shrink-0">
             <div
@@ -265,69 +414,38 @@
         </div>
 
         <!-- Navigation Pills -->
-        <nav class="flex gap-3 overflow-x-auto hide-scrollbar py-4 px-4">
-            <button onclick="switchTab('s1')" id="btn-s1"
-                class="tab-btn active whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-brand-accent text-white shadow-glow border border-brand-accent hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                    </path>
-                </svg> 腳本概覽
-            </button>
-            <button onclick="switchTab('s2')" id="btn-s2"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                    </path>
-                </svg> 集合點
-            </button>
-            <button onclick="switchTab('s3')" id="btn-s3"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
-                    </path>
-                </svg> 山林區
-            </button>
-            <button onclick="switchTab('s4')" id="btn-s4"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
-                    </path>
-                </svg> 灘頭工作室
-            </button>
-            <button onclick="switchTab('s5')" id="btn-s5"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                </svg> 商店
-            </button>
-            <button onclick="switchTab('s6')" id="btn-s6"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                    </path>
-                </svg> 跨站點
-            </button>
-            <button onclick="switchTab('s7')" id="btn-s7"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
-                </svg> 收尾
-            </button>
-            <button onclick="switchTab('s8')" id="btn-s8"
-                class="tab-btn whitespace-nowrap px-5 py-2.5 rounded-full flex items-center gap-2 text-base font-medium transition-all duration-300 bg-[#0a271e] text-brand-textMuted border border-[#123f31] hover:text-white hover:bg-[#0e3629] hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                </svg> 附錄
-            </button>
-        </nav>
+        <div class="gooey-nav-container" id="sub-nav-container">
+            <nav class="overflow-x-auto hide-scrollbar">
+                <ul id="sub-nav-list" class="flex gap-2 relative">
+                    <li data-tab="s1" id="btn-s1" class="active"><a href="#" onclick="subGooeyNavClick(event,'s1');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>腳本概覽
+                    </a></li>
+                    <li data-tab="s2" id="btn-s2"><a href="#" onclick="subGooeyNavClick(event,'s2');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>集合點
+                    </a></li>
+                    <li data-tab="s3" id="btn-s3"><a href="#" onclick="subGooeyNavClick(event,'s3');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>山林區
+                    </a></li>
+                    <li data-tab="s4" id="btn-s4"><a href="#" onclick="subGooeyNavClick(event,'s4');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>灘頭工作室
+                    </a></li>
+                    <li data-tab="s5" id="btn-s5"><a href="#" onclick="subGooeyNavClick(event,'s5');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>商店
+                    </a></li>
+                    <li data-tab="s6" id="btn-s6"><a href="#" onclick="subGooeyNavClick(event,'s6');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>跨站點
+                    </a></li>
+                    <li data-tab="s7" id="btn-s7"><a href="#" onclick="subGooeyNavClick(event,'s7');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>收尾
+                    </a></li>
+                    <li data-tab="s8" id="btn-s8"><a href="#" onclick="subGooeyNavClick(event,'s8');return false;">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>附錄
+                    </a></li>
+                    <span class="effect filter" id="sub-gooey-filter"></span>
+                    <span class="effect text"   id="sub-gooey-text"></span>
+                </ul>
+            </nav>
+        </div>
     </header>
 
     <main class="max-w-6xl mx-auto px-6 py-10 overflow-hidden">
@@ -1129,15 +1247,109 @@
     <!-- JavaScript 邏輯 -->
     <script>
         // Tab 切換邏輯 (重啟動畫)
+        let subActiveIndex = 0;
+
+        const noise = (n = 1) => n / 2 - Math.random() * n;
+
+        function getXY(distance, pointIndex, totalPoints) {
+            const angle = ((360 + noise(8)) / totalPoints) * pointIndex * (Math.PI / 180);
+            return [distance * Math.cos(angle), distance * Math.sin(angle)];
+        }
+
+        function createParticle(i, t, d, r) {
+            const rotate = noise(r / 10);
+            return {
+                start: getXY(d[0], 15 - i, 15),
+                end:   getXY(d[1] + noise(7), 15 - i, 15),
+                time:  t,
+                scale: 1 + noise(0.2),
+                color: [1, 2, 3, 1, 2, 3, 1, 4][Math.floor(Math.random() * 8)],
+                rotate: rotate > 0 ? (rotate + r / 20) * 10 : (rotate - r / 20) * 10
+            };
+        }
+
+        function makeSubParticles(el) {
+            const bubbleTime = 1200 + 300;
+            el.style.setProperty('--time', `${bubbleTime}ms`);
+
+            for (let i = 0; i < 15; i++) {
+                const t = 1200 + noise(600);
+                const p = createParticle(i, t, [40, 5], 100);
+                el.classList.remove('active');
+
+                setTimeout(() => {
+                    const particle = document.createElement('span');
+                    const point    = document.createElement('span');
+                    particle.classList.add('gooey-particle');
+                    particle.style.setProperty('--start-x', `${p.start[0]}px`);
+                    particle.style.setProperty('--start-y', `${p.start[1]}px`);
+                    particle.style.setProperty('--end-x',   `${p.end[0]}px`);
+                    particle.style.setProperty('--end-y',   `${p.end[1]}px`);
+                    particle.style.setProperty('--time',    `${p.time}ms`);
+                    particle.style.setProperty('--scale',   `${p.scale}`);
+                    particle.style.setProperty('--color',   `var(--color-${p.color}, white)`);
+                    particle.style.setProperty('--rotate',  `${p.rotate}deg`);
+                    point.classList.add('gooey-point');
+                    particle.appendChild(point);
+                    el.appendChild(particle);
+                    requestAnimationFrame(() => el.classList.add('active'));
+                    setTimeout(() => { try { el.removeChild(particle); } catch {} }, t);
+                }, 30);
+            }
+        }
+
+        function updateSubEffectPosition(liEl) {
+            const filterEl  = document.getElementById('sub-gooey-filter');
+            const textEl    = document.getElementById('sub-gooey-text');
+            if (!filterEl || !textEl || !liEl) return;
+
+            const styles = {
+                left:   `${liEl.offsetLeft}px`,
+                top:    `${liEl.offsetTop}px`,
+                width:  `${liEl.offsetWidth}px`,
+                height: `${liEl.offsetHeight}px`
+            };
+            Object.assign(filterEl.style, styles);
+            Object.assign(textEl.style,   styles);
+            textEl.innerHTML = liEl.querySelector('a').innerHTML;
+        }
+
+        window.subGooeyNavClick = function (e, tabId) {
+            e.preventDefault();
+            const liEl = e.currentTarget.closest('li') || e.target.closest('li');
+            const items = Array.from(document.querySelectorAll('#sub-nav-list li'));
+            const idx   = items.indexOf(liEl);
+            if (idx === subActiveIndex) { switchTab(tabId); return; }
+
+            subActiveIndex = idx;
+
+            items.forEach((el, i) => el.classList.toggle('active', i === idx));
+
+            updateSubEffectPosition(liEl);
+
+            const filterEl = document.getElementById('sub-gooey-filter');
+            const textEl   = document.getElementById('sub-gooey-text');
+
+            filterEl.querySelectorAll('.gooey-particle').forEach(p => filterEl.removeChild(p));
+
+            textEl.classList.remove('active');
+            void textEl.offsetWidth;
+            textEl.classList.add('active');
+
+            makeSubParticles(filterEl);
+
+            switchTab(tabId);
+        };
+
         function switchTab(tabId) {
             const allTabs = document.querySelectorAll('.tab-content');
             allTabs.forEach(el => {
                 el.classList.remove('active');
             });
 
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-brand-accent', 'text-white', 'shadow-glow', 'border-brand-accent');
-                btn.classList.add('bg-[#0a271e]', 'text-brand-textMuted', 'border-[#123f31]');
+            // 移除舊的 active class
+            document.querySelectorAll('#sub-nav-list li').forEach(li => {
+                li.classList.remove('active');
             });
 
             // Trigger reflow to restart CSS animations
@@ -1148,11 +1360,11 @@
                 targetTab.classList.add('active');
             }
 
-            const activeBtn = document.getElementById('btn-' + tabId);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-[#0a271e]', 'text-brand-textMuted', 'border-[#123f31]');
-                activeBtn.classList.add('bg-brand-accent', 'text-white', 'shadow-glow', 'border-brand-accent');
-                activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            const activeLi = document.getElementById('btn-' + tabId);
+            if (activeLi) {
+                activeLi.classList.add('active');
+                updateSubEffectPosition(activeLi);
+                activeLi.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -1189,6 +1401,24 @@
             // 恢復背景滾動
             document.body.style.overflow = 'auto';
         }
+
+        function initGooeyPosition() {
+            const activeLi = document.querySelector('#sub-nav-list li.active');
+            if (activeLi) {
+                updateSubEffectPosition(activeLi);
+                activeLi.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        // Run immediately since DOM is already loaded in SPA dynamic inject flow
+        setTimeout(initGooeyPosition, 150);
+
+        window.addEventListener('resize', () => {
+            const activeLi = document.querySelector('#sub-nav-list li.active');
+            if (activeLi) {
+                updateSubEffectPosition(activeLi);
+            }
+        });
     </script>
 </body>
 

@@ -40,7 +40,7 @@ class GradualBlur extends HTMLElement {
       header: { position: 'top', height: '3.5rem', curve: 'ease-out', strength: 1.0 },
       footer: { position: 'bottom', height: '3.5rem', curve: 'ease-out', strength: 1.0 },
       sidebar: { position: 'left', height: '3.5rem', strength: 1.2 },
-      'page-header': { position: 'top', height: '3.5rem', target: 'page', strength: 1.0 },
+      'page-header': { position: 'top', height: '3.5rem', target: 'page', strength: 1.0, top: '60px', zIndex: 30 },
       'page-footer': { position: 'bottom', height: '3.5rem', target: 'page', strength: 1.0 }
     };
 
@@ -256,15 +256,15 @@ class GradualBlur extends HTMLElement {
 
     const finalHeight = this.currentHeight || presetConfig.height || this.DEFAULT_CONFIG.height;
     const finalWidth = this.currentWidth || presetConfig.width || this.DEFAULT_CONFIG.width;
+    const finalTop = presetConfig.top !== undefined ? presetConfig.top : (this.getAttribute('top') || '0');
 
     if (isVertical) {
       this.style.height = finalHeight;
       this.style.width = finalWidth || '100%';
-      this.style[position] = '0';
       this.style.left = '0';
       this.style.right = '0';
       // Reset other axis
-      this.style.top = position === 'top' ? '0' : '';
+      this.style.top = position === 'top' ? finalTop : '';
       this.style.bottom = position === 'bottom' ? '0' : '';
     } else if (isHorizontal) {
       this.style.width = finalWidth || finalHeight;
