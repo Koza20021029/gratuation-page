@@ -17,9 +17,46 @@
     <!-- Font Awesome（課堂版使用） -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- React + ReactDOM + Babel（課堂版使用，預先載入避免動態注入時時序問題） -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="./react.production.min.js" crossorigin></script>
+    <script src="./react-dom.production.min.js" crossorigin></script>
+    <script src="./babel.min.js"></script>
+    <!-- Global event listener tracking wrapper for auto-cleanup in dynamic SPA router -->
+    <script>
+        (function() {
+            const originalAdd = window.addEventListener;
+            const originalRemove = window.removeEventListener;
+            let trackedListeners = [];
+            let isTracking = false;
+
+            window.startTrackingSpaListeners = function() {
+                isTracking = true;
+            };
+
+            window.stopTrackingAndCleanupSpaListeners = function() {
+                isTracking = false;
+                trackedListeners.forEach(({ type, listener, options }) => {
+                    originalRemove.call(window, type, listener, options);
+                });
+                trackedListeners = [];
+            };
+
+            window.addEventListener = function(type, listener, options) {
+                if (isTracking) {
+                    trackedListeners.push({ type, listener, options });
+                }
+                originalAdd.call(window, type, listener, options);
+            };
+
+            window.removeEventListener = function(type, listener, options) {
+                if (isTracking) {
+                    trackedListeners = trackedListeners.filter(
+                        item => !(item.type === type && item.listener === listener)
+                    );
+                }
+                originalRemove.call(window, type, listener, options);
+            };
+        })();
+    </script>
 
 
     <!-- ===== 全站共用：Tailwind 設定 ===== -->
@@ -444,6 +481,8 @@
     <!-- 全域流光特效背景 (Beams) - 僅在規則書頁面顯示 -->
     <div id="beams-container" class="fixed inset-0 pointer-events-none overflow-hidden transition-opacity duration-500" style="opacity: 0; z-index: 1; background: transparent;"></div>
 
+
+
     <!-- ===================================================
          全域系統導覽列 (封面頁進入後顯示，封面本身隱藏)
     ==================================================== -->
@@ -722,11 +761,8 @@
                     }
                 }
 
-                // 初始化（只執行一次）
-                if (!initialized[pageId]) {
-                    initialized[pageId] = true;
-                    initPage(pageId);
-                }
+                // 每次切換頁面都重新載入，確保語系與事件監聽器狀態完美重置，徹底消除效能卡頓與殘留
+                initPage(pageId);
 
                 // 更新瀏覽器網址 hash
                 history.pushState({ page: pageId }, '', '#' + pageId);
@@ -1044,14 +1080,16 @@
                 scrollProgress = Math.max(0, Math.min(1, scrollProgress));
                 oceanOverlay.style.opacity = scrollProgress;
 
+                const isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
+
                 if (scrollProgress > 0.5) {
                     coverEnterBtn.style.borderColor   = 'rgba(34,211,238,0.5)';
                     coverEnterBtn.style.color         = '#cffafe';
-                    coverEnterBtn.textContent         = '揚帆出海航行';
+                    coverEnterBtn.textContent         = isEn ? 'Sail Out to Sea' : '揚帆出海航行';
                 } else {
                     coverEnterBtn.style.borderColor   = 'rgba(253,230,138,0.4)';
                     coverEnterBtn.style.color         = '#fef3c7';
-                    coverEnterBtn.textContent         = '進入山林採集';
+                    coverEnterBtn.textContent         = isEn ? 'Enter Mountain Forest' : '進入山林採集';
                 }
             }
 
@@ -1245,7 +1283,8 @@
 
         // 執行從外部 HTML 注入的 <script> 標籤（innerHTML 不會自動執行）
         // 已在 index.html head 預載的函式庫 src 清單（跳過重複載入）
-        const PRELOADED_SRCS = ['react', 'react-dom', 'babel', 'lucide'];
+        const PRELOADED_SRCS = ['react', 'react-dom', 'babel', 'lucide', 'tailwindcss', 'gradual-blur'];
+        window.loadedDynamicScripts = window.loadedDynamicScripts || new Set(PRELOADED_SRCS);
 
         async function runInjectedScripts(container) {
             const scripts = Array.from(container.querySelectorAll('script'));
@@ -1256,11 +1295,12 @@
 
                 if (src) {
                     // 外部腳本：若已預載則直接移除，否則非同步載入並等待
-                    const isPreloaded = PRELOADED_SRCS.some(lib => src.includes(lib));
+                    const isPreloaded = Array.from(window.loadedDynamicScripts).some(lib => src.includes(lib));
                     if (isPreloaded) {
                         oldScript.remove();
                         continue;
                     }
+                    window.loadedDynamicScripts.add(src);
                     await new Promise(resolve => {
                         const newScript = document.createElement('script');
                         newScript.src = src;
@@ -1273,9 +1313,14 @@
                     });
 
                 } else if (scriptType === 'text/babel') {
-                    // Babel/React 腳本：手動轉譯
+                    // Babel/React 腳本：手動轉譯（先讓瀏覽器渲染載入畫面，避免畫面卡死）
+        await new Promise(resolve => setTimeout(resolve, 50));
                     try {
-                        const transpiled = Babel.transform(oldScript.textContent, {
+                        let code = oldScript.textContent;
+                        // Wrap the script in an IIFE so variables like 'const root' and 'const [activeTab...' are scoped locally.
+                        // This prevents SyntaxError (Identifier has already been declared) when navigating SPA pages back and forth.
+                        code = `(() => { ${code} })();`;
+                        const transpiled = Babel.transform(code, {
                             presets: ['react'],
                         }).code;
                         const newScript = document.createElement('script');
@@ -1292,7 +1337,12 @@
                     Array.from(oldScript.attributes).forEach(attr => {
                         newScript.setAttribute(attr.name, attr.value);
                     });
-                    newScript.textContent = oldScript.textContent;
+                    let code = oldScript.textContent;
+                    const declRegex = /(?:^|;|}|{|\s)(const|let)\s+([a-zA-Z0-9_$]+)\b/g;
+                    code = code.replace(declRegex, (fullMatch, keyword, varName) => {
+                        return fullMatch.replace(keyword, 'var');
+                    });
+                    newScript.textContent = code;
                     document.body.appendChild(newScript);
                     oldScript.remove();
                 }
@@ -1346,6 +1396,11 @@
             const filename = PAGE_FILES[pageId];
             if (!filename || !section) return;
 
+            // ★ 卸載/載入新分頁前，徹底清理上一個分頁在 window 註冊的所有全域事件監聽器，消除卡死/殘留
+            if (typeof window.stopTrackingAndCleanupSpaListeners === 'function') {
+                window.stopTrackingAndCleanupSpaListeners();
+            }
+
             // 顯示載入動畫
             section.innerHTML = `
                 <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1361,7 +1416,13 @@
             try {
                 const res = await fetch('./' + encodeURIComponent(filename));
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                const html = await res.text();
+                let html = await res.text();
+
+                // ★ 源頭字串級翻譯：若當前為英文模式，在 HTML 原始碼被瀏覽器解析前，直接用 RegExp 替換所有中文
+                // 這能將 React 代碼、JS 靜態陣列、動態腳本的文字「預翻譯」，徹底避開 React 虛擬 DOM 衝突與當機！
+                if (typeof currentLang !== 'undefined' && currentLang === 'en') {
+                    html = html.replace(ZH_REGEXP, (match) => GLOSSARY[match] || match);
+                }
 
                 // 注入 body 內容與其樣式類別（並去除舊導覽列）
                 const extracted = extractBody(html);
@@ -1375,6 +1436,11 @@
 
                 // 補上該頁面需要的 padding-top 以避免被全域導覽列遮住
                 section.style.paddingTop = '60px';
+
+                // ★ 開始追蹤這個分頁腳本在 window 註冊的新事件監聽器，以便之後自動清理
+                if (typeof window.startTrackingSpaListeners === 'function') {
+                    window.startTrackingSpaListeners();
+                }
 
                 // 執行頁面內的 script（非同步依序，Babel 轉譯完成後才繼續）
                 await runInjectedScripts(section);
@@ -1404,6 +1470,790 @@
                 console.error(`❌ 載入 ${filename} 失敗：`, err);
             }
         }
+    </script>
+
+    <!-- ===== 語言切換中英文翻譯引擎 ===== -->
+    <script>
+        const TRANSLATIONS = {
+            zh: {
+                "cover-subtitle": "順應夜曆，還是追求效率？",
+                "cover-title-zh": "島嶼的維度",
+                "cover-desc-line-0": "身為蘭嶼的工匠，你必須在 12 個月內完成一艘拼板舟。",
+                "cover-desc-line-1": "在「傳統馬尼拉蕉麻」與「現代化學樹脂」之間，",
+                "cover-desc-line-2": "決定你要留下什麼樣的文化認同。",
+                "cover-enter-btn-forest": "進入山林採集",
+                "cover-enter-btn-sea": "揚帆出海航行",
+                "gnav-cover": "首頁",
+                "gnav-rulebook": "規則書",
+                "gnav-scenario": "情境腳本",
+                "gnav-fieldwork": "走讀版",
+                "gnav-classroom": "課堂版"
+            },
+            en: {
+                "cover-subtitle": "Follow the calendar, or pursue efficiency?",
+                "cover-title-zh": "Dimension of the Island",
+                "cover-desc-line-0": "As Lanyu's artisan, you must complete a plank boat in 12 months.",
+                "cover-desc-line-1": "Between traditional Manila hemp and modern chemical resin,",
+                "cover-desc-line-2": "Decide what kind of cultural identity you want to leave behind.",
+                "cover-enter-btn-forest": "Enter Mountain Forest",
+                "cover-enter-btn-sea": "Sail Out to Sea",
+                "gnav-cover": "Home",
+                "gnav-rulebook": "Rulebook",
+                "gnav-scenario": "Scenario",
+                "gnav-fieldwork": "Fieldwork",
+                "gnav-classroom": "Classroom"
+            }
+        };
+
+        const GLOSSARY = {
+            // General nav/sidebar in subpages
+            "卷宗：遊戲簡介": "Dossier: Game Intro",
+            "遊戲簡介": "Game Introduction",
+            "I. 遊戲目標": "I. Game Goal",
+            "遊戲目標": "Game Goal",
+            "II. 核心資源": "II. Core Resources",
+            "核心資源": "Core Resources",
+            "III. 選擇角色": "III. Role Selection",
+            "選擇角色": "Role Selection",
+            "IV. 地圖與移動": "IV. Map & Movement",
+            "地圖與移動": "Map & Movement",
+            "V. 遊戲進行流程": "V. Game Flow",
+            "遊戲進行流程": "Game Flow & Loop",
+            "VI. 可執行動作": "VI. Available Actions",
+            "可執行動作": "Available Actions",
+            "VII. 技術路徑抉擇": "VII. Tech Path Decisions",
+            "技術路徑抉擇": "Tech Path Decisions",
+            "VIII. 海洋夜曆": "VIII. Ocean Calendar",
+            "海洋夜曆": "Ocean Calendar",
+            "IX. 分數結算": "IX. Scoring",
+            "分數結算": "Scoring Settlement",
+            "AI 傳承指引": "AI Heritage Guide",
+            "★ 卡牌設計哲學": "★ Card Design Philosophy",
+            "人數": "Players",
+            "回合": "Rounds",
+            "時長": "Duration",
+            "年齡": "Age",
+            "2–4 人": "2-4 Players",
+            "12 月 (一年)": "12 Months (1 Year)",
+            "60–90 分": "60-90 Mins",
+            "14+": "14+",
+            "資深工匠": "Elder Artisan",
+            "耆老": "Elder",
+            "文化復振青年": "Apprentice (Youth)",
+            "中生代工匠": "Negotiator (Middle)",
+            "行動點數": "Action Points",
+            "技術點數": "Knowledge Points",
+            "山林": "Mountain Forest",
+            "灘頭工作室": "Beach Workshop",
+            "商店": "Store",
+            "剝麻": "Peeling Hemp",
+            "刮絲": "Scraping Fiber",
+            "捻線": "Twining Rope",
+            "填縫": "Caulking",
+            "完工": "Finish Ship",
+            "展開選單": "Open Menu",
+            "收合選單": "Collapse Menu",
+            "傳承成功！": "Heritage Succeeded!",
+            "完工，但文化流失": "Finished with Cultural Loss",
+            "傳統路線": "Traditional Path",
+            "現代化路線": "Modern Path",
+
+            // Scenario subpage specific terms
+            "【封山危機】—— 遺忘儲備的代價": "【Mountain Closure】Price of Forgetting to Stockpile",
+            "【梅雨腐蝕】—— 時間與天氣的賽跑": "【Plum Rain Erosion】Race Against Time and Weather",
+            "【禁忌之月】—— 心理韌性的考驗": "【Forbidden Month】A Test of Resilience",
+            "【最終衝刺】—— 祖先的祝福": "【Final Sprint】Blessing of the Ancestors",
+            "環境情境腳本：時序的規訓": "Scenario: Discipline of Time",
+            "環境情境腳本": "Scenario Scripts",
+            "文化韌性評分": "Cultural Resilience Score",
+            "第一等級": "Tier 1",
+            "第二等級": "Tier 2",
+            "第三等級": "Tier 3",
+            "第四等級": "Tier 4",
+            "第五等級": "Tier 5",
+            "達成條件": "Achieved Conditions",
+            "敘事文本": "Narrative Text",
+            "【傳承之靈】活著的拼板舟": "【Spirit of Heritage】The Living Plank Boat",
+            "【協商之光】時代的橋樑": "【Light of Negotiation】Bridge of the Era",
+            "【效率之重】工業的餘溫": "【Weight of Efficiency】Warmth of Industry",
+            "【失落之魂】斷裂的鏈條": "【Lost Soul】Broken Chain",
+            "【文化斷裂】遺失的時間": "【Cultural Disruption】Lost Time",
+
+            // Fieldwork subpage specific terms
+            "Ponso no Tao 的實地走讀": "Fieldwork in Ponso no Tao",
+            "走讀紀錄": "Fieldwork Records",
+
+            // Classroom subpage specific terms
+            "數位主持人儀表板": "Digital Host Dashboard",
+            "課堂版": "Classroom Version",
+            
+            // Calendar rules
+            "準備月: 移動不消耗 AP。": "Prep Month: Movement costs 0 AP.",
+            "飛魚禁令: 禁止進入山林，無法採集。": "Flying Fish Ban: Forest closed. Cannot gather.",
+            "捕撈飛魚盛期: 在灘頭執行工序 AP 消耗減 1。": "Peak Fishing: Crafting at beach costs -1 AP.",
+            "男人勤於出海: 請益消耗 AP 加倍 (需 4 AP)。": "Men at Sea: Learning from Elder costs double AP (4 AP).",
+            "梅雨季節: 請注意 AP 管理。": "Plum Rain Season: Watch out for AP maintenance fees.",
+            "好月節: 執行填縫額外 +2 分。": "Good Month Festival: Caulking grants +2 bonus score.",
+            "解禁重啟: 山林開放，採集獲 2 份材料。": "Forest Reopened: Gathering yields 2x materials.",
+            "土器月: 科學轉譯必成功 (可維修獎勵)。": "Clay Vessel Month: Tech translation always succeeds.",
+            "飛魚終食祭: 商店材料價格加倍。": "Final Fish Feast: Store prices are doubled.",
+            "禁忌之月: 無法執行完工 (填縫)。": "Forbidden Month: Caulking (finishing ship) is strictly banned.",
+            "祭神月: 青年與耆老同區域，KP 自動 +2。": "Sacred Month: Apprentice in same area as Elder gets +2 KP.",
+            "手工藝月: 捻線不再消耗 AP。": "Handicraft Month: Twining fiber costs 0 AP.",
+
+            // Additional custom subpage body content and dialogues
+            "當青年透過「請益」或「學徒式參與」獲得 KP 時，引導他的耆老同步獲得 +1 聲望分，聲望分於結算時等同文化韌性分。": "When the Youth gains KP through ‘Consultation’ or ‘Apprentice Participation’, the guiding Elder simultaneously gains +1 Reputation Point. Reputation Points equal Cultural Resilience Points at the settlement.",
+            "代表體力與時間。每回合開始自動補滿至角色上限。執行幾乎所有動作都需消耗 AP，用完即代表本回合行動結束。": "Represents physical strength and time. Refills to the character’s limit at the start of each round. Executing almost any action consumes AP, and depleting it means the end of action for the current round.",
+            "代表對傳統工藝的理解，累積後不會重置。KP 是解鎖高階工序的唯一途徑——捻線需 KP 3，填縫需 KP 8。": "Represents the understanding of traditional craftsmanship and does not reset once accumulated. KP is the only path to unlock high-level processes — twining rope requires KP 3, and caulking requires KP 8.",
+            "每張工序卡採雙面設計，體現「內核傳統、外殼現代」的核心主題：": "Each process card adopts a double-sided design, embodying the core theme of ‘Traditional Core, Modern Shell’:",
+            "工匠動作手繪插圖，附族語動詞（如：Mivivini 捻線）。角落標註所需 AP 與 KP。傳遞具身實踐與默會知識。": "Hand-drawn illustrations of artisan actions with Tao verbs (e.g. Mivivini twining rope). AP and KP requirements are marked in the corners. Transmits embodied practice and tacit knowledge.",
+            "SEM 掃描顯微影像，顯示 Avaka 吸水膨脹率 15% vs 尼龍 0%，將原住民生態知識轉譯為科學數據，驗證祖先工藝的物理優勢。": "SEM scanning electron microscope images showing Avaka’s water-absorption expansion rate is 15% vs nylon’s 0%, translating indigenous ecological knowledge into scientific data to verify the physical advantages of ancestral craftsmanship.",
+            "所有玩家共用一個底線目標：在第 12 回合結束前完成自己的拼板舟。未能完工者視為「文化斷裂」，直接出局。": "All players share a baseline goal: complete their own plank boat before the end of the 12th round. Those who fail to finish are deemed ‘Cultural Disruption’ and are eliminated directly.",
+            "在此基礎上，文化韌性評分最高的玩家獲勝。評分取決於你選擇哪條完工路徑、如何積累技術知識，以及你與耆老、青年之間的傳承互動。": "On this basis, the player with the highest Cultural Resilience Score wins. The score depends on which completion path you choose, how you accumulate technical knowledge, and your heritage interaction with Elders and Youth.",
+            "遊戲中有兩種核心點數，每位玩家需同時追蹤：": "There are two core points in the game, which each player must track simultaneously:",
+            "每位玩家於遊戲開始前選擇一個角色，角色決定你的 AP 上限、初始 KP，以及獨特能力。": "Each player selects a character before the game starts. The character determines your AP limit, initial KP, and unique ability.",
+            "地圖為線性設計，玩家只能依序在三個區域間移動。每跨越一格消耗 1 AP（青年角色為 0 AP）。": "The map is linear, and players can only move sequentially among three areas. Crossing each tile consumes 1 AP (0 AP for the Youth character).",
+            "同區域的玩家可消耗 1 AP 將材料贈予另一名玩家": "Players in the same area can consume 1 AP to gift materials to another player.",
+            "本腳本為《Avaka：島嶼的維度》沉浸式走讀工作坊的完整帶路人手冊，涵蓋開場引言、各空間站點情境台詞、操作介入時機，以及最終反思討論的引導。": "This script is a complete guide manual for the immersive Ponso no Tao fieldwork workshop, covering opening introductions, situational dialogues at various space stations, timing for operational intervention, and final reflective discussions.",
+            "全程以 3–4 小時為設計基準，本版腳本的邏輯前提是「空間先於規則」——玩家的身體位置決定其可執行的行動。": "Designed with a baseline of 3-4 hours. The logical premise of this script is 'Space precedes Rules' — the player's physical location determines their available actions.",
+            "工作坊視覺化操作流程": "Fieldwork Workshop Visualized Flowchart",
+            "設計核心原則": "Core Design Principles",
+            "空間即規則。帶路人不會宣布「你不能這樣做」，透過讓環境說話——「這裡沒有 Avaka，你要去哪裡採集？」": "Space is rule. The guide will not announce 'You cannot do this'. Instead, let the environment speak — 'There is no Avaka here, where will you gather?'",
+            "身體先於詮釋。讓玩家先觸摸、先移動、先行動，再給予知識框架解釋其意義。": "Body before interpretation. Let players touch, move, and act first, before providing a knowledge framework to explain the meaning.",
+            "失敗也是完整的體驗。未完工的玩家不需要補救，其結局文本是整個工作坊中最有討論價值的材料之一。": "Failure is also a complete experience. Unfinished players do not need rescue; their ending narrative is one of the most valuable materials for discussion in the workshop.",
+            "帶路人保持角色扮演。帶路人在各空間站點以「現場工匠」或「部落耆老」身份說話，而非遊戲設計者。": "Guide maintains role-play. The guide speaks at various stations as a 'local artisan' or 'tribal elder', rather than a game designer.",
+            "「你們現在站的這個地方，有人曾在這裡造船，在這裡等待季節，在這裡失去技術，也有人在這裡把知識傳給下一代。」": "“The place where you stand now is where people once built boats, waited for seasons, lost techniques, and passed knowledge to the next generation.”",
+            "「今天，我們要跟著這片土地的節奏走一遍。我不會告訴你們應該怎麼做。但可以告訴你們的是，這個地方，它有很多故事。準備好踏入這段旅程吧。」": "“Today, we will walk along the rhythm of this land. I will not tell you what you should do. But what I can tell you is that this place holds many stories. Get ready to step into this journey.”",
+            "「手上這張牌，是你今天在這個地方的身份。你不能交換，不能選擇。（停頓）在蘭嶼的傳統社會，沒有人選擇自己的出身，但每一個位置都有它的責任與意義。翻開它，認識你自己。」": "“This card in your hand is your identity here today. You cannot exchange it, you cannot choose it. (Pause) In Lanyu’s traditional society, no one chooses their birth, but every position has its responsibility and meaning. Flip it over, and know yourself.”",
+            "你是今天走讀中知識的「源頭」。你不主動教學，只在被問到的時候才說話。": "You are the ‘source’ of knowledge in today’s fieldwork. You do not actively teach; you only speak when asked.",
+            "移動力最強(不耗AP)，但現在什麼都不會(KP 0)。唯一可觸摸所有材料的角色。": "Most mobile (0 AP for movement), but currently knows nothing (KP 0). The only character who can touch all materials.",
+            "最複雜的角色。有基礎知識(KP 5)，特殊能力讓你使用工業材料時不受懲罰。": "The most complex character. Has basic knowledge (KP 5), with a special ability that exempts you from penalties when using industrial materials.",
+            "「你擁有最多的技術知識，但體力有限。你的存在意義，不是完成速度最快的船，而是確保知識不在你這一代斷掉。你的聲望，來自於你教會了多少人。」": "“You possess the most technical knowledge, but physical energy is limited. Your reason for being is not to finish the fastest boat, but to ensure that knowledge does not break in your generation. Your prestige comes from how many people you have taught.”",
+            "「你移動不耗體力，學習能力最強，但你現在什麼都不會——KP 是零。你能走到哪裡、能做什麼，很大程度上取決於你願不願意跟著耆老。沒有人會強迫你，但知識只在靠近的地方發生。」": "“You move without wasting physical energy, and your learning ability is the strongest, but you currently know nothing — KP is zero. Where you can go and what you can do depends largely on your willingness to follow the elder. No one will force you, but knowledge only happens in close proximity.”",
+            "「你是橋樑，也是矛盾最深的人。你用工業材料不會被懲罰，但你也清楚，這條路走到底，船造好了，技術也死了。你有能力在現實與傳統之間找到縫隙——問題是你想不想找。」": "“You are a bridge, and also the person with the deepest contradictions. You will not be penalized for using industrial materials, but you also know that if you go all the way down this path, the boat is built and the technology is dead. You have the ability to find cracks between reality and tradition — the question is whether you want to look for them.”",
+            "「做船不能只看地上的麻，要看天上的雲。快收起來！」": "“Building a boat is not just about looking at the hemp on the ground, but reading the clouds in the sky. Hurry, pack them up!”",
+            "此時，便利的「化學樹脂」在商店發出誘人的光芒——它不怕濕，且即刻可用。": "At this moment, the convenient ‘chemical resin’ glows invitingly in the shop window — it is unaffected by moisture and instantly usable.",
+            "「這就是『儀式時間』的邏輯。你得學會等待。如果你現在強行完工，這艘船在部落眼中將失去靈魂。」": "“This is the logic of ‘Ritual Time’. You must learn to wait. If you force completion now, this boat will lose its soul in the eyes of the tribe.”",
+            "「但我只剩兩個月就要結算了！如果不現在做，我怕來不及完成……」": "“But I only have two months left until the settlement! If I don't do it now, I'm afraid it'll be too late...”",
+            "「你現在可以去學你還沒學到的東西。等待，不是什麼都不做。」": "“You can use this time to learn what you haven't learned yet. Waiting is not doing nothing.”",
+            "「看吧，只要你順應時序，土地會給你最後的補償。快動手，讓這條船趕在明年飛魚祭前下水！」": "“See? As long as you conform to the seasonal flow, the land will give you final compensation. Move quickly, get this boat in the water before next year’s Flying Fish Festival!”",
+            "「糟了！我的 Avaka 原料用完了，但現在上山會觸犯禁忌……」": "“Oh no! My Avaka raw materials are depleted, but going to the mountains now would violate the taboo...”",
+            "「這就是為什麼老人家說 Kashyman 月要拼命存貨。現在你只能跟我去商店買尼龍繩，或者枯等一個月，看著進度落後。」": "“This is why the elders said to stock up eagerly during Kashyman. Now you can only buy nylon rope with me at the shop, or wait dryly for a month and watch your progress fall behind.”",
+
+            // --- Dynamic scenario & ending translations ---
+            "第 2 月 Kapowan (Paneneb)": "Month 2: Kapowan (Paneneb)",
+            "第 5 月 Pipilapila": "Month 5: Pipilapila",
+            "第 10 月 Kaneman": "Month 10: Kaneman",
+            "第 12 月 Kaowan": "Month 12: Kaowan",
+            "青年": "Youth",
+            "中生代": "Negotiator",
+            "系統": "System",
+            "【飛魚禁令】禁止進入山林，無法執行「採集」動作。": "【Flying Fish Ban】Entering the mountain forest is prohibited; the ‘Gather’ action cannot be executed.",
+            "部落灘頭已舉行招魚祭，整個月門戶關閉（Paneneb）。為了尊重魚靈，所有男人禁止進入山林。": "The Rayon (招魚祭) has been held at the beach, and the gate is closed for the entire month (Paneneb). To show respect to the fish spirits, all men are prohibited from entering the mountain forest.",
+            "玩家必須決定是要「消耗 1 AP 贈與」向隊友求援，還是直接轉向「路徑 B：商店購買」以換取進度。": "Players must decide whether to ‘Consume 1 AP to Gift’ to request help from teammates, or turn directly to ‘Path B: Store Purchase’ to trade for progress.",
+            "【梅雨季節】若未預留 AP 處理，曝曬中的材料將自動報廢。": "【Plum Rain Season】If no AP is reserved for maintenance, the materials drying in the sun will rot and be scrapped automatically.",
+            "天空陰雲密佈，突如其來的降雨讓你在灘頭曝曬的 Avaka 纖維陷入腐爛危機。": "The sky is overcast with thick clouds, and sudden rain threatens to rot the Avaka fibers drying on the beach.",
+            "「孩子，做船不能只看地上的麻，要看天上的雲。快收起來！」": "“Child, building a boat is not just about looking at the hemp on the ground, but reading the clouds in the sky. Hand them in!”",
+            "玩家必須額外支出 1 AP 進行材料維護。若 AP 已耗盡，苦心經營的「路徑 A」材料將歸零。": "Players must spend an extra 1 AP for material maintenance. If AP is depleted, the hard-earned ‘Path A’ materials will be lost and reduced to zero.",
+            "【禁忌之月】最不吉祥的月份，無法執行任何「完工（填縫）」動作。": "【Forbidden Month】The most inauspicious month; executing any ‘Caulking (Finishing Ship)’ action is strictly prohibited.",
+            "這是專門製作貝灰的月份，不允許舉行婚禮、造屋或落成禮。即便你的材料已齊備，現在也絕不能動工填縫。": "This is a month dedicated to making shell ash, and no weddings, house building, or completion ceremonies are allowed. Even if all your materials are ready, you must not start caulking now.",
+            "此情境強迫玩家轉向「請益」以累積 KP。這體現了技術實踐是維繫人、物與神靈平衡的社會倫理，而非單純追求生產效率。": "This scenario forces players to turn to ‘Consultation’ to accumulate KP. It reflects that technical practice is a social ethic for maintaining the balance between humans, objects, and spirits, rather than purely pursuing production efficiency.",
+            "【技術精進】執行「捻線」不再消耗 AP。": "【Tech Master】Executing the ‘Twining Rope’ action no longer consumes AP.",
+            "這是屬於手工藝的月份。雖然時間緊迫，但你發現自己的手感前所未有的流暢。": "This is a month dedicated to handicrafts. Although time is pressing, you find your hands flowing with unprecedented smoothness.",
+            "讓堅持「路徑 A」的玩家在最後一刻獲得加速感，平衡路徑 B 的便利性誘惑。": "Gives players sticking to ‘Path A’ a sense of acceleration at the final moment, balancing the tempting convenience of Path B.",
+            "完成「路徑 A：Avaka 操作鏈」、觸發「科學轉譯」、且與耆老有高度傳承互動（累積聲望分）。": "Completed ‘Path A: Avaka Crafting Chain’, triggered ‘Scientific Translation’, and had high-frequency heritage interactions with the Elder (accumulating Reputation Points).",
+            "「這艘船是活的。不僅僅一種比喻，而是真的活著。你花了整整一年，跟著走過祖先的同一條山路，身體記住了採集時該繞開哪棵樹、Avaka的纖維要朝哪個方向捻才不會斷。這些動作可能沒有被文字記錄，卻藏在族人身體的記憶之中，等待被喚醒。": "“This boat is alive. It is not just a metaphor, but truly alive. You spent a whole year retracing the exact same mountain path of your ancestors. Your body remembers which tree to bypass when gathering, and which direction to twine the Avaka fibers so they won't break. These actions might not be recorded in text, but they are hidden in the physical memory of the tribe, waiting to be awakened.",
+            "後來，透過科學資料，證實了Avaka 纖維吸水之後會膨脹。你忽然明白，老人說『讓船呼吸』不只一種想像，是造船的學問。當海水滲進縫隙，纖維膨脹後，船反而變得更緊實。可以拆，可以修，可以一塊一塊換掉，再一次出海。": "“Later, scientific data confirmed that Avaka fibers expand after absorbing water. You suddenly realized that when the elders said ‘let the boat breathe,’ it was not just an imagination, but a profound knowledge of boat building. When sea water seeps into the cracks and the fibers expand, the boat becomes tighter instead. It can be disassembled, repaired, and replaced piece by piece, to set sail again.",
+            "那些你以為早已斷裂的記憶，其實只是靜靜地等著願意承接的人。": "“Those memories you thought were long broken are actually just waiting quietly for someone willing to inherit them.",
+            "而這艘船會繼續航行，帶著耆老們說過的話，也帶著你找回的那些記憶。」": "“And this boat will continue to sail, carrying the words spoken by the elders, and the memories you have recovered.”",
+            "多由「中生代工匠」達成，混用部分工業材料，但保留核心傳承邏輯。": "Mostly achieved by the ‘Negotiator (Middle-aged Artisan)’, mixing some industrial materials but retaining the core heritage logic.",
+            "「你沒辦法只活在傳統裡，這你很清楚。": "“You cannot live solely in tradition, that much you know clearly.",
+            "孩子要上學，油費要繳，時間不等人，你在這些現實壓力裡嘗試找到縫隙，幾塊工業材料省了些工夫，但你沒有就此撒手。你還是去敲了耆老的門，還是問了那幾個不問不會有人主動說的問題：材料要怎麼選、哪道工序不能跳過，有甚麼樣的禁忌。": "“Children need school, fuel needs to be paid for, and time waits for no one. Amidst these real-life pressures, you tried to find cracks. A few industrial materials saved some effort, but you did not let go entirely. You still knocked on the elder’s door, still asked those few questions that no one would answer unless asked: how to choose materials, which process cannot be skipped, and what taboos exist.",
+            "船造好的時候，你自己也說不清它到底是傳統還是現代。但或許這才是最誠實的答案，蘭嶼從來就不是一座博物館，人們在這裡過的是真實的生活，傳統也一直在真實的生活裡摩擦、磨損、又重新長出新的樣子。": "“When the boat was finished, you couldn't tell if it was traditional or modern. But perhaps that is the most honest answer. Lanyu has never been a museum; people live real lives here, and tradition is always rubbing, wearing down, and growing into new shapes in real life.",
+            "這艘船帶著工業的氣味，也帶著老人家的智慧。它雖不完美，但它是活在這個時代裡的人造出來的。」": "“This boat carries the scent of industry, and also the wisdom of the elders. It is not perfect, but it was built by people living in this very era.”",
+            "完成「路徑 B：工業替代模式」，雖完工但缺乏文化加成。": "Completed ‘Path B: Industrial Substitution Mode’; although finished, it lacks cultural resilience bonuses.",
+            "「船造好了。但有什麼東西卻悄然失去了。": "“The boat is finished. But something has been quietly lost.",
+            "南寶樹脂把縫填得密不透風，不用等木材慢慢漲開，不用對著日曆算季節，省下了大半時間。船下水的那一刻，看起來和其他船沒什麼兩樣。": "“The epoxy resin sealed the gaps airtight. No waiting for the wood to slowly swell, no checking the calendar for seasons, saving most of the time. The moment the boat entered the water, it looked no different from any other boat.",
+            "只是壞了就壞了，沒辦法修。那種嵌接的方式、那種拆開再組回去的可能，在你選擇跳過的那幾道工序裡，也連帶消失了。": "“But once it breaks, it breaks, and there is no way to repair it. That method of interlocking, the possibility of taking it apart and putting it back together, disappeared along with the few processes you chose to skip.",
+            "手指也忘了。忘了纖維來回時的阻力，忘了怎麼判斷木材的品種。隨然並非一夕之間，卻是一點一點地，在每個選擇便利的瞬間流失。": "“Your fingers have forgotten too. Forgotten the resistance when the fibers move back and forth, forgotten how to identify wood species. Although not overnight, it slipped away little by little, in every moment you chose convenience.",
+            "這艘船能用，但卻沒辦法教會你任何事。它只是一件時代下的商品。」": "“This boat is usable, but it cannot teach you anything. It is merely a product of the times.”",
+            "勉強完工，但全程未使用傳統材料，且無視季節禁忌或與耆老零互動。": "Barely finished, using no traditional materials throughout, ignoring seasonal taboos, and having zero interaction with the Elder.",
+            "「船下水了。你應該覺得完成了什麼，但內心是空的。": "“The boat is in the water. You should feel that you have accomplished something, but your heart is empty.",
+            "你沒有上山採集過那些Avaka，不知道採集時要說什麼、要避開哪些日子。你繞過了所有看起來麻煩的環節，也繞過了所有真正重要的事。": "“You have never climbed the mountain to gather Avaka, you don't know what to say during gathering, or which days to avoid. You bypassed all the links that seemed troublesome, and bypassed all the things that truly mattered.",
+            "這艘船和這片海沒有關係，和山也沒有關係。它只是一個形狀，一件可以賣給觀光客拍照的道具。沒有人會想修它，壞了就丟，再做一艘新的。": "“This boat has nothing to do with the sea, and nothing to do with the mountain. It is just a shape, a prop to sell to tourists for photos. No one wants to repair it; if it breaks, throw it away and build a new one.",
+            "那些採集時吟唱的歌，那些老人家說只有動手做才能理解的身體知識——不是被由你反對，是被你忽略了。被忽略的東西，比被摧毀的東西消失得更安靜，也更難追回。」": "“Those songs chanted during gathering, that physical knowledge the elders said can only be understood by doing it yourself — were not opposed by you, but ignored. Things ignored disappear more quietly than things destroyed, and are harder to recover.”",
+            "未能在 12 回合（一年）內完成船隻。": "Failed to complete the boat within 12 rounds (one year).",
+            "「一年過去了，灘頭的木材還散在那裡。": "“A year has passed, and the wood on the beach is still scattered there.",
+            "始終沒有開始，好像哪裡卡住了，借使是不知道下一步該問誰，也許是繞了太多遠路，隨時間一天一天過去，而你還沒準備好。": "“It never started, as if stuck somewhere. Perhaps you didn't know who to ask for the next step, perhaps you took too many detours, and as time passed day by day, you were still not ready.",
+            "一艘船的誕生需要一整年，不是因為工序真的那麼複雜，是因為它必須跟著季節走：採集、乾燥、等待、修整，每一步都有它自己的時間。你的節奏和這個節奏對不上，船就停在那裡，等一個不會來的時機。": "“The birth of a boat takes a whole year, not because the process is really that complex, but because it must follow the seasons: gathering, drying, waiting, trimming — every step has its own time. Your rhythm did not match this rhythm, and the boat stopped there, waiting for a time that would never come.",
+            "那些纖維會腐爛。那些還沒說出口的技術知識，也會隨著保有記憶的人慢慢老去，而跟著消失。": "“Those fibers will rot. Those unspoken technical skills will also disappear as the people holding the memories slowly grow old.",
+
+            // --- Dynamic classroom dashboard translations ---
+            "數位儀表板載入中...": "Digital Dashboard Loading...",
+            "三層次反思討論": "Three-Level Reflection Discussion",
+            "層次一：事實層": "Level 1: Fact Level",
+            "層次二：機制層": "Level 2: Mechanism Level",
+            "層次三：價值層": "Level 3: Value Level",
+            "附錄：快速參考表": "Appendix: Quick Reference Table",
+            "行動一覽表": "Action Reference Table",
+            "行動名稱": "Action Name",
+            "需求": "Requirements",
+            "說明": "Description",
+            "關閉腳本": "Close Script",
+            "閱讀結局": "Read Ending",
+            "環境與角色旁白": "Environment & Character Narratives",
+            "旁白與台詞": "Narrative & Dialogue",
+            "第一段：導入與角色分配": "Part 1: Introduction & Role Assignment",
+            "第二段：遊戲體驗 (精選月份)": "Part 2: Gameplay Experience (Selected Months)",
+            "第三段：結算與反思討論": "Part 3: Scoring & Reflective Discussion",
+            "導入與角色": "Introduction & Roles",
+            "精選月份": "Selected Months",
+            "結算與反思": "Scoring & Reflection",
+            "預警的季節": "Season of Pre-warning",
+            "飛魚禁令": "Flying Fish Ban",
+            "梅雨腐壞": "Plum Rain Rotting",
+            "禁忌之月": "Forbidden Month",
+            "最終衝刺": "Final Sprint",
+            "引導方向：": "Guided Direction:",
+            "課程目標": "Course Goal",
+            "主要目標": "Primary Goal",
+            "次要目標一": "Secondary Goal 1",
+            "次要目標二": "Secondary Goal 2",
+            "主持人準備事項": "Host Preparation Items",
+            "材料清單": "Materials List",
+            "場地與進場設定": "Venue & Entry Settings",
+
+            // --- Rulebook & Classroom dynamic translation extensions (189 keys) ---
+            "Avaka 島嶼的維度 - 主持人儀表板": "Avaka Dimension of the Island - Host Dashboard",
+            "引起動機": "Engagement & Motivation",
+            "角色分配": "Role Assignment",
+            "規則說明": "Rule Explanation",
+            "快速跳過": "Quick Bypass",
+            "學徒機制": "Apprentice Mechanism",
+            "教學目的": "Pedagogical Goals",
+            "最終提問": "Final Questioning",
+            "主持人開場引言": "Host's Opening Remarks",
+            "耆老：角色旁白": "Elder: Character Narrative",
+            "青年：角色旁白": "Youth: Character Narrative",
+            "中生代：角色旁白": "Negotiator: Character Narrative",
+            "第 1 月 主持人台詞": "Month 1 Host Lines",
+            "第 2 月 環境旁白": "Month 2 Environment Narrative",
+            "第 2 月 角色對白": "Month 2 Character Dialogue",
+            "第 5 月 環境與角色旁白": "Month 5 Environment & Character Narratives",
+            "第 10 月 旁白與台詞": "Month 10 Narratives & Dialogues",
+            "第 12 月 旁白與台詞": "Month 12 Narratives & Dialogues",
+            "傳承之靈 (18-25分)": "Spirit of Heritage (18-25 pts)",
+            "協商之光 (11-17分)": "Light of Negotiation (11-17 pts)",
+            "效率之重 (6-10分)": "Weight of Efficiency (6-10 pts)",
+            "失落之魂 (1-5分)": "Lost Soul (1-5 pts)",
+            "文化斷裂 (失敗)": "Cultural Disruption (Failure)",
+            "三層次反思討論（約 12 分鐘）": "Three-Level Reflection Discussion (approx. 12 mins)",
+            "主持人操作提示": "Host Operation Tips",
+            "主持人操作提示（全班暫停討論）": "Host Operation Tips (pause entire class discussion)",
+            "主持人操作提示（班級快問）": "Host Operation Tips (class quick Q&A)",
+            "主持人：「每一個門檻都對應著真實的文化現象——這是知識的連鎖性。」": "Host: “Each threshold corresponds to a real cultural phenomenon — this is the chain of knowledge.”",
+            "主持人收尾：「文化傳承不是把知識存在書裡，是存在人的身體裡。」": "Host closing: “Cultural heritage is not about storing knowledge in books; it is about storing it in people’s bodies.”",
+            "去商店買樹脂，直接完工，但取得「不可修復」標記": "Go to shop to buy resin, complete ship directly, but receive ‘Irreparable’ tag",
+            "用工業材料完工時得分提升，且無「去技能化」懲罰": "When completing the ship using industrial materials, score increases, and there is no ‘Deskilling’ penalty",
+            "青年與耆老同區域時，回合結束自動獲得 1": "When Youth is in the same area as Elder, automatically gain 1 at the end of the round",
+            "本月，執行『捻線』不再消耗任何": "This month, executing ‘Twining Rope’ no longer consumes any",
+            "將角色卡正面朝下分發，請學生先不要翻開。主持人說": "Distribute character cards face down; please do not flip them over yet. The host says:",
+            "不可修復標記的意涵，以及跳過工序後技術知識的消失": "The meaning of the Irreparable tag, and the disappearance of technical knowledge after skipping processes",
+            "載入 React 核心庫與 Babel 編譯器": "Load React core libraries and Babel compiler",
+            "月份卡 12 張（按序排列，正面朝下置於中央）": "12 Month Cards (ordered sequentially, face down in the center)",
+            "規則快速說明（約 3 分鐘）": "Quick rule explanation (approx. 3 mins)",
+            "你現在的每一個決定，都在替下個月的自己鋪路。」": "“Every decision you make now paves the way for yourself next month.”",
+            "如果你是蘭嶼的青年，你今天會選哪條路？」": "“If you were Lanyu’s Youth, which path would you choose today?”",
+            "引導青年反饋：文化知識存在於人的身體裡": "Guide Youth feedback: Cultural knowledge exists in the human body",
+            "燈光可稍暗，或主持人拿起月份卡展示給全場看）": "The lights can be slightly dimmed, or the host holds up the Month Card to show the class)",
+            "執行報廢處理後，主持人指著商店方向說": "After executing the scrap process, the host points towards the shop and says:",
+            "保持中立，讓學生互相回應，不要評判答案優劣": "Maintain neutrality, let students respond to each other, do not judge the quality of answers",
+            "探討「樹脂路徑」造成的不可修復與去技能化": "Explore ‘Deskilling’ and ‘Irreparability’ caused by the resin path",
+            "設定 Tailwind 自訂動畫與顏色": "Set custom Tailwind animations and colors",
+            "檢討「傳統工法難拿高分」的遊戲機制原因": "Review the game mechanism reasons for ‘traditional craftsmanship is hard to score highly’",
+            "載入 FontAwesome 圖示庫": "Load FontAwesome icon library",
+            "依各組得分，由高至低朗讀五大結局文本": "Read the five major ending texts in order from highest to lowest score",
+            "今天你們的選擇，會決定你留下什麼。」": "“Today your choices will determine what you leave behind.”",
+            "消耗 2 AP，獲得「不可修復」標記": "Consume 2 AP, receive ‘Irreparable’ tag",
+            "須在灘頭執行；Kaneman 月禁止": "Must be executed at the beach; banned in Kaneman month",
+            "快速宣告環境限制後，讓小組自行決策": "Quickly announce environmental constraints, then let groups make their own decisions",
+            "今天你們不是學生，你們是蘭嶼的工匠": "Today you are not students; you are Lanyu’s artisans",
+            "主動向耆老請益，獲得 3 點": "Actively consult Elder, gain 3 points",
+            "不足、月份禁令限制、KP 門檻高等": "Insufficiency, month ban constraints, high KP thresholds, etc.",
+            "必須暫停計時，進行腳本朗讀與引導": "Must pause the timer to perform script reading and guidance",
+            "的回合；灰暗的節點則代表": "rounds; while grey nodes represent",
+            "不在同一區域時可耗 1 AP 使青年": "When not in the same area, consume 1 AP to make the Youth",
+            "選擇二：前往商店購買尼初繩": "Option 2: Go to shop to buy nylon rope",
+            "向同區域耆老請益，獲得 3": "Consult the Elder in the same area, gain 3",
+            "全班開場引言（約 3 分鐘）": "Whole class opening remarks (approx. 3 mins)",
+            "角色分牌儀式（約 4 分鐘）": "Character distribution ceremony (approx. 4 mins)",
+            "執行「填縫」不耗": "Executing ‘Caulking’ costs 0",
+            "每位玩家每回合有固定": "Each player has a fixed amount per round of",
+            "消耗 1 AP。尋求團隊支援": "Consume 1 AP. Seek team support",
+            "建議每組圍桌而坐，3人一組": "Recommended for each group to sit around a table, 3 players per group",
+            "灘頭起了白煙。招魚祭開始了": "“White smoke rises from the beach. The Rayon has begun”",
+            "選擇三：枯坐一個月": "Option 3: Wait dryly for a month",
+            "選擇一：向同組玩家求援": "Option 1: Request help from teammates in the same group",
+            "不跑完全部 12 回合，精選五個關鍵月份作為「劇情節點」": "Instead of running all 12 rounds, select five key months as ‘plot nodes’",
+            "讓學生體驗 AP 資源管理的壓力，同時感受工業材料的「便利誘惑」": "Let students experience the pressure of AP resource management, while feeling the ‘convenience temptation’ of industrial materials",
+            "如果你的 AP 已經用完了——那些材料，就從你的存貨裡劃掉吧。」": "“If your AP is already depleted — those materials will be crossed off your inventory.”",
+            "在遊戲裡，你跟著耆老學習的那幾個回合帶給你什麼？」": "“In the game, what did those rounds of learning from the Elder bring you?”",
+            "角色卡（每組 3 張）、分數結算表": "Character Cards (3 per group), Score Settlement Sheet",
+            "但在這一年裡，你們會不斷面對一個問題：走傳統的路，妄走快的路": "But in this year, you will constantly face a question: take the traditional path, or the quick path",
+            "為什麼路徑 A（傳統工法）這麼難拿高分？從遊戲規則面說說看。」": "“Why is Path A (traditional method) so hard to get a high score? Explain from the perspective of game rules.”",
+            "快速講解 AP 消耗、傳統與工業兩大路徑，以及學徒機制的運作": "Quickly explain AP consumption, the traditional vs. industrial paths, and how the apprentice mechanism works",
+            "讓學生感受「沒有選擇」的緊迫感，理解文化禁令背後的社會邏輯": "Let students feel the urgency of ‘having no choice’, understanding the social logic behind cultural bans",
+            "分發卡片，主持人口述三大角色之旁白與特殊能力，賦予責任感": "Distribute cards, and the host verbally narrates the descriptions and unique abilities of the three major characters, instilling responsibility",
+            "月份卡說——本回合移動不耗 AP，這是立春的禮物": "The Month Card says — movement does not consume AP in this round, this is the gift of Li Chun",
+            "手指也忘了。忘了線維來回時的阻力，忘了怎麼判斷木材的品種": "Your fingers have forgotten too. Forgotten the resistance when twining back and forth, forgotten how to identify wood species",
+            "樹脂路徑雖然快，但在遊戲裡，『去技能化』是怎麼發生的？」": "“Although the resin path is fast, in the game, how does ‘Deskilling’ happen?”",
+            "在山林、灘頭、商店間移動": "Move among the mountain forest, beach, and shop",
+            "全班朗讀「開場引言」，建立工匠情境與目標，不使用投影片": "The entire class reads the ‘Opening Remarks’ aloud to establish the artisan context and goals, without using slides",
+            "的化學樹脂今天不受天氣影響，它不怕濕，也不需要曝曬。」": "The chemical resin today is unaffected by the weather; it is not afraid of moisture and doesn't require drying.”",
+            "與耆老同區域時，回合結束自動獲得 1": "When in the same area as the Elder, automatically gain 1 at the end of the round",
+            "執行「填縫」不耗 AP。": "Executing ‘Caulking’ costs 0 AP.",
+            "【遠程指導】": "【Remote Guidance】",
+            "跨區域消耗 1 AP 使青年 KP +1。": "Cross-region consumes 1 AP to grant the Youth +1 KP.",
+            "【學徒】": "【Apprentice】",
+            "移動消耗 0 AP。": "Movement costs 0 AP.",
+            "【快速學習】": "【Fast Learning】",
+            "主動請益時立即獲得 KP +3。": "When actively consulting, immediately gain +3 KP.",
+            "【協商者】": "【Negotiator】",
+            "使用工業材料完工時，得分由 +5 提升至 +10，且免除懲罰。": "When completing the ship using industrial materials, score increases from +5 to +10, and penalties are exempted.",
+            "地圖為線性設計，玩家只能依序在三個區域間移動。每跨越一格消耗": "The map is linear, and players can only move sequentially among three areas. Crossing each tile consumes",
+            "（青年角色為 0 AP）。": " (0 AP for the Youth character).",
+            "採集 Avaka": "Gather Avaka",
+            "採集花椒纖維": "Gather Pepper Fiber",
+            "剝麻、刮絲": "Peeling Hemp, Scraping Fiber",
+            "捻線、填縫": "Twining Rope, Caulking",
+            "購買南寶樹脂": "Purchase Nanpao Resin",
+            "購買尼龍繩": "Purchase Nylon Rope",
+            "遊戲以「海洋夜曆」的月份作為時間軸，總共進行 12 個月（回合）。未能在 12 個月內完成拼板舟者，將遭遇文化斷裂而出局。": "The game takes the months of the 'Oceanic Night Calendar' as the timeline, lasting for 12 months (rounds). Failure to complete the plank boat within 12 months results in cultural disruption and elimination.",
+            "遊戲開始 (準備)": "Game Start (Preparation)",
+            "12 個月循環 (回合)": "12 Months Cycle (Rounds)",
+            "翻開環境卡": "Flip Environment Card",
+            "全場共用，推進「海洋夜曆」至下個月份，並決定當月的": "Shared by all players, advances the 'Oceanic Night Calendar' to the next month and determines the month’s",
+            "執行移動、工序、請益或購買等動作，直到所有人的 AP 耗盡或主動略過。": "Execute movement, crafting processes, consultation, or purchases until everyone’s AP is depleted or they actively pass.",
+            "傳承觸發：": "Heritage Trigger:",
+            "本階段結束時，若青年與耆老位於同一區域，青年自動獲得": "At the end of this phase, if the Youth and the Elder are in the same area, the Youth automatically gains",
+            "回合結算": "Round Settlement",
+            "補滿至角色上限，當月環境卡效果解除。": "Refilled to character limit, and the month’s environment card effect is removed.",
+            "12個月？": "12 months?",
+            "否 (No)": "No",
+            "是 (Yes)": "Yes",
+            "遊戲結束，進入文化韌性結算": "Game Over, proceed to Cultural Resilience Settlement",
+            "在山林、灘頭、商店之間移動一格。(青年 0 AP)": "Move one space among the forest, beach, and shop. (0 AP for Youth)",
+            "依序打出卡牌：採集 → 剝麻 → 刮絲 → 捻線 → 填縫。": "Play cards sequentially: Gather → Peel Hemp → Scrape Fiber → Twine Rope → Caulk.",
+            "請益耆老": "Consult Elder",
+            "青年主動向同區耆老學習，立即獲得": "The Youth actively learns from the Elder in the same area, immediately gaining",
+            "購買材料": "Purchase Materials",
+            "需在商店。購入南寶樹脂或尼龍繩，走工業替代路徑。": "Must be at the shop. Purchase Nanpao resin or nylon rope, taking the industrial substitution path.",
+            "執行捻線或填縫後觸發。驗證卡牌 B 面物理優勢，獲獎勵": "Triggered after executing twining rope or caulking. Verifies the physical advantage of side B of the card, gaining rewards",
+            "將手中材料轉交給同區域 of 另一名玩家，緩解物料匱乏。": "Transfer materials in hand to another player in the same area to relieve material scarcity.",
+            "「傳統馬尼拉蕉麻（Avaka）與現代化學樹脂，不只是材料的選擇，更是文化認同的宣言。」": "“Traditional Manila hemp (Avaka) and modern chemical resin are not just choices of materials, but declarations of cultural identity.”",
+            "採集（山林）": "Gather (Mountain Forest)",
+            "剝麻 / 刮絲（灘頭）": "Peeling Hemp / Scraping Fiber (Beach)",
+            "需 KP 3": "Requires 3 KP",
+            "需 KP 8": "Requires 8 KP",
+            "，可再加科學轉譯 +5": ", plus +5 from Scientific Translation",
+            "前往商店": "Go to Shop",
+            "購買南寶樹脂或尼龍繩": "Purchase Nanpao Resin or Nylon Rope",
+            "直接完工": "Direct Completion",
+            "，船隻獲「不可修復」標記": ", ship receives 'Irreparable' tag",
+            "若跳過所有工序使用工業材料完工，非協商者角色將觸發「去技能化」懲罰": "If all crafting processes are skipped to finish with industrial materials, non-negotiator characters will trigger 'Deskilling' penalty",
+            "，最終得分可能為 0。": ", and the final score might be 0.",
+            "本回合移動不消耗 AP": "Movement does not consume AP in this round",
+            "舉行「立春」與「孝敬父母日」。殺豬祭儀，將豬肉分享給祖先以祈求出海平安。": "Perform 'Li Chun' and 'Filial Piety Day'. Pig-slaying ritual, sharing pork with ancestors to pray for safe voyages.",
+            "準備捕魚工具、採集材料、修補大船、理髮。": "Prepare fishing gear, gather materials, repair big boats, and get haircuts.",
+            "禁忌與正式招魚": "Taboos and Formal Rayon",
+            "舉行正式的招飛魚祭 (Manlag)。東清部落會焚燒蘆葦莖製作火把。": "Perform the formal flying fish calling ritual (Manlag). Dongqing village burns reed stalks to make torches.",
+            "進入禁慾期 (Paneneb)，男船員在共宿屋集體生活防寒並防私會。": "Enter the period of sexual abstinence (Paneneb), where male crew members live collectively in a shared lodging house to stay warm and prevent secret meetings.",
+            "上山砍伐曬魚架材料；開始夜間火把捕魚。": "Climb mountains to fell wood for fish-drying racks; begin nighttime torch fishing.",
+            "大船船組解散，男人可回原家屋睡覺。": "The big boat crew disbands, and men can return to their family houses to sleep.",
+            "捕獲的飛魚可帶回家中煮熟處理，並塗抹鹽巴晾曬。": "Captured flying fish can be taken home, cooked, salted, and dried.",
+            "全力捕撈飛魚；婦女開始到山上採集陸蟹。": "Full-scale catching of flying fish; women begin gathering land crabs in the mountains.",
+            "舉行小船招魚祭，開始晝間繩釣鬼頭刀。舉行慰勞節，婦女製作芋頭糕慰勞丈夫。": "Perform small boat fish calling ritual; begin daytime line fishing for dolphinfish. Hold the Appreciation Festival where women make taro cakes to appreciate their husbands.",
+            "砍伐專門晾曬鬼頭刀的魚架 (Papataw)。": "Cut wood for specialized racks (Papataw) to dry dolphinfish.",
+            "舉行蒸飛魚祭 (mapasoad)，將飛魚乾剪翅後蒸熟儲存。製作木臼與木杵。": "Perform steam flying fish ritual (mapasoad), steaming dried flying fish after cutting their wings for storage. Make wooden mortars and pestles.",
+            "飛魚終了祭，此月結束後不再捕飛魚。舉行收獲節與小米祭。": "Final Flying Fish Festival; no more flying fish catching after this month. Hold harvest festival and millet festival.",
+            "稱為「好月節」，親友間互相贈送剩餘的飛魚，分享勞動成果。": "Called 'Good Month Festival', where relatives and friends gift remaining flying fish to share harvest fruits.",
+            "適合舉辦房屋（主屋、涼亭）或各種拼板舟的落成禮。": "Suitable for hosting completion ceremonies for houses (main house, pavilion) or various plank boats.",
+            "開始開墾新的水芋田與地瓜田。": "Begin clearing new wet taro fields and sweet potato fields.",
+            "採集陶土並燒製陶器（陶甕）。因氣候乾燥有利於陶器成型。": "Gather pottery clay and fire earthenware (pots). Dry weather is favorable for shaping pottery.",
+            "月中舉行飛魚終食祭，此後嚴禁食用飛魚乾。": "Hold the flying fish final consumption ritual in the middle of the month, after which eating dried flying fish is strictly banned.",
+            "剩餘魚乾需餵豬，不可再儲存。此月被視為驅除惡靈的月份。": "Remaining dried fish must be fed to pigs and can no longer be stored. This month is regarded as a period to dispel evil spirits.",
+            "全年最不吉利的月份，禁止建屋、造船落成或為嬰兒取名。": "The most inauspicious month of the year; house building, boat completion ceremonies, or naming babies are strictly prohibited.",
+            "專門燒製貝灰（與檳榔共食或彩繪船身用）。": "Specially dedicated to burning shell ash (for chewing with betel nuts or painting boat hulls).",
+            "舉行祖靈祭 (Pazos) 與亡魂節，感謝神靈保護與祖先養育。": "Perform ancestor spirit ritual (Pazos) and Hungry Ghost Festival, thanking spirits for protection and ancestors for upbringing.",
+            "播種小米；採伐蘆葦以備未來製作捕魚用的火把。": "Sow millet seeds; fell reeds to prepare for future torch-making for fishing.",
+            "男人從事冶鐵（製作銀帽、盔甲、漿繩）；女人織布並編織藤籃。": "Men engage in iron-working (making silver hats, armor, paddle ropes); women weave cloth and baskets.",
+            "婦女舉行祝福芋頭田的儀式。": "Women hold rituals to bless taro fields.",
+            "第 12 回合結束後，計算每位完工玩家的最終得分：": "After the 12th round ends, calculate the final score of each completed player:",
+            "傳統 Avaka 路徑": "Traditional Avaka Path",
+            "基礎 15 + 科學轉譯 +5（保證）": "Base 15 + Scientific Translation +5 (Guaranteed)",
+            "最高 20 分": "Maximum 20 Points",
+            "中生代工業路徑": "Middle Artisan Industrial Path",
+            "基礎 5 + 協商者特殊 +5": "Base 5 + Negotiator Special +5",
+            "最高 10 分": "Maximum 10 Points",
+            "一般工業路徑": "General Industrial Path",
+            "基礎 5 − 去技能化懲罰 5": "Base 5 − Deskilling Penalty 5",
+            "最高 0 分": "Maximum 0 Points",
+            "※ 耆老的聲望分（傳承獎勵）於結算時等同文化韌性分，不包含在上表基礎分內，可額外累加。": "※ Elder’s Reputation Points (Heritage Reward) equal Cultural Resilience Points at settlement, not included in the base points above, and can be added additionally.",
+            "在遊玩過程中，不知道該如何形容你的行動？或者想沉浸在達悟族的神話中？請選擇你目前的狀態，呼喚耆老的靈魂為你述說專屬的工匠故事。": "During the game, not sure how to describe your actions? Or wish to immerse yourself in Tao mythology? Select your current state and call upon the Elder’s spirit to narrate your exclusive artisan story.",
+            "當前角色 Role": "Current Role",
+            "當前夜曆 Month": "Current Calendar Month",
+            "欲執行之行動 Intent": "Action Intent",
+            "聆聽海的記憶": "Listen to the Memory of the Sea",
+            "發生錯誤，請稍後再試。": "An error occurred, please try again later.",
+            "卡牌設計哲學": "Card Design Philosophy",
+            "每張工序卡採": "Each process card adopts",
+            "雙面設計": "double-sided design",
+            "，體現「內核傳統、外殼現代」的核心主題：": ", embodying the core theme of 'Traditional Core, Modern Shell':",
+            "傳統與默會": "Tradition and Tacit Knowledge",
+            "工匠動作手繪插圖，附族語動詞（如：": "Hand-drawn illustrations of artisan actions, with Tao verbs (e.g., ",
+            "捻線）。角落標註所需 AP 與 KP。傳遞具身實踐與默會知識。": "twining rope). AP and KP requirements are marked in the corners. Transmits embodied practice and tacit knowledge.",
+            "科學與轉譯": "Science and Translation",
+
+            // --- Rulebook & Classroom remaining leftover extensions (153 keys) ---
+            "傳承者】": "Elder Artisan】",
+            "往下箭頭": "Down Arrow",
+            "迴圈標籤": "Loop Label",
+            "環境限制": "Environment Constraints",
+            "豐收加成": "Harvest Bonus",
+            "判斷節點": "Decision Node",
+            "執行工序": "Crafting Process",
+            "科學轉譯": "Scientific Translation",
+            "條件觸發": "Conditional Trigger",
+            "贈予材料": "Gift Materials",
+            "基礎得分": "Base Points",
+            "注意警告": "Warning",
+            "飛魚盛期": "Peak Flying Fish Season",
+            "釣鬼頭刀": "Dolphinfish Fishing",
+            "取土燒陶": "Gather Clay & Fire Pottery",
+            "手工藝月": "Handicrafts Month",
+            "非協商者": "Non-Negotiator",
+            "當前角色": "Current Role",
+            "當前夜曆": "Current Calendar",
+            "解解禁月": "Month of Reopening",
+            "不吉祥月": "Inauspicious Month",
+            "請求失敗": "Request Failed",
+            "資源色": "Resource Color",
+            "規則書": "Rulebook",
+            "走讀版": "Fieldwork Version",
+            "聲望分": "Reputation Points",
+            "傳承者": "Elder Artisan",
+            "學習者": "Apprentice (Youth)",
+            "適應者": "Negotiator",
+            "提升至": "increases to",
+            "子區塊": "Sub-block",
+            "玩家的": "player’s",
+            "是否滿": "Is it full",
+            "準備月": "Preparation Month",
+            "招魚祭": "Calling Fish Ritual",
+            "梅雨月": "Plum Rain Month",
+            "好月節": "Good Month Festival",
+            "解禁月": "Reopening Month",
+            "土器月": "Clay Vessel Month",
+            "終食祭": "Final Consumption Festival",
+            "不吉月": "Inauspicious Month",
+            "亡魂節": "Ancestor Spirit Festival",
+            "協商者": "Negotiator",
+            "淺金": "Light Gold",
+            "封面": "Cover",
+            "首頁": "Home",
+            "走讀": "Fieldwork",
+            "課堂": "Classroom",
+            "節點": "Node",
+            "移動": "Move",
+            "祝福": "Blessing",
+            "祭儀": "Ritual",
+            "勞動": "Labor",
+            "禁忌": "Taboo",
+            "文化": "Culture",
+            "整合": "Integration",
+            "卡牌": "Card",
+            "角色": "Role",
+            "月份": "Month",
+            "這艘船是活的。不僅僅是一種比喻，而是真的活著。你花了整整一年，跟著走過祖先的同一條山路，身體記住了採集時該繞開哪棵樹、Avaka 的纖維要朝哪個方向捻才不會斷。這些動作可能沒有被文字記錄，卻藏在族人身體的記憶之中，等待被喚醒": "This boat is alive. It is not just a metaphor, but truly alive. You spent a whole year retracing the exact same mountain path of your ancestors. Your body remembers which tree to bypass when gathering, and which direction to twine the Avaka fibers so they won’t break. These actions might not be recorded in text, but they are hidden in the physical memory of the tribe, waiting to be awakened",
+            "後來，透過科學資料，證實了 Avaka 纖維吸水之後會膨脹。你忽然明白，老人說『讓船呼吸』不只一種想像，是造船的學問。當海水滲進縫隙，纖維膨脹後，船反而變得更緊實。可以拆，可以修，可以一塊一塊換掉，再一次出海": "Later, scientific data confirmed that Avaka fibers expand after absorbing water. You suddenly realized that when the elders said ‘let the boat breathe,’ it was not just an imagination, but a profound knowledge of boat building. When sea water seeps into the cracks and the fibers expand, the boat becomes tighter instead. It can be disassembled, repaired, and replaced piece by piece, to set sail again",
+            "孩子要上學，油費要繳，時間不等人，你在這些現實壓力裡嘗試找到縫隙，幾塊工業材料省了些工夫，但你沒有就此撒手。你還是去敲了Elder的門，還是問了那幾個不問不會有人主動說的問題：材料要怎麼選、哪道工序不能跳過": "Children need school, fuel needs to be paid for, and time waits for no one. Amidst these real-life pressures, you tried to find cracks. A few industrial materials saved some effort, but you did not let go entirely. You still knocked on the Elder’s door, still asked those few questions that no one would answer unless asked: how to choose materials, and which process cannot be skipped",
+            "主持人問全班：「你在現代生活中，有沒有一種等待是有意義的？還是所有的等待對你來說都只是浪費時間？」等待 2-3 位學生發言後繼續。這個問題不需要標準答案，目標是讓學生的生命經驗與遊戲機制產生對話": "Host asks the class: “In modern life, is there a kind of waiting that is meaningful? Or is all waiting just a waste of time for you?” Wait for 2-3 students to speak before continuing. This question does not require a standard answer; the goal is to create a dialogue between students’ life experiences and the game mechanisms",
+            "課堂教學模式的完整主持人手冊，涵蓋開場引言、角色導入、各月份情境台詞、教學介入時機，以及最終反思討論的逐字引導。全程以 60 分鐘為設計基準，主持人可依課堂節奏作 10 分鐘內的彈性調整": "The complete host manual for classroom teaching mode, covering opening remarks, character introduction, situational dialogues for each month, timing for pedagogical intervention, and verbatim guides for final reflective discussions. Designed with a baseline of 60 minutes, which the host can flexibly adjust within a 10-minute margin based on classroom pacing",
+            "傳統的路，需要等待季節、跟著Elder學習，每一步都有它的節奏。快的路，是去Store買化學樹脂，幾個動作就能Finish Ship。兩條路都能讓你造好一艘船，但這兩艘船是不一樣的": "The traditional path requires waiting for the seasons and learning from the Elder; every step has its own rhythm. The quick path is to go to the Store to buy chemical resin, finishing the ship with a few simple steps. Both paths can allow you to build a boat, but these two boats are fundamentally different",
+            "這是蘭嶼夜曆中最不吉祥的月份。這個月，專門製作貝灰，不允許舉行婚禮、造屋，也不允許落成禮。 即便你的材料已齊備，KP 已達標——現在也絕對不能動工Caulking。」": "This is the most inauspicious month in Lanyu’s calendar. This month is dedicated to making shell ash, and no weddings, house building, or completion ceremonies are allowed. Even if your materials are ready and KP has met the threshold — you must never start caulking now.”",
+            "但我要提醒你們一件事：下個月是 Kapowan，招魚祭的月份，Mountain Forest會封閉整整一個月。你現在手上的 Avaka 原料還夠嗎": "But I want to remind you of one thing: next month is Kapowan, the month of the fish-calling ritual, and the Mountain Forest will be closed for a whole month. Do you currently have enough Avaka raw materials in your hand?",
+            "主持人問全班：「有哪一組選擇了枯坐一個月的？為什麼？」讓不同組分享決策邏輯。觀察課堂中「接受限制」與「繞過限制」的比例——這個比例本身就是教學素材": "Host asks the class: “Which group chose to sit dryly for a month? Why?” Let different groups share their decision-making logic. Observe the proportion of “accepting constraints” vs. “bypassing constraints” in the classroom — this ratio itself is a great teaching resource.",
+            "說完後不要繼續解釋，給學生 30 秒的安靜決策時間。觀察哪些組的Youth開始快速往Mountain Forest移動採集，哪些組忽略了這個預警": "Do not explain further after speaking; give students 30 seconds of silent decision-making time. Observe which groups’ Youth begin to move quickly to the Mountain Forest to gather, and which groups ignore this pre-warning.",
+            "讓這個Rounds跑完整。不要催促，讓各組自行完成最後行動與Finish Ship計算。主持人保持安靜，只在必要時回答規則問題。讓結局自然發生": "Let this round run completely. Do not rush; let each group finish their final actions and finish ship calculations. Host remains quiet, only answering rule questions when necessary. Let the endings happen naturally.",
+            "你沒有上山採集過那些 Avaka，不知道採集時要說什麼、要避開哪些日子。你繞過了所有看起來麻煩的環節，也繞過了所有真正重要的事": "You have never climbed the mountain to gather Avaka, you don’t know what to say during gathering, or which days to avoid. You bypassed all the links that seemed troublesome, and bypassed all the things that truly mattered.",
+            "你發現自己的手感前所未有的流暢。不是因為你突然變厲害了，是因為你整年都在積累，而現在，土地給了你最後的補償。」": "You find your hands flowing with unprecedented smoothness. Not because you suddenly became amazing, but because you have been accumulating all year, and now, the land has given you the final compensation.”",
+            "始終沒有開始，好像哪裡卡住了，也許是不知道下一步該問誰，也許是繞了太多遠路，隨時間一天一天過去，而你還沒準備好": "It never started, as if stuck somewhere. Perhaps you didn’t know who to ask for the next step, perhaps you took too many detours, and as time passed day by day, you were still not ready.",
+            "現在，Mountain Forest封閉，你無法執行採集行動。如果你上個月沒有存夠材料，你面臨三個選擇：」": "Now that the Mountain Forest is closed, you cannot execute gather actions. If you did not stockpile enough materials last month, you face three options:”",
+            "預載畫面 (Preloader) - 提供即時回饋，避免 Babel 編譯與加載時的短暫黑屏卡頓感": "Preloader — provides instant feedback to avoid brief black screen lag during Babel compilation and loading",
+            "透過Apprentice Mechanism，體驗「默會知識」的場域依賴性——知識需要在場才能傳遞": "Through the Apprentice Mechanism, experience the field-dependency of ‘tacit knowledge’ — knowledge must be present in the field to be transmitted.",
+            "這句話不需特別強調，只是讓誘惑自然存在於遊戲場域中。接著繼續讓學生完成本Rounds行動，不做評論": "This sentence does not need special emphasis; just let the temptation naturally exist in the game space. Then let students complete their actions in this round without comment.",
+            "那些採集時吟唱的歌，那些老人家說只有動手做才能理解的身體知識——不是被你反對，是被你忽略了。」": "Those songs chanted during gathering, that physical knowledge the elders said can only be understood by doing it yourself — were not opposed by you, but ignored.”",
+            "讓學生從遊戲第一Rounds就進入「預判未來、提前規劃」的思維，模擬文化知識中的預備行為邏輯": "Allow students to enter an ‘anticipate the future and plan ahead’ mindset from the very first round, simulating preparatory behavior logic in cultural knowledge.",
+            "教學提示：朗讀時不要搭配投影片Description。讓語言單獨產生作用，讓學生先感受情境": "Pedagogical Tip: Do not use slides during reading. Let the language speak for itself, and let students feel the context first.",
+            "所有男人禁止進入Mountain Forest，門戶關閉——這叫做 Paneneb，是禁忌": "All men are forbidden from entering the Mountain Forest; the gateway is closed — this is called Paneneb, a taboo.",
+            "這是最容易引發挫折感的月份。讓學生在「幾乎完成」的時刻被強制暫停，體驗「儀式時間」的邏輯": "This is the month most likely to cause frustration. Forcing students to pause at the ‘almost finished’ moment allows them to experience the logic of ‘Ritual Time’.",
+            "這一年，你們必須完成一艘拼板舟。這艘船不只是交通工具，它是你們和祖先、和海洋之間的對話": "This year, you must complete a plank boat. This boat is not just a means of transport; it is a dialogue between you, your ancestors, and the ocean.",
+            "在傳統社會裡，沒有人可以選擇自己的出身，你被賦予了一個位置，你就在那個位置上承擔責任": "In traditional society, no one can choose their own origin. You are given a position, and you bear responsibility in that position.",
+            "規則說：曝曬中的材料，若你沒有預留 1 AP 進行維護，下Rounds自動報廢。」": "The rules say: for materials being dried, if you do not reserve 1 AP for maintenance, they will automatically rot next round.”",
+            "引導學生思考為何「高分路徑」比「快速路徑」更難達成，並連結至現實中文化傳承的困境": "Guide students to reflect on why the ‘high-score path’ is harder to achieve than the ‘quick path’, linking it to real-life dilemmas of cultural heritage.",
+            "天空陰雲密佈。 突如其來的降雨，讓你在灘頭曝曬的 Avaka 纖維陷入腐爛危機": "The sky is covered with dark clouds. The sudden rain puts your Avaka fiber drying on the beach in danger of rotting.",
+            "讓學生透過角色扮演與決策體驗，深度理解「技術選擇與文化韌性」之間的邏輯關係": "Enable students to deeply understand the logical connection between ‘technical choices and cultural resilience’ through role-playing and decision-making experiences.",
+            "飛魚隨著黑潮而來，而我們則順應時節。這是海洋的規矩，我們要好好遵守。」": "“Flying fish come with the Kuroshio current, and we conform to the seasons. This is the rule of the ocean, and we must obey it well.”",
+            "這是屬於手工藝的月份。 男人冶鐵織繩，女人織布——整個部落都在做手工": "This is a month dedicated to handicrafts. Men forge iron and weave ropes, women weave cloth — the entire tribe is doing handcrafts.",
+            "讓堅持傳統路徑的玩家在最後一刻獲得加速感，感受到「順應時序的回報」": "Allow players who stick to the traditional path to feel a sense of acceleration at the last moment, experiencing ‘the rewards of conforming to seasonal flow’.",
+            "手上這張卡，是你在蘭嶼的身份。在你翻開它之前，我只想告訴你一件事": "This card in your hand is your identity in Lanyu. Before you flip it over, I only want to tell you one thing:",
+            "每Rounds翻開一張月份卡，月份卡決定本Rounds的環境限制": "Each round flip a Month Card; the Month Card determines environmental constraints for the current round.",
+            "但在這一年裡，你們會不斷面對一個問題：走傳統的路，還是走快的路": "But in this year, you will constantly face a question: take the traditional path, or the quick path.",
+            "頂部與底部漸變模糊毛玻璃效果": "Top & Bottom Gradual Blur Glassmorphism Effect",
+            "放棄行動。默默承受時間壓力": "Give up action. Bear the pressure of time silently.",
+            "確認每組已有三名角色卡": "Verify that each group has exactly three character cards.",
+            "上方發光的圓形節點代表": "The glowing circular node above represents",
+            "從高分到低分唸出文本）": "read out the narratives from high to low score)",
+            "載入漸變模糊效果組件": "Load Gradual Blur Component",
+            "分鐘 課堂操作流程圖": "Minutes Classroom Operation Flowchart",
+            "現在，翻開你的牌。」": "“Now, flip your card.”",
+            "路徑 A（傳統工法）": "Path A (Traditional Method)",
+            "路徑 B（工業替代）": "Path B (Industrial Substitution)",
+            "全局 CSS 樣式": "Global CSS Styles",
+            "標記（籌碼或骰子）": "Markers (chips or dice)",
+            "突然抬頭看天）": "suddenly looking up at the sky)",
+            "載入明體字型": "Load Noto Serif TC font",
+            "約 5 分鐘": "approx. 5 mins",
+            "約 6 分鐘": "approx. 6 mins",
+            "約 4 分鐘": "approx. 4 mins",
+            "主持節奏控制": "Host Pacing Control",
+            "閱讀角色旁白": "Read Character Narrative",
+            "第 10 月": "Month 10",
+            "第 12 月": "Month 12",
+            "展露出笑意）": "showing a smile)",
+            "須在灘頭執行": "Must be executed at the beach",
+            "第 1 月": "Month 1",
+            "第 2 月": "Month 2",
+            "島嶼的維度": "Dimension of the Island",
+            "進場前確認": "Pre-entry Confirmation",
+            "事實層討論": "Fact-level Discussion",
+            "機制層討論": "Mechanism-level Discussion",
+            "價值層總結": "Value-level Summary",
+            "分牌前台詞": "Pre-distribution Lines",
+            "點（初始）": "points (initial)",
+            "移動不消耗": "Movement does not consume",
+            "停頓兩秒）": "pausing for two seconds)",
+            "第 5 月": "Month 5",
+            "看著材料）": "looking at materials)",
+            "腳本概覽": "Script Overview",
+            "閱讀台詞": "Read Dialogue",
+            "本腳本為": "This script is",
+            "場地設定": "Venue Setting",
+            "特殊能力": "Unique Ability",
+            "用完為止": "until depleted",
+            "緊張地）": "nervously)",
+            "平靜地）": "calmly)",
+            "的流暢": "flowing",
+            "第二段": "Part 2",
+            "停頓）": "pause)",
+            "免費）": "Free)",
+            "載入": "Load",
+            "附錄": "Appendix",
+            "預警": "Warning",
+            "禁令": "Ban",
+            "腐壞": "Rot",
+            "等待": "Wait",
+            "衝刺": "Sprint",
+            "採集": "Gather",
+            "消耗": "Consume",
+            "請益": "Consult",
+            "分鐘": "Minutes",
+
+            // --- Classroom 100% clean Chinese translations (40 keys) ---
+            "「這艘船是活的。不僅僅是一種比喻，而是真的活著。你花了整整一年，跟著走過祖先的同一條山路，身體記住了採集時該繞開哪棵樹、Avaka 的纖維要朝哪個方向捻才不會斷。這些動作可能沒有被文字記錄，卻藏在族人身體的記憶之中，等待被喚醒": "“This boat is alive. It is not just a metaphor, but truly alive. You spent a whole year retracing the exact same mountain path of your ancestors. Your body remembers which tree to bypass when gathering, and which direction to twine the Avaka fibers so they won’t break. These actions might not be recorded in text, but they are hidden in the physical memory of the tribe, waiting to be awakened",
+            "後來，透過科學資料，證實了 Avaka 纖維吸水之後會膨脹。你忽然明白，老人說『讓船呼吸』不只一種想像，是造船的學問。當海水滲進縫隙，纖維膨脹後，船反而變得更緊實。可以拆，可以修，可以一塊一塊換掉，再一次出海。": "“Later, scientific data confirmed that Avaka fibers expand after absorbing water. You suddenly realized that when the elders said ‘let the boat breathe,’ it was not just an imagination, but a profound knowledge of boat building. When sea water seeps into the cracks and the fibers expand, the boat becomes tighter instead. It can be disassembled, repaired, and replaced piece by piece, to set sail again.",
+            "那些你以為早已斷裂的記憶，其實只是靜靜地等著願意承接的人": "“Those memories you thought were long broken are actually just waiting quietly for someone willing to inherit them",
+            "而這艘船會繼續航行，帶著耆老們說過的話，也帶著你找回的那些記憶。": "“And this boat will continue to sail, carrying the words spoken by the elders, and the memories you have recovered.”",
+            "孩子要上學，油費要繳，時間不等人，你在這些現實壓力裡嘗試找到縫隙，幾塊工業材料省了些工夫，但你沒有就此撒手。你還是去敲了耆老的門，還是問了那幾個不問不會有人主動說的問題：材料要怎麼選、哪道工序不能跳過。": "“Children need school, fuel needs to be paid for, and time waits for no one. Amidst these real-life pressures, you tried to find cracks. A few industrial materials saved some effort, but you did not let go entirely. You still knocked on the elder’s door, still asked those few questions that no one would answer unless asked: how to choose materials, and which process cannot be skipped.",
+            "孩子要上學，油費要繳，時間不等人，你在這些現實壓力裡嘗試找到縫隙，幾塊工業材料省了些工夫，但你沒有就此撒手。你還是去敲了耆老的門，還是問了那幾個不問不會有人主動說的問題：材料要怎麼選、哪道工序不能跳過": "“Children need school, fuel needs to be paid for, and time waits for no one. Amidst these real-life pressures, you tried to find cracks. A few industrial materials saved some effort, but you did not let go entirely. You still knocked on the elder’s door, still asked those few questions that no one would answer unless asked: how to choose materials, and which process cannot be skipped",
+            "船造好的時候，你自己也說不清它到底是傳統還是現代。但或許這才是最誠實的答案，蘭嶼從來就不是一座博物館，人們在這裡過的是真實的生活，傳統也一直在真實的生活裡摩擦、磨損、又重新長出新的樣子": "“When the boat was finished, you couldn't tell if it was traditional or modern. But perhaps that is the most honest answer. Lanyu has never been a museum; people live real lives here, and tradition is always rubbing, wearing down, and growing into new shapes in real life",
+            "「月份卡說——本回合移動不耗 AP，這是立春的禮物。": "“The Month Card says — movement does not consume AP in this round, this is the gift of Li Chun.",
+            "但我要提醒你們一件事：下個月是 Kapowan，招魚祭的月份，山林會封閉整整一個月。你現在手上的 Avaka 原料還夠嗎？": "“But I want to remind you of one thing: next month is Kapowan, the month of the fish-calling ritual — the mountain forest will be closed for a whole month. Do you currently have enough Avaka raw materials in your hand?",
+            "但我要提醒你們一件事：下個月是 Kapowan，招魚祭的月份，山林會封閉整整一個月。你現在手上的 Avaka 原料還夠嗎": "“But I want to remind you of one thing: next month is Kapowan, the month of the fish-calling ritual — the mountain forest will be closed for a whole month. Do you currently have enough Avaka raw materials in your hand?",
+            "（燈光可稍暗，或主持人拿起月份卡展示給全場看）": "(The lights can be slightly dimmed, or the host holds up the Month Card to show the class)",
+            "「灘頭起了白煙。招魚祭開始了。": "“White smoke rises from the beach. The fish-calling ritual has begun.",
+            "所有男人禁止進入山林，門戶關閉——這叫做 Paneneb，是禁忌。": "“All men are forbidden from entering the mountain forest; the gates are closed — this is called Paneneb, a taboo.",
+            "所有男人禁止進入山林，門戶關閉——這叫做 Paneneb，是": "“All men are forbidden from entering the mountain forest; the gates are closed — this is called Paneneb, a taboo",
+            "現在，山林封閉，你無法執行採集行動。如果你上個月沒有存夠材料，你面臨三個選擇：」": "“Now, the mountain forest is closed, and you cannot perform the Gather action. If you did not stockpile enough materials last month, you face three options:”",
+            "青年：「糟了！我的 Avaka 原料用完了，但現在上山會觸犯禁忌……」": "Youth: “Oh no! My Avaka raw materials are depleted, but going up the mountain now would violate the taboo...”",
+            "中生代：「這就是為什麼老人家說 Kashyman 月要拼命存貨。現在你只能跟我去商店買尼龍繩，或者枯等一個月，看著進度落後。」": "Negotiator: “This is why the elders said to stock up eagerly during Kashyman. Now you can only buy nylon rope with me at the shop, or wait dryly for a month and watch your progress fall behind.”",
+            "中生代：「這就是為什麼老人家說 Kashyman 月要拼命存貨。現在你只能跟我去商店買尼龍繩，或者枯坐一個月，看著進度落後。」": "Negotiator: “This is why the elders said to stock up eagerly during Kashyman. Now you can only buy nylon rope with me at the shop, or wait dryly for a month and watch your progress fall behind.”",
+            "耆老：「飛魚隨著黑潮而來，而我們則順應時節。這是海洋的規矩，我們要好好遵守。」": "Elder: “Flying fish come with the Kuroshio, and we conform to the seasons. This is the ocean's rule — we must obey it well.”",
+            "「天空陰雲密佈。 突如其來的降雨，讓你在灘頭曝曬的 Avaka 纖維陷入腐爛危機。": "“The sky is overcast with dark clouds. The sudden rain puts your Avaka fiber drying on the beach in danger of rotting.",
+            "規則說：曝曬中的材料，若你沒有預留 1 AP 進行維護，下回合自動報廢。」": "“The rules say: for materials being dried, if you do not reserve 1 AP for maintenance, they will automatically rot next round.”",
+            "耆老（突然抬頭看天）：「孩子，做船不能只看地上的麻，要看天上的雲。快收起來！」": "Elder (suddenly looking up at the sky): “Child, when building a boat you cannot only watch the hemp on the ground — you must watch the clouds in the sky. Quickly bring it inside!”",
+            "「如果你的 AP 已經用完了——那些材料，就從你的存貨裡劃掉吧。」": "“If your AP is already depleted — those materials will be crossed off your inventory.”",
+            "「這是蘭嶼夜曆中最不吉祥的月份。這個月，專門製作貝灰，不允許舉行婚禮、造屋，也不允許落成禮。 即便你的材料已齊備，KP 已達標——現在也絕對不能動工填縫。」": "“This is the most inauspicious month in Lanyu’s calendar. This month is dedicated to making shell ash, and no weddings, house building, or completion ceremonies are allowed. Even if your materials are ready and KP has met the threshold — you must never start caulking now.”",
+            "中生代（看著材料）：「這就是『儀式時間』的邏輯。你得學會等待。如果你現在強行完工，這艘船在部落眼中將失去靈魂。」": "Negotiator (looking at the materials): “This is the logic of ritual time. You must learn to wait. If you force completion now, this boat will lose its soul in the eyes of the tribe.”",
+            "青年（緊張地）：「但我只剩兩個月就要結算了！如果不現在做，我怕來不及完成……」": "Youth (nervously): “But I only have two months left until settlement! If I don't do it now, I'm afraid I won't make it in time...”",
+            "耆老（平靜地）：「你現在可以去學你還沒學到的東西。等待，不是什麼都不做。」": "Elder (calmly): “You can use this time to learn what you haven't learned yet. Waiting does not mean doing nothing.”",
+            "「這是屬於手工藝的月份。 男人冶鐵織繩，女人織布——整個部落都在做手工。": "“This is a month dedicated to handicrafts. Men forge iron and weave ropes, women weave cloth — the entire tribe is doing handcrafts.",
+            "本月，執行『捻線』不再消耗任何 AP。": "“This month, executing ‘Twining Rope’ no longer consumes any AP.",
+            "耆老（展露出笑意）：「看吧，只要你順應時序，土地會給你最後的補償。快動手，讓這條船趕在明年飛魚祭前下水！」": "Elder (showing a smile): “You see — follow the seasonal order, and the land gives you its final reward. Get to work! Let this boat launch before next year's Flying Fish Ritual!”",
+            "這句話不需特別強調，只是讓誘惑自然存在於遊戲場域中。接著繼續讓學生完成本回合行動，不做評論。": "This sentence does not need special emphasis; just let the temptation naturally exist in the game space. Then let students complete their actions in this round without comment.",
+            "教學提示：朗讀時不要搭配投影片說明。讓語言單獨產生作用，讓學生先感受情境。": "Pedagogical Tip: Do not use slides during reading. Let the language speak for itself, and let students feel the context first.",
+            "說完後不要繼續解釋，給學生 30 秒 of 安靜決策時間。觀察哪些組 of 青年開始快速往山林移動採集，哪些組忽略了這個預警。": "Do not explain further after speaking; give students 30 seconds of silent decision-making time. Observe which groups’ Youth begin to move quickly to the mountain forest to gather, and which groups ignore this pre-warning.",
+            "說完後不要繼續解釋，給學生 30 秒的安靜決策時間。觀察哪些組的青年開始快速往山林移動採集，哪些組忽略了這個預警。": "Do not explain further after speaking; give students 30 seconds of silent decision-making time. Observe which groups’ Youth begin to move quickly to the mountain forest to gather, and which groups ignore this pre-warning.",
+            "讓這個回合跑完整。不要催促，讓各組自行完成最後行動與完工計算。主持人保持安靜，只在必要時回答規則問題。讓結局自然發生。": "Let this round run completely. Do not rush; let each group finish their final actions and finish ship calculations. Host remains quiet, only answering rule questions when necessary. Let the endings happen naturally.",
+            "讓學生從遊戲第一回合就進入「預判未來、提前規劃」的思維，模擬文化知識中的預備行為邏輯。": "Allow students to enter an ‘anticipate the future and plan ahead’ mindset from the very first round, simulating preparatory behavior logic in cultural knowledge.",
+            "透過學徒機制，體驗「默會知識」的場域依賴性——知識需要在場才能傳遞。": "Through the Apprentice Mechanism, experience the field-dependency of ‘tacit knowledge’ — knowledge must be present in the field to be transmitted.",
+            "手指也忘了。忘了纖維來回時的阻力，忘了怎麼判斷木材的品種。": "Your fingers have forgotten too. Forgotten the resistance when the fibers move back and forth, forgotten how to identify wood species.",
+            "分數結算（從高分到低分唸出文本）": "Score Settlement (read out the narratives from high to low score)",
+            "將手中材料轉交給同區域的另一名玩家，緩解物料匱乏": "Transfer materials in hand to another player in the same area to relieve material scarcity.",
+
+            // --- Classroom 100% final three clean Chinese translations (2 keys) ---
+            "傳統的路，需要等待季節、跟著耆老學習，每一步都有它的節奏。快的路，是去商店買化學樹脂，幾個動作就能完工。兩條路都能讓你造好一艘船，但這兩艘船是不一樣的。": "The traditional path requires waiting for seasons and learning from the elders — every step has its own rhythm. The fast path means buying chemical resin at the shop and finishing in a few steps. Both can get you a boat, but these two boats are not the same.",
+            "填縫（完工）": "Caulking (Finish Ship)",
+            "2 AP（耆老免費)": "2 AP (Elder Free)",
+            "Avaka：Dimension of the Island": "Avaka: Dimension of the Island",
+            "60MinutesClassroom Version": "60 Minutes Classroom Version",
+            "無": "None"
+            "每回合翻開一張月份卡，月份卡決定本回合的環境限制。": "Each round, flip one Month Card. The Month Card determines the environmental constraints for this round.",
+
+            // --- Classroom 100% final single clean Chinese translation (1 keys) ---
+            "後來，透過科學資料，證實了 Avaka 纖維吸水之後會膨脹。你忽然明白，老人說『讓船呼吸』不只是一種想像，是造船的學問。當海水滲進縫隙，纖維膨脹後，船反而變得更緊實。可以拆，可以修，可以一塊一塊換掉，再一次出海。": "Later, scientific data confirmed that Avaka fibers expand after absorbing water. You suddenly realized that when the elders said ‘let the boat breathe,’ it was not just a metaphor, but a profound knowledge of boat building. When sea water seeps into the cracks and the fibers expand, the boat becomes tighter instead. It can be disassembled, repaired, and replaced piece by piece, to set sail again.",
+
+
+
+
+
+
+            "不是誰的錯。那只是隨著時代推進而必然的結果。」": "“It is no one's fault. It is simply an inevitable result of the advance of the times.”"
+        };
+
+
+        let currentLang = 'zh';
+
+        // Pre-compile regular expressions for blazing fast execution and 100% regex-safety
+        const escapeRegex = (str) => str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        
+        const ZH_KEYS = Object.keys(GLOSSARY).sort((a,b) => b.length - a.length);
+        const ZH_REGEXP = new RegExp(ZH_KEYS.map(escapeRegex).join('|'), 'g');
+
+        const REVERSE_GLOSSARY = {};
+        for (let [zh, en] of Object.entries(GLOSSARY)) {
+            REVERSE_GLOSSARY[en] = zh;
+        }
+        const EN_KEYS = Object.keys(REVERSE_GLOSSARY).sort((a,b) => b.length - a.length);
+        const EN_REGEXP = new RegExp(EN_KEYS.map(escapeRegex).join('|'), 'g');
+
+        // High-performance dynamic DOM translator
+        function translateDOM(node, lang) {
+            if (!node) return;
+            if (node.nodeType === Node.TEXT_NODE) {
+                const text = node.textContent;
+                if (!text || !text.trim()) return;
+                
+                let translated;
+                if (lang === 'en') {
+                    translated = text.replace(ZH_REGEXP, (match) => GLOSSARY[match] || match);
+                } else {
+                    translated = text.replace(EN_REGEXP, (match) => REVERSE_GLOSSARY[match] || match);
+                }
+                
+                if (translated !== text) {
+                    node.textContent = translated;
+                }
+            } else {
+                if (node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE') return;
+                
+                if (node.placeholder) {
+                    node.placeholder = lang === 'en' 
+                        ? node.placeholder.replace(ZH_REGEXP, (match) => GLOSSARY[match] || match)
+                        : node.placeholder.replace(EN_REGEXP, (match) => REVERSE_GLOSSARY[match] || match);
+                }
+                
+                if (node.title) {
+                    node.title = lang === 'en'
+                        ? node.title.replace(ZH_REGEXP, (match) => GLOSSARY[match] || match)
+                        : node.title.replace(EN_REGEXP, (match) => REVERSE_GLOSSARY[match] || match);
+                }
+
+                // Concurrent-safe child traversal using static array
+                const children = Array.from(node.childNodes);
+                for (let child of children) {
+                    translateDOM(child, lang);
+                }
+            }
+        }
+
+        function applyRulesLanguage() {
+            const t = TRANSLATIONS[currentLang];
+            
+            // 1. Update cover page static text
+            const subtitleEl = document.getElementById('cover-subtitle');
+            if (subtitleEl) {
+                subtitleEl.textContent = t["cover-subtitle"];
+                if (typeof applyBlurText === 'function') {
+                    applyBlurText('cover-subtitle', { direction: 'top', baseDelay: 400, delay: 50 });
+                }
+            }
+            
+            const titleZhEl = document.getElementById('cover-title-zh');
+            if (titleZhEl) {
+                titleZhEl.textContent = t["cover-title-zh"];
+                if (typeof applyBlurText === 'function') {
+                    applyBlurText('cover-title-zh', { direction: 'bottom', baseDelay: 1800, delay: 70 });
+                }
+            }
+            
+            for (let i = 0; i <= 2; i++) {
+                const descLine = document.getElementById(`cover-desc-line-${i}`);
+                if (descLine) {
+                    descLine.textContent = t[`cover-desc-line-${i}`];
+                    if (typeof applyBlurText === 'function') {
+                        applyBlurText(`cover-desc-line-${i}`, { direction: 'bottom', baseDelay: 2500 + i * 700, delay: 35 });
+                    }
+                }
+            }
+            
+            const enterBtn = document.getElementById('cover-enter-btn');
+            if (enterBtn) {
+                const isSea = enterBtn.textContent.includes('出海') || enterBtn.textContent.includes('Sail');
+                enterBtn.textContent = isSea ? t["cover-enter-btn-sea"] : t["cover-enter-btn-forest"];
+            }
+            
+            // 2. Translate global navigation menu items
+            const gnavCover = document.querySelector('#gnav-cover a');
+            if (gnavCover) gnavCover.textContent = t["gnav-cover"];
+            const gnavRulebook = document.querySelector('#gnav-rulebook a');
+            if (gnavRulebook) gnavRulebook.textContent = t["gnav-rulebook"];
+            const gnavScenario = document.querySelector('#gnav-scenario a');
+            if (gnavScenario) gnavScenario.textContent = t["gnav-scenario"];
+            const gnavFieldwork = document.querySelector('#gnav-fieldwork a');
+            if (gnavFieldwork) gnavFieldwork.textContent = t["gnav-fieldwork"];
+            const gnavClassroom = document.querySelector('#gnav-classroom a');
+            if (gnavClassroom) gnavClassroom.textContent = t["gnav-classroom"];
+
+            // Update Gooey text active effect if active
+            const gooeyText = document.getElementById('gooey-text');
+            if (gooeyText && gooeyText.classList.contains('active')) {
+                const activeLi = document.querySelector('#gooey-nav-list li.active');
+                if (activeLi) {
+                    gooeyText.innerText = activeLi.querySelector('a').innerText;
+                }
+            }
+
+            // 3. Clean-up & re-render SPA subpages
+            const activeSection = document.querySelector('.page-section.page-active');
+            if (activeSection) {
+                const activePageId = activeSection.id.replace('page-', '');
+                document.body.dataset.currentPage = ''; // Force re-render
+                initPage(activePageId);
+            }
+        }
+
+
     </script>
 
     <!-- ===================================================

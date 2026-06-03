@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaka Dimension of the Island - Host Dashboard</title>
+
+    <!-- Load FontAwesome icon library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Load Noto Serif TC font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Gradual Blur Component -->
+    <script src="./gradual-blur.js?v=3"></script>
+
+    <!-- Set custom Tailwind animations and colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        slideUp: 'slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        float: 'floatSlow 3.5s ease-in-out infinite',
+                        glow: 'glowPulse 3s ease-in-out infinite',
+                        pulseSlow: 'glowPulse 4s ease-in-out infinite',
+                        spinSlow: 'spinSlow 12s linear infinite',
+                        fadeIn: 'fadeIn 0.4s ease-out forwards'
+                    },
+                    keyframes: {
+                        slideUpFade: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)', filter: 'blur(3px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }
+                        },
+                        floatSlow: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        },
+                        glowPulse: {
+                            '0%, 100%': { opacity: 0.8, filter: 'brightness(1)' },
+                            '50%': { opacity: 1, filter: 'brightness(1.3)' }
+                        },
+                        spinSlow: {
+                            from: { transform: 'rotate(0deg)' },
+                            to: { transform: 'rotate(360deg)' }
+                        },
+                        fadeIn: {
+                            from: { opacity: 0 },
+                            to: { opacity: 1 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Global CSS Styles -->
+    <style>
+        body {
+            font-family: 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.5);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.8);
+        }
+
+        .text-shadow-glow {
+            text-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+        }
+
+        .shadow-glow-amber {
+            box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+        }
+
+        .delay-100 {
+            animation-delay: 100ms;
+        }
+
+        .delay-200 {
+            animation-delay: 200ms;
+        }
+
+        .delay-300 {
+            animation-delay: 300ms;
+        }
+
+        button {
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ============ sub-GooeyNav ============ */
+        :root {
+            --color-1: #34d399;   /* emerald */
+            --color-2: #fcd34d;   /* gold */
+            --color-3: #38bdf8;   /* sky */
+            --color-4: #ffffff;   /* white */
+        }
+        #sub-nav-container {
+            position: relative;
+            background: rgba(10, 39, 30, 0.45);
+            border: 1px solid rgba(18, 63, 49, 0.55);
+            border-radius: 100vw;
+            padding: 4px;
+        }
+        #sub-nav-container nav {
+            display: flex;
+            position: relative;
+            transform: translate3d(0,0,0.01px);
+            padding: 38px 0;
+            margin: -38px 0;
+            align-items: center;
+        }
+        #sub-nav-container nav ul {
+            display: flex;
+            gap: 0.3em;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            z-index: 3;
+            color: #84b8a4; /* brand-textMuted */
+        }
+        #sub-nav-container nav ul li {
+            border-radius: 100vw;
+            position: relative;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            color: #84b8a4;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        #sub-nav-container nav ul li a {
+            display: flex;
+            align-items: center;
+            padding: 0.6em 1.2em;
+            text-decoration: none;
+            color: inherit;
+        }
+        #sub-nav-container nav ul li::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 100vw;
+            background: #047857; /* active color matching bg-emerald-700 */
+            opacity: 0;
+            transform: scale(0);
+            z-index: -1;
+            display: none !important; /* Hide fallback to prevent transition jump */
+        }
+        #sub-nav-container nav ul li.active {
+            color: #ffffff;
+        }
+        #sub-nav-container nav ul li.active::after {
+            opacity: 0;
+            transform: scale(0);
+            display: none !important; /* Hide fallback to prevent transition jump */
+        }
+        /* effect spans */
+        #sub-nav-container .effect {
+            position: absolute;
+            left: 0; top: 0;
+            width: 0; height: 0;
+            opacity: 1;
+            pointer-events: none;
+            display: grid;
+            place-items: center;
+            z-index: 1;
+            will-change: left, top, width, height;
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        top 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #sub-nav-container .effect.text {
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #sub-nav-container .effect.text.active { color: #ffffff; }
+        #sub-nav-container .effect.filter {
+            filter: url(#goo-nav-filter);
+        }
+        #sub-nav-container .effect.filter::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #047857;
+            transform: scale(0);
+            opacity: 0;
+            z-index: -1;
+            border-radius: 100vw;
+        }
+        #sub-nav-container .effect.active::after {
+            animation: sub-gooey-pill 0.3s ease both;
+        }
+        @keyframes sub-gooey-pill {
+            to { transform: scale(1); opacity: 1; }
+        }
+        .gooey-particle, .gooey-point {
+            display: block;
+            opacity: 0;
+            width: 20px; height: 20px;
+            border-radius: 100%;
+            transform-origin: center;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
+        }
+        .gooey-particle {
+            --time: 5s;
+            position: absolute;
+            top: calc(50% - 8px);
+            left: calc(50% - 8px);
+            animation: gooey-particle calc(var(--time)) ease 1 -350ms;
+        }
+        .gooey-point {
+            background: var(--color);
+            opacity: 1;
+            animation: gooey-point calc(var(--time)) ease 1 -350ms;
+        }
+        @keyframes gooey-particle {
+            0%   { transform: rotate(0deg) translate(var(--start-x), var(--start-y)); opacity:1; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            70%  { transform: rotate(calc(var(--rotate)*.5)) translate(calc(var(--end-x)*1.2),calc(var(--end-y)*1.2)); opacity:1; animation-timing-function:ease; }
+            85%  { transform: rotate(calc(var(--rotate)*.66)) translate(var(--end-x),var(--end-y)); opacity:1; }
+            100% { transform: rotate(calc(var(--rotate)*1.2)) translate(calc(var(--end-x)*.5),calc(var(--end-y)*.5)); opacity:1; }
+        }
+        @keyframes gooey-point {
+            0%   { transform:scale(0); opacity:0; animation-timing-function:cubic-bezier(0.55,0,1,0.45); }
+            25%  { transform:scale(calc(var(--scale)*.25)); }
+            38%  { opacity:1; }
+            65%  { transform:scale(var(--scale)); opacity:1; animation-timing-function:ease; }
+            85%  { transform:scale(var(--scale)); opacity:1; }
+            100% { transform:scale(0); opacity:0; }
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- SVG Gooey Filter -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display: block; height: 0; width: 0; position: absolute; pointer-events: none;">
+      <defs>
+        <filter id="goo-nav-filter" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+
+    <div id="root">
+        <!-- Preloader — provides instant feedback to avoid brief black screen lag during Babel compilation and loading -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #01120d; color: #34d399; font-family: 'Noto Serif TC', serif;">
+            <div style="width: 48px; height: 48px; border: 3px solid rgba(52, 211, 153, 0.2); border-top-color: #34d399; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 24px;"></div>
+            <style>
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            </style>
+            <h2 style="font-size: 1.5rem; letter-spacing: 0.2em; color: #ecfdf5; font-weight: bold; margin-bottom: 8px;">Avaka</h2>
+            <p style="font-size: 0.875rem; letter-spacing: 0.3em; color: rgba(52, 211, 153, 0.8);">Digital Dashboard Loading...</p>
+        </div>
+    </div>
+
+    <!-- Load React core libraries and Babel compiler -->
+    <script src="./react.production.min.js" crossorigin></script>
+    <script src="./react-dom.production.min.js" crossorigin></script>
+    <script src="./babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const GooeyNav = ({ tabs, activeTab, setActiveTab }) => {
+            const containerRef = React.useRef(null);
+            const filterRef = React.useRef(null);
+            const textRef = React.useRef(null);
+            const listRef = React.useRef(null);
+            const [subActiveIndex, setSubActiveIndex] = useState(0);
+
+            const noise = (n = 1) => n / 2 - Math.random() * n;
+
+            const getXY = (distance, pointIndex, totalPoints) => {
+                const angle = ((360 + noise(8)) / totalPoints) * pointIndex * (Math.PI / 180);
+                return [distance * Math.cos(angle), distance * Math.sin(angle)];
+            };
+
+            const createParticle = (i, t, d, r) => {
+                let rotate = noise(r / 10);
+                return {
+                    start: getXY(d[0], 15 - i, 15),
+                    end: getXY(d[1] + noise(7), 15 - i, 15),
+                    time: t,
+                    scale: 1 + noise(0.2),
+                    color: [1, 2, 3, 1, 2, 3, 1, 4][Math.floor(Math.random() * 8)],
+                    rotate: rotate > 0 ? (rotate + r / 20) * 10 : (rotate - r / 20) * 10
+                };
+            };
+
+            const makeSubParticles = (el) => {
+                const bubbleTime = 1200 + 300;
+                el.style.setProperty('--time', `${bubbleTime}ms`);
+
+                for (let i = 0; i < 15; i++) {
+                    const t = 1200 + noise(600);
+                    const p = createParticle(i, t, [40, 5], 100);
+                    el.classList.remove('active');
+
+                    setTimeout(() => {
+                        const particle = document.createElement('span');
+                        const point = document.createElement('span');
+                        particle.className = 'gooey-particle';
+                        particle.style.setProperty('--start-x', `${p.start[0]}px`);
+                        particle.style.setProperty('--start-y', `${p.start[1]}px`);
+                        particle.style.setProperty('--end-x', `${p.end[0]}px`);
+                        particle.style.setProperty('--end-y', `${p.end[1]}px`);
+                        particle.style.setProperty('--time', `${p.time}ms`);
+                        particle.style.setProperty('--scale', `${p.scale}`);
+                        particle.style.setProperty('--color', `var(--color-${p.color}, white)`);
+                        particle.style.setProperty('--rotate', `${p.rotate}deg`);
+                        point.className = 'gooey-point';
+                        particle.appendChild(point);
+                        el.appendChild(particle);
+                        requestAnimationFrame(() => el.classList.add('active'));
+                        setTimeout(() => {
+                            try { el.removeChild(particle); } catch(e) {}
+                        }, t);
+                    }, 30);
+                }
+            };
+
+            const updateSubEffectPosition = (liEl) => {
+                const filterEl = filterRef.current;
+                const textEl = textRef.current;
+                if (!filterEl || !textEl || !liEl) return;
+
+                const styles = {
+                    left: `${liEl.offsetLeft}px`,
+                    top: `${liEl.offsetTop}px`,
+                    width: `${liEl.offsetWidth}px`,
+                    height: `${liEl.offsetHeight}px`
+                };
+                Object.assign(filterEl.style, styles);
+                Object.assign(textEl.style, styles);
+
+                const spanEl = liEl.querySelector('span');
+                const iconEl = liEl.querySelector('i');
+                if (spanEl && textEl) {
+                    textEl.innerHTML = '';
+                    if (iconEl) {
+                        const newIcon = iconEl.cloneNode(true);
+                        textEl.appendChild(newIcon);
+                    }
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'tracking-wide ml-3';
+                    textSpan.innerText = spanEl.innerText;
+                    textEl.appendChild(textSpan);
+                }
+            };
+
+            useEffect(() => {
+                // Initialize active tab position on mount after layout settles
+                const activeLi = listRef.current ? listRef.current.querySelector(`li.active`) : null;
+                if (activeLi) {
+                    const timer = setTimeout(() => {
+                        updateSubEffectPosition(activeLi);
+                    }, 150);
+                    return () => clearTimeout(timer);
+                }
+            }, []);
+
+            useEffect(() => {
+                // Keep in sync synchronously if activeTab changes programmatically
+                const activeLi = listRef.current ? listRef.current.querySelector(`li.active`) : null;
+                if (activeLi) {
+                    updateSubEffectPosition(activeLi);
+                }
+            }, [activeTab]);
+
+            // Resize listener
+            useEffect(() => {
+                const handleResize = () => {
+                    const activeLi = listRef.current ? listRef.current.querySelector(`li.active`) : null;
+                    if (activeLi) {
+                        updateSubEffectPosition(activeLi);
+                    }
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            const handleTabClick = (e, tabId, idx) => {
+                e.preventDefault();
+                const liEl = e.currentTarget.closest('li');
+                if (tabId === activeTab) return;
+
+                setActiveTab(tabId);
+                setSubActiveIndex(idx);
+
+                // Smoothly scroll the clicked tab to the center of the list
+                liEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+                const filterEl = filterRef.current;
+                const textEl = textRef.current;
+                if (filterEl && textEl) {
+                    // remove old particles
+                    filterEl.querySelectorAll('.gooey-particle').forEach(p => {
+                        try { filterEl.removeChild(p); } catch(e) {}
+                    });
+
+                    textEl.classList.remove('active');
+                    void textEl.offsetWidth;
+                    textEl.classList.add('active');
+
+                    updateSubEffectPosition(liEl);
+                    makeSubParticles(filterEl);
+                }
+            };
+
+            return (
+                <div className="gooey-nav-container" ref={containerRef} id="sub-nav-container">
+                    <nav className="overflow-x-auto hide-scrollbar">
+                        <ul className="flex gap-2 relative" ref={listRef} id="sub-nav-list">
+                            {tabs.map((tab, idx) => (
+                                <li
+                                    key={tab.id}
+                                    id={`btn-${tab.id}`}
+                                    className={activeTab === tab.id ? 'active' : ''}
+                                >
+                                    <a href="#" onClick={(e) => handleTabClick(e, tab.id, idx)}>
+                                        {tab.icon}
+                                        <span className="tracking-wide ml-3">{tab.name}</span>
+                                    </a>
+                                </li>
+                            ))}
+                            <span className="effect filter" ref={filterRef} id="sub-gooey-filter"></span>
+                            <span className="effect text" ref={textRef} id="sub-gooey-text"></span>
+                        </ul>
+                    </nav>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('section1');
+            const [activeMonth, setActiveMonth] = useState(1);
+            const [isLoaded, setIsLoaded] = useState(false);
+
+            useEffect(() => {
+                setIsLoaded(true);
+            }, []);
+
+            const [modal, setModal] = useState({
+                isOpen: false, title: '', content: null, icon: null, theme: 'emerald'
+            });
+
+            const modalThemes = {
+                emerald: { borderContainer: 'border-emerald-500/50', bgHeader: 'bg-emerald-950/80', borderHeader: 'border-emerald-500/30', iconBg: 'border-emerald-500/30', title: 'text-emerald-300', glow: 'bg-emerald-500/5', borderLeft: 'border-emerald-500/80', btnBg: 'bg-emerald-700', btnHover: 'hover:bg-emerald-600', btnShadow: 'hover:shadow-emerald-500/30' },
+                cyan: { borderContainer: 'border-cyan-500/50', bgHeader: 'bg-cyan-950/80', borderHeader: 'border-cyan-500/30', iconBg: 'border-cyan-500/30', title: 'text-cyan-300', glow: 'bg-cyan-500/5', borderLeft: 'border-cyan-500/80', btnBg: 'bg-cyan-700', btnHover: 'hover:bg-cyan-600', btnShadow: 'hover:shadow-cyan-500/30' },
+                amber: { borderContainer: 'border-amber-500/50', bgHeader: 'bg-amber-950/80', borderHeader: 'border-amber-500/30', iconBg: 'border-amber-500/30', title: 'text-amber-300', glow: 'bg-amber-500/5', borderLeft: 'border-amber-500/80', btnBg: 'bg-amber-700', btnHover: 'hover:bg-amber-600', btnShadow: 'hover:shadow-amber-500/30' },
+                slate: { borderContainer: 'border-slate-500/50', bgHeader: 'bg-slate-900/80', borderHeader: 'border-slate-500/30', iconBg: 'border-slate-500/30', title: 'text-slate-300', glow: 'bg-slate-500/5', borderLeft: 'border-slate-500/80', btnBg: 'bg-slate-700', btnHover: 'hover:bg-slate-600', btnShadow: 'hover:shadow-slate-500/30' },
+                rose: { borderContainer: 'border-rose-500/50', bgHeader: 'bg-rose-950/80', borderHeader: 'border-rose-500/30', iconBg: 'border-rose-500/30', title: 'text-rose-300', glow: 'bg-rose-500/5', borderLeft: 'border-rose-500/80', btnBg: 'bg-rose-700', btnHover: 'hover:bg-rose-600', btnShadow: 'hover:shadow-rose-500/30' },
+                red: { borderContainer: 'border-red-500/50', bgHeader: 'bg-red-950/80', borderHeader: 'border-red-500/30', iconBg: 'border-red-500/30', title: 'text-red-300', glow: 'bg-red-500/5', borderLeft: 'border-red-500/80', btnBg: 'bg-red-700', btnHover: 'hover:bg-red-600', btnShadow: 'hover:shadow-red-500/30' }
+            };
+
+            const tabs = [
+                { id: 'section1', name: 'Script Overview', icon: <i className="fas fa-file-alt text-[22px]" /> },
+                { id: 'section2', name: 'Introduction & Roles', icon: <i className="fas fa-users text-[22px]" /> },
+                { id: 'section3', name: 'Selected Months', icon: <i className="fas fa-book-open text-[22px]" /> },
+                { id: 'section4', name: 'Scoring & Reflection', icon: <i className="fas fa-flag text-[22px]" /> },
+                { id: 'section5', name: 'Appendix', icon: <i className="fas fa-list text-[22px]" /> }
+            ];
+
+            const months = [
+                { id: 1, name: 'Month 1 Kashyman', subtitle: 'Season of Pre-warning', duration: 'approx. 5 mins' },
+                { id: 2, name: 'Month 2 Kapowan', subtitle: 'Flying Fish Ban', duration: 'approx. 6 mins' },
+                { id: 5, name: 'Month 5: Pipilapila', subtitle: 'Plum Rain Rotting', duration: 'approx. 5 mins' },
+                { id: 10, name: 'Month 10: Kaneman', subtitle: 'Forbidden Month', duration: 'approx. 5 mins' },
+                { id: 12, name: 'Month 12: Kaowan', subtitle: 'Final Sprint', duration: 'approx. 4 mins' }
+            ];
+
+            const openModal = (title, content, icon, theme = 'emerald') => {
+                setModal({ isOpen: true, title, content, icon, theme });
+            };
+
+            const closeModal = () => {
+                setModal(prev => ({ ...prev, isOpen: false }));
+            };
+
+            const GlassCard = ({ children, className = "", delay = "", isActive = true }) => (
+                <div className={`bg-[#021812]/85 backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative overflow-hidden ${isActive ? 'animate-slideUp' : 'opacity-0'} ${delay} ${className}`}>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[50px] pointer-events-none rounded-full"></div>
+                    <div className="relative z-10">{children}</div>
+                </div>
+            );
+
+            const SectionTitle = ({ icon, title }) => (
+                <h2 className="text-3xl font-bold text-white mb-8 flex items-center border-b border-white/10 pb-5 tracking-wider">
+                    <div className="animate-float">{icon}</div>
+                    <span className="ml-4 text-shadow-glow">{title}</span>
+                </h2>
+            );
+
+            const StepBadge = ({ num }) => (
+                <span className="bg-emerald-900/80 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.4)] w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base font-bold flex-shrink-0 animate-glow" style={{ transform: 'translateZ(0)' }}>
+                    {num}
+                </span>
+            );
+
+            const ScriptButton = ({ icon, title, content, buttonText = "Read Dialogue", theme = "emerald" }) => {
+                const themeStyles = {
+                    emerald: { border: 'border-emerald-500/30', text: 'text-emerald-300', bg: 'bg-emerald-950/50', btn: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30', shadow: 'hover:shadow-emerald-500/10' },
+                    cyan: { border: 'border-cyan-500/30', text: 'text-cyan-300', bg: 'bg-cyan-950/50', btn: 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/30', shadow: 'hover:shadow-cyan-500/10' },
+                    amber: { border: 'border-amber-500/30', text: 'text-amber-300', bg: 'bg-amber-950/50', btn: 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30', shadow: 'hover:shadow-amber-500/10' },
+                    slate: { border: 'border-slate-500/30', text: 'text-slate-300', bg: 'bg-slate-900/50', btn: 'bg-slate-600 hover:bg-slate-500 text-white shadow-slate-600/30', shadow: 'hover:shadow-slate-500/10' },
+                    rose: { border: 'border-rose-500/30', text: 'text-rose-300', bg: 'bg-rose-950/50', btn: 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30', shadow: 'hover:shadow-rose-500/10' },
+                    red: { border: 'border-red-500/30', text: 'text-red-300', bg: 'bg-red-950/50', btn: 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/30', shadow: 'hover:shadow-red-500/10' },
+                };
+                const t = themeStyles[theme] || themeStyles.emerald;
+
+                return (
+                    <div className={`p-6 rounded-2xl border ${t.border} ${t.bg} flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all hover:-translate-y-1 hover:shadow-lg ${t.shadow} mb-5 duration-300`}>
+                        <div className="flex items-center space-x-5">
+                            <div className={`p-3 rounded-full border ${t.border} bg-black/40 shadow-inner flex items-center justify-center`}>
+                                {icon}
+                            </div>
+                            <h4 className={`font-bold ${t.text} tracking-wider text-xl`}>{title}</h4>
+                        </div>
+                        <button
+                            onClick={() => openModal(title, content, icon, theme)}
+                            className={`px-6 py-3 rounded-xl font-bold text-base transition-all shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 ${t.btn}`}
+                        >
+                            <i className="fas fa-quote-left text-[18px] mr-3 opacity-80" />
+                            {buttonText}
+                        </button>
+                    </div>
+                );
+            };
+
+            const renderSection1 = (isActive) => (
+                <div className="space-y-8">
+                    <GlassCard className="p-8 md:p-10" delay="delay-100" isActive={isActive}>
+                        <SectionTitle icon={<i className="fas fa-file-alt text-[28px] text-emerald-400" />} title="Script Overview" />
+
+                        <p className="text-emerald-100/90 leading-relaxed mb-10 bg-[#04281f] p-6 rounded-xl border border-emerald-900 tracking-wide shadow-inner text-lg">
+                            This script is《Avaka：Dimension of the Island》The complete host manual for classroom teaching mode, covering opening remarks, character introduction, situational dialogues for each month, timing for pedagogical intervention, and verbatim guides for final reflective discussions. Designed with a baseline of 60 minutes, which the host can flexibly adjust within a 10-minute margin based on classroom pacing。
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                            <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 shadow-lg hover:border-emerald-500/50 transition-colors duration-300 group">
+                                <h3 className="font-bold text-emerald-300 mb-6 flex items-center text-xl tracking-wider group-hover:text-emerald-200 transition-colors">
+                                    <i className="fas fa-bullseye text-[24px] mr-3 animate-float" />
+                                    Course Goal
+                                </h3>
+                                <ul className="space-y-6">
+                                    <li className="flex items-start">
+                                        <span className="bg-emerald-800/80 text-emerald-100 border border-emerald-500/30 text-sm font-bold px-3 py-1 rounded mr-4 mt-0.5 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.2)]">Primary Goal</span>
+                                        <span className="text-base text-emerald-50 leading-relaxed">Enable students to deeply understand the logical connection between ‘technical choices and cultural resilience’ through role-playing and decision-making experiences.。</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="bg-emerald-800/80 text-emerald-100 border border-emerald-500/30 text-sm font-bold px-3 py-1 rounded mr-4 mt-0.5 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.2)]">Secondary Goal 1</span>
+                                        <span className="text-base text-emerald-50 leading-relaxed">Through the Apprentice Mechanism, experience the field-dependency of ‘tacit knowledge’ — knowledge must be present in the field to be transmitted.</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="bg-emerald-800/80 text-emerald-100 border border-emerald-500/30 text-sm font-bold px-3 py-1 rounded mr-4 mt-0.5 whitespace-nowrap shadow-[0_0_8px_rgba(16,185,129,0.2)]">Secondary Goal 2</span>
+                                        <span className="text-base text-emerald-50 leading-relaxed">Guide students to reflect on why the ‘high-score path’ is harder to achieve than the ‘quick path’, linking it to real-life dilemmas of cultural heritage.。</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-[#291b04] p-8 rounded-2xl border border-amber-800/50 shadow-lg hover:border-amber-500/50 transition-colors duration-300 group">
+                                <h3 className="font-bold text-amber-400 mb-6 flex items-center text-xl tracking-wider group-hover:text-amber-300 transition-colors">
+                                    <i className="fas fa-check-circle text-[24px] mr-3 animate-pulseSlow" />
+                                    Host Preparation Items
+                                </h3>
+                                <div className="space-y-8">
+                                    <div>
+                                        <h4 className="font-bold text-amber-200 mb-4 flex items-center text-lg"><div className="w-2 h-2 bg-amber-400 rounded-full mr-3 shadow-glow-amber"></div>Materials List</h4>
+                                        <ul className="list-disc pl-7 text-base text-amber-50/90 space-y-3">
+                                            <li>Character Cards (3 per group), Score Settlement Sheet</li>
+                                            <li>Action PointsMarkers (chips or dice)</li>
+                                            <li>12 Month Cards (ordered sequentially, face down in the center)</li>
+                                        </ul>
+                                    </div>
+                                    <div className="border-t border-amber-800/50 pt-6">
+                                        <h4 className="font-bold text-amber-200 mb-4 flex items-center text-lg"><div className="w-2 h-2 bg-amber-400 rounded-full mr-3 shadow-glow-amber"></div>Venue & Entry Settings</h4>
+                                        <ul className="list-disc pl-7 text-base text-amber-50/90 space-y-3">
+                                            <li><strong className="text-amber-300 tracking-wide">Venue Setting：</strong>Recommended for each group to sit around a table, 3 players per group。</li>
+                                            <li><strong className="text-amber-300 tracking-wide">Pre-entry Confirmation：</strong>Verify that each group has exactly three character cards.。</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+
+                    <GlassCard className="p-8 md:p-12" delay="delay-200" isActive={isActive}>
+                        <h3 className="font-bold text-cyan-300 mb-8 flex items-center text-3xl tracking-wider border-b border-white/10 pb-6">
+                            <i className="fas fa-clock text-[32px] mr-4 animate-spinSlow" />
+                            60 Minutes Classroom Operation Flowchart
+                        </h3>
+
+                        <div className="relative mt-10">
+                            <div className="absolute top-4 bottom-8 left-[19px] md:left-[27px] w-[3px] rounded-full bg-gradient-to-b from-cyan-400 via-emerald-500 to-amber-500 shadow-[0_0_12px_rgba(52,211,153,0.6)]"></div>
+
+                            <div className="space-y-16">
+                                <div className="relative pl-14 md:pl-20">
+                                    <div className="absolute top-0 left-[0px] md:left-[8px] w-10 h-10 bg-[#011410] border-[4px] border-cyan-400 rounded-full z-10 shadow-[0_0_20px_rgba(34,211,238,0.8)] flex items-center justify-center animate-glow" style={{ transform: 'translateZ(0)' }}>
+                                        <div className="w-3 h-3 bg-cyan-300 rounded-full"></div>
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
+                                        <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">00:00 - 10:00</span>
+                                        <span>Part 1: Introduction & Role Assignment</span>
+                                    </h4>
+
+                                    <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                                        <div className="flex-1 bg-gradient-to-br from-cyan-950/40 to-[#011410] border border-cyan-800/50 p-6 rounded-2xl hover:-translate-y-1 hover:border-cyan-500/50 transition-all shadow-lg group">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="bg-cyan-900/50 text-cyan-300 text-sm font-bold px-3 py-1.5 rounded">Step 1</span>
+                                                <span className="text-cyan-500/70 text-sm font-bold">3 mins</span>
+                                            </div>
+                                            <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-play-circle text-[20px] mr-3 text-cyan-400" />Engagement & Motivation</div>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">The entire class reads the ‘Opening Remarks’ aloud to establish the artisan context and goals, without using slides。</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-center hidden md:flex text-cyan-800"><i className="fas fa-arrow-right text-[28px]" /></div>
+                                        <div className="flex items-center justify-center md:hidden text-cyan-800"><i className="fas fa-arrow-down text-[28px]" /></div>
+
+                                        <div className="flex-1 bg-gradient-to-br from-cyan-950/40 to-[#011410] border border-cyan-800/50 p-6 rounded-2xl hover:-translate-y-1 hover:border-cyan-500/50 transition-all shadow-lg group">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="bg-cyan-900/50 text-cyan-300 text-sm font-bold px-3 py-1.5 rounded">Step 2</span>
+                                                <span className="text-cyan-500/70 text-sm font-bold">4 mins</span>
+                                            </div>
+                                            <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-users text-[20px] mr-3 text-cyan-400" />Role Assignment</div>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">Distribute cards, and the host verbally narrates the descriptions and unique abilities of the three major characters, instilling responsibility。</p>
+                                        </div>
+
+                                        <div className="flex items-center justify-center hidden md:flex text-cyan-800"><i className="fas fa-arrow-right text-[28px]" /></div>
+                                        <div className="flex items-center justify-center md:hidden text-cyan-800"><i className="fas fa-arrow-down text-[28px]" /></div>
+
+                                        <div className="flex-1 bg-gradient-to-br from-cyan-950/40 to-[#011410] border border-cyan-800/50 p-6 rounded-2xl hover:-translate-y-1 hover:border-cyan-500/50 transition-all shadow-lg group">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="bg-cyan-900/50 text-cyan-300 text-sm font-bold px-3 py-1.5 rounded">Step 3</span>
+                                                <span className="text-cyan-500/70 text-sm font-bold">3 mins</span>
+                                            </div>
+                                            <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-list text-[20px] mr-3 text-cyan-400" />Rule Explanation</div>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">Quickly explain AP consumption, the traditional vs. industrial paths, and how the apprentice mechanism works。</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="relative pl-12 md:pl-16">
+                                    <div className="absolute top-0 left-[0px] md:left-[8px] w-10 h-10 bg-[#011410] border-[4px] border-emerald-400 rounded-full z-10 shadow-[0_0_20px_rgba(52,211,153,0.8)] flex items-center justify-center animate-glow" style={{ transform: 'translateZ(0)', animationDelay: '1s' }}>
+                                        <div className="w-3 h-3 bg-emerald-300 rounded-full"></div>
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
+                                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">10:00 - 45:00</span>
+                                        <span>Part 2: Gameplay Experience (Selected Months)</span>
+                                    </h4>
+
+                                    <div className="bg-[#011a14] p-8 rounded-3xl border border-emerald-800/40 shadow-inner overflow-x-auto hide-scrollbar">
+                                        <div className="flex items-start gap-2 min-w-[800px] py-4">
+                                            {[
+                                                { m: '1月', name: 'Warning', time: '5m', active: true, icon: <i className="fas fa-exclamation-triangle text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '2月', name: 'Ban', time: '6m', active: true, icon: <i className="fas fa-book-open text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '3-4月', name: 'Quick Bypass', time: '3m', active: false },
+                                                { m: '5月', name: 'Rot', time: '5m', active: true, icon: <i className="fas fa-exclamation-triangle text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '6-9月', name: 'Quick Bypass', time: '5m', active: false },
+                                                { m: '10月', name: 'Wait', time: '5m', active: true, icon: <i className="fas fa-check-circle text-[20px] text-emerald-300 mb-2" /> },
+                                                { m: '11月', name: 'Quick Bypass', time: '2m', active: false },
+                                                { m: '12月', name: 'Sprint', time: '4m', active: true, icon: <i className="fas fa-trophy text-[20px] text-emerald-300 mb-2" /> }
+                                            ].map((step, idx, arr) => (
+                                                <div className="relative flex flex-col items-center w-28 shrink-0 group" key={idx}>
+                                                    {idx < arr.length - 1 && (
+                                                        <div className={`absolute top-8 left-1/2 w-full h-[3px] z-0 ${step.active && arr[idx + 1].active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-white/10'}`}></div>
+                                                    )}
+                                                    <div className={`relative z-10 flex flex-col items-center justify-center w-16 h-16 rounded-full border-2 transition-all duration-300 ${step.active
+                                                        ? 'bg-emerald-950 border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.4)] group-hover:scale-110 group-hover:bg-emerald-900 cursor-pointer'
+                                                        : 'bg-black border-white/10 text-white/30 grayscale hover:grayscale-0'
+                                                        }`} style={{ transform: 'translateZ(0)' }}>
+                                                        {step.active && step.icon}
+                                                        <span className={`font-bold tracking-wider leading-none ${step.active ? 'text-white text-base' : 'text-sm'}`}>{step.m}</span>
+                                                    </div>
+                                                    <span className={`mt-4 text-base font-bold tracking-widest ${step.active ? 'text-emerald-300' : 'text-white/30'}`}>{step.name}</span>
+                                                    <span className={`mt-1.5 px-3 py-1 rounded text-xs ${step.active ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50' : 'text-white/20'}`}>{step.time}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 bg-emerald-900/20 p-5 rounded-xl text-base text-emerald-100/90 border border-emerald-500/30 flex items-start shadow-lg">
+                                        <i className="far fa-dot-circle text-[24px] mr-4 mt-0.5 text-emerald-400 flex-shrink-0 animate-pulseSlow" />
+                                        <p className="leading-relaxed">
+                                            <strong className="text-emerald-300 tracking-wide text-lg">Host Pacing Control：</strong><br />
+                                            The glowing circular node above represents<strong className="text-white mx-1 text-lg border-b border-emerald-500/50">Must pause the timer to perform script reading and guidance</strong>rounds; while grey nodes represent<strong className="text-white mx-1 text-lg border-b border-emerald-500/50">Quickly announce environmental constraints, then let groups make their own decisions</strong>flowingRounds。
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="relative pl-12 md:pl-16 pb-4">
+                                    <div className="absolute top-0 left-[0px] md:left-[8px] w-10 h-10 bg-[#011410] border-[4px] border-amber-400 rounded-full z-10 shadow-[0_0_20px_rgba(251,191,36,0.8)] flex items-center justify-center animate-glow" style={{ transform: 'translateZ(0)', animationDelay: '2s' }}>
+                                        <div className="w-3 h-3 bg-amber-300 rounded-full"></div>
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
+                                        <span className="bg-amber-950/60 text-amber-400 border border-amber-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">45:00 - 60:00</span>
+                                        <span>Part 3: Scoring & Reflective Discussion</span>
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 1</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">3m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">Scoring Settlement</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">Read the five major ending texts in order from highest to lowest score。</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 2</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">3m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">Fact-level Discussion</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">Review the game mechanism reasons for ‘traditional craftsmanship is hard to score highly’。</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 3</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">4m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">Mechanism-level Discussion</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">Explore ‘Deskilling’ and ‘Irreparability’ caused by the resin path。</p>
+                                        </div>
+                                        <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-amber-400 text-sm font-bold tracking-wider">Step 4</span>
+                                                <span className="text-amber-500/70 text-sm font-bold">5m</span>
+                                            </div>
+                                            <div className="text-white font-bold text-lg mb-2 tracking-wide">Value-level Summary</div>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">Guide Youth feedback: Cultural knowledge exists in the human body。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection2 = (isActive) => (
+                <div className="space-y-8 animate-fadeIn">
+                    <GlassCard className="p-8 md:p-10" delay="delay-100" isActive={isActive}>
+                        <SectionTitle icon={<i className="fas fa-users text-[28px] text-emerald-400" />} title="Part 1: Introduction & Role Assignment（00:00 – 10:00）" />
+
+                        <div className="mb-14">
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
+                                <StepBadge num="2-1" />Whole class opening remarks (approx. 3 mins)
+                            </h3>
+                            <div className="ml-14 border-l-2 border-emerald-800/50 pl-8 pb-2">
+                                <ScriptButton
+                                    icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                    title="Host's Opening Remarks"
+                                    content={<>
+                                        「Today you are not students; you are Lanyu’s artisans。<br /><br />
+                                        This year, you must complete a plank boat. This boat is not just a means of transport; it is a dialogue between you, your ancestors, and the ocean.。<br /><br />
+                                        But in this year, you will constantly face a question: take the traditional path, or the quick path.？<br /><br />
+                                        The traditional path requires waiting for seasons and learning from the elders — every step has its own rhythm. The fast path means buying chemical resin at the shop and finishing in a few steps. Both can get you a boat, but these two boats are not the same.<br /><br />
+                                        “Today your choices will determine what you leave behind.”
+                                    </>}
+                                    theme="emerald"
+                                />
+                                <p className="text-base text-amber-200/80 mt-4 flex items-center bg-amber-900/20 inline-block px-5 py-3 rounded-xl border border-amber-800/30">
+                                    <i className="fas fa-info-circle text-[18px] mr-3 text-amber-400" />
+                                    Pedagogical Tip: Do not use slides during reading. Let the language speak for itself, and let students feel the context first.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mb-14">
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
+                                <StepBadge num="2-2" />Character distribution ceremony (approx. 4 mins)
+                            </h3>
+                            <div className="ml-14 border-l-2 border-cyan-800/50 pl-8 pb-2">
+                                <p className="text-lg text-emerald-100/70 mb-5">Distribute character cards face down; please do not flip them over yet. The host says:：</p>
+                                <ScriptButton
+                                    icon={<i className="fas fa-play-circle text-[28px] text-cyan-400" />}
+                                    title="Pre-distribution Lines"
+                                    content={<>
+                                        「This card in your hand is your identity in Lanyu. Before you flip it over, I only want to tell you one thing:——<br /><br />
+                                        In traditional society, no one can choose their own origin. You are given a position, and you bear responsibility in that position.。<br /><br />
+                                        “Now, flip your card.”
+                                    </>}
+                                    theme="cyan"
+                                />
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+                                    <div className="bg-[#1c1202] rounded-2xl border border-amber-700/50 overflow-hidden flex flex-col shadow-lg hover:-translate-y-2 transition-transform duration-300 hover:shadow-amber-500/20 group">
+                                        <div className="h-2 bg-amber-500 w-full group-hover:shadow-[0_0_15px_#f59e0b] transition-shadow"></div>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h4 className="font-bold text-2xl text-amber-400 mb-6 tracking-wider flex items-center">
+                                                <i className="fas fa-trophy text-[24px] mr-3" />Elder Artisan (Elder)
+                                            </h4>
+                                            <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-amber-900/50">
+                                                <p className="flex justify-between text-amber-100/80"><span>AP：</span> <span className="font-bold text-white">6點 / Rounds</span></p>
+                                                <p className="flex justify-between text-amber-100/80"><span>KP：</span> <span className="font-bold text-emerald-400">10points (initial)</span></p>
+                                            </div>
+                                            <div className="mb-6 flex-1">
+                                                <p className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4">Unique Ability</p>
+                                                <ul className="text-base text-amber-100/90 space-y-3 pl-5 list-disc marker:text-amber-500 leading-relaxed">
+                                                    <li><strong className="text-amber-300">【Elder Artisan】</strong>Executing ‘Caulking’ costs 0 AP.</li>
+                                                    <li><strong className="text-amber-300">【Remote Guidance】</strong>When not in the same area, consume 1 AP to make the Youth KP+1。</li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => openModal("Elder: Character Narrative", "“You possess the most technical knowledge, but physical energy is limited. Your reason for being is not to finish the fastest boat, but to ensure that knowledge does not break in your generation. Your prestige comes from how many people you have taught.”", <i className="fas fa-users text-[28px] text-amber-400" />, "amber")}
+                                                className="mt-auto w-full py-4 rounded-xl border border-amber-500/40 text-amber-300 text-base font-bold hover:bg-amber-900/50 hover:text-white transition-colors flex justify-center items-center"
+                                            >
+                                                <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />Read Character Narrative
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-[#021816] rounded-2xl border border-teal-700/50 overflow-hidden flex flex-col shadow-lg hover:-translate-y-2 transition-transform duration-300 hover:shadow-teal-500/20 group">
+                                        <div className="h-2 bg-teal-400 w-full group-hover:shadow-[0_0_15px_#2dd4bf] transition-shadow"></div>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h4 className="font-bold text-2xl text-teal-300 mb-6 tracking-wider flex items-center">
+                                                <i className="fas fa-bullseye text-[24px] mr-3" />Apprentice (Youth)
+                                            </h4>
+                                            <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-teal-900/50">
+                                                <p className="flex justify-between text-teal-100/80"><span>AP：</span> <span className="font-bold text-white">12點 / Rounds</span></p>
+                                                <p className="flex justify-between text-teal-100/80"><span>KP：</span> <span className="font-bold text-slate-400">0points (initial)</span></p>
+                                            </div>
+                                            <div className="mb-6 flex-1">
+                                                <p className="text-sm font-bold text-teal-600 uppercase tracking-widest mb-4">Unique Ability</p>
+                                                <ul className="text-base text-teal-100/90 space-y-3 pl-5 list-disc marker:text-teal-400 leading-relaxed">
+                                                    <li><strong className="text-teal-300">【Apprentice】</strong>Movement does not consume AP。</li>
+                                                    <li><strong className="text-teal-300">【Fast Learning】</strong>Actively consult Elder, gain 3 points KP。</li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => openModal("Youth: Character Narrative", "“You move without wasting physical energy, and your learning ability is the strongest, but you currently know nothing — KP is zero. Where you can go and what you can do depends largely on your willingness to follow the elder. No one will force you, but knowledge only happens in close proximity.”", <i className="fas fa-users text-[28px] text-teal-400" />, "cyan")}
+                                                className="mt-auto w-full py-4 rounded-xl border border-teal-500/40 text-teal-300 text-base font-bold hover:bg-teal-900/50 hover:text-white transition-colors flex justify-center items-center"
+                                            >
+                                                <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />Read Character Narrative
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-[#0b121c] rounded-2xl border border-slate-700/50 overflow-hidden flex flex-col shadow-lg hover:-translate-y-2 transition-transform duration-300 hover:shadow-slate-500/20 group">
+                                        <div className="h-2 bg-slate-400 w-full group-hover:shadow-[0_0_15px_#94a3b8] transition-shadow"></div>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h4 className="font-bold text-2xl text-slate-300 mb-6 tracking-wider flex items-center">
+                                                <i className="fas fa-users text-[24px] mr-3" />Negotiator (Middle)
+                                            </h4>
+                                            <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-slate-800/50">
+                                                <p className="flex justify-between text-slate-200/80"><span>AP：</span> <span className="font-bold text-white">8點 / Rounds</span></p>
+                                                <p className="flex justify-between text-slate-200/80"><span>KP：</span> <span className="font-bold text-emerald-400">5points (initial)</span></p>
+                                            </div>
+                                            <div className="mb-6 flex-1">
+                                                <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Unique Ability</p>
+                                                <ul className="text-base text-slate-200/90 space-y-3 pl-5 list-disc marker:text-slate-400 leading-relaxed">
+                                                    <li><strong className="text-slate-300">【Negotiator】</strong>When completing the ship using industrial materials, score increases, and there is no ‘Deskilling’ penalty。</li>
+                                                </ul>
+                                            </div>
+                                            <button
+                                                onClick={() => openModal("Negotiator: Character Narrative", "“You are a bridge, and also the person with the deepest contradictions. You will not be penalized for using industrial materials, but you also know that if you go all the way down this path, the boat is built and the technology is dead. You have the ability to find cracks between reality and tradition — the question is whether you want to look for them.”", <i className="fas fa-users text-[28px] text-slate-400" />, "slate")}
+                                                className="mt-auto w-full py-4 rounded-xl border border-slate-500/40 text-slate-300 text-base font-bold hover:bg-slate-800/50 hover:text-white transition-colors flex justify-center items-center"
+                                            >
+                                                <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />Read Character Narrative
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
+                                <StepBadge num="2-3" />Quick rule explanation (approx. 3 mins)
+                            </h3>
+                            <div className="ml-14 border-l-2 border-emerald-800/50 pl-8 pb-2">
+                                <div className="bg-[#04281f] p-8 rounded-2xl border border-emerald-900 shadow-inner hover:shadow-emerald-900/30 transition-shadow">
+                                    <ul className="text-emerald-50/90 space-y-6 list-decimal pl-6 marker:text-emerald-500 marker:font-bold text-lg leading-relaxed">
+                                        <li className="pl-3">Each round, flip one Month Card. The Month Card determines the environmental constraints for this round.</li>
+                                        <li className="pl-3">Each player has a fixed amount per round of <strong className="text-white tracking-wide text-xl">AP</strong>，until depleted。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">Path A (Traditional Method)：</strong>Gather → Peeling Hemp → Scraping Fiber → Twining Rope（Requires 3 KP）→ Caulking（Requires 8 KP）。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">Path B (Industrial Substitution)：</strong>Go to shop to buy resin, complete ship directly, but receive ‘Irreparable’ tag。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">Apprentice Mechanism：</strong>When Youth is in the same area as Elder, automatically gain 1 at the end of the round KP。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection3 = (isActive) => (
+                <div className="flex flex-col lg:flex-row gap-8 animate-fadeIn h-full">
+                    <div className="lg:w-1/3 flex flex-col space-y-4">
+                        <GlassCard className="p-8 h-full" delay="delay-100" isActive={isActive}>
+                            <h2 className="text-2xl font-bold text-emerald-400 mb-5 tracking-wider flex items-center">
+                                <i className="fas fa-book-open text-[24px] mr-3 animate-float" />Part 2：Selected Months
+                            </h2>
+                            <p className="text-base text-emerald-100/70 leading-relaxed mb-8 border-b border-white/10 pb-8">
+                                Instead of running all 12 rounds, select five key months as ‘plot nodes’。
+                            </p>
+                            <div className="space-y-4 flex-1 flex flex-col">
+                                {months.map((m, idx) => (
+                                    <button
+                                        key={m.id}
+                                        onClick={() => setActiveMonth(m.id)}
+                                        className={`w-full text-left p-5 rounded-2xl transition-all duration-300 border-l-[5px] flex flex-col hover:translate-x-2 ${activeMonth === m.id
+                                            ? 'bg-[#063529] border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.2)]'
+                                            : 'bg-black/20 border-transparent hover:bg-[#03241b] text-emerald-100/60'
+                                            }`}
+                                        style={{ animationDelay: `${idx * 100}ms` }}
+                                    >
+                                        <div className={`font-bold text-xl tracking-wider ${activeMonth === m.id ? 'text-white text-shadow-glow' : 'text-emerald-200/80'}`}>
+                                            {m.name}
+                                        </div>
+                                        <div className={`text-base mt-2 flex justify-between ${activeMonth === m.id ? 'text-emerald-300' : 'text-emerald-400/50'}`}>
+                                            <span>{m.subtitle}</span>
+                                            <span className="opacity-70 tracking-widest">{m.duration}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </GlassCard>
+                    </div>
+
+                    <GlassCard className="lg:w-2/3 flex flex-col min-h-[600px]" delay="delay-200" isActive={isActive}>
+                        {activeMonth === 1 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    Month 1：Kashyman
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg hover:shadow-emerald-500/10 transition-shadow">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> Pedagogical Goals</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">Allow students to enter an ‘anticipate the future and plan ahead’ mindset from the very first round, simulating preparatory behavior logic in cultural knowledge.</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="Month 1 Host Lines"
+                                        content={<>
+                                            “The Month Card says — movement does not consume AP in this round, this is the gift of Li Chun.
+                                            <br /><br />
+                                            （pausing for two seconds)
+                                            <br /><br />
+                                            “But I want to remind you of one thing: next month is Kapowan, the month of the fish-calling ritual — the mountain forest will be closed for a whole month. Do you currently have enough Avaka raw materials in your hand?
+                                            <br /><br />
+                                            “Every decision you make now paves the way for yourself next month.”
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">Host Operation Tips</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">Do not explain further after speaking; give students 30 seconds of silent decision-making time. Observe which groups’ Youth begin to move quickly to the mountain forest to gather, and which groups ignore this pre-warning.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 2 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    Month 2：Kapowan
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg hover:shadow-emerald-500/10 transition-shadow">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> Pedagogical Goals</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">Let students feel the urgency of ‘having no choice’, understanding the social logic behind cultural bans。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="Month 2 Environment Narrative"
+                                        content={<>
+                                            (The lights can be slightly dimmed, or the host holds up the Month Card to show the class)<br /><br />
+                                            “White smoke rises from the beach. The fish-calling ritual has begun.<br /><br />
+                                            “All men are forbidden from entering the mountain forest; the gates are closed — this is called Paneneb, a taboo.<br /><br />
+                                            （pause)<br /><br />
+                                            “Now, the mountain forest is closed, and you cannot perform the Gather action. If you did not stockpile enough materials last month, you face three options:”
+                                        </>}
+                                    />
+                                    <div className="ml-3 my-10 px-5 border-l-4 border-cyan-800/50">
+                                        <ul className="space-y-6 text-base text-emerald-50">
+                                            <li className="bg-cyan-950/20 p-6 rounded-xl border border-teal-800/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-teal-400 block mb-3 tracking-widest text-xl">Option 1: Request help from teammates in the same group</strong><span className="opacity-90">Consume 1 AP. Seek team support。</span></li>
+                                            <li className="bg-slate-900/40 p-6 rounded-xl border border-slate-700/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-slate-300 block mb-3 tracking-widest text-xl">Option 2: Go to shop to buy nylon rope</strong><span className="opacity-90">Consume 2 AP, receive ‘Irreparable’ tag。</span></li>
+                                            <li className="bg-amber-950/20 p-6 rounded-xl border border-amber-800/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-amber-400 block mb-3 tracking-widest text-xl">Option 3: Wait dryly for a month</strong><span className="opacity-90">Give up action. Bear the pressure of time silently.。</span></li>
+                                        </ul>
+                                    </div>
+                                    <ScriptButton
+                                        icon={<i className="fas fa-users text-[28px] text-cyan-400" />}
+                                        title="Month 2 Character Dialogue"
+                                        content={<>
+                                            Youth: “Oh no! My Avaka raw materials are depleted, but going up the mountain now would violate the taboo...”
+                                            <br /><br />
+                                            Negotiator: “This is why the elders said to stock up eagerly during Kashyman. Now you can only buy nylon rope with me at the shop, or wait dryly for a month and watch your progress fall behind.”
+                                            <br /><br />
+                                            Elder: “Flying fish come with the Kuroshio, and we conform to the seasons. This is the ocean's rule — we must obey it well.”
+                                        </>}
+                                        theme="cyan"
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">Host Operation Tips (class quick Q&A)</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">Host asks the class: “Which group chose to sit dryly for a month? Why?” Let different groups share their decision-making logic. Observe the proportion of “accepting constraints” vs. “bypassing constraints” in the classroom — this ratio itself is a great teaching resource.。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 5 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    Month 5：Pipilapila
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> Pedagogical Goals</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">Let students experience the pressure of AP resource management, while feeling the ‘convenience temptation’ of industrial materials。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="Month 5 Environment & Character Narratives"
+                                        content={<>
+                                            “The sky is overcast with dark clouds. The sudden rain puts your Avaka fiber drying on the beach in danger of rotting.<br /><br />
+                                            “The rules say: for materials being dried, if you do not reserve 1 AP for maintenance, they will automatically rot next round.”
+                                            <br /><br />
+                                            Elder (suddenly looking up at the sky): “Child, when building a boat you cannot only watch the hemp on the ground — you must watch the clouds in the sky. Quickly bring it inside!”
+                                            <br /><br />
+                                            （pause)
+                                            <br /><br />
+                                            “If your AP is already depleted — those materials will be crossed off your inventory.”
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">Host Operation Tips</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">After executing the scrap process, the host points towards the shop and says:：<strong className="text-amber-200 tracking-wide text-lg">「StoreThe chemical resin today is unaffected by the weather; it is not afraid of moisture and doesn't require drying.”</strong>This sentence does not need special emphasis; just let the temptation naturally exist in the game space. Then let students complete their actions in this round without comment.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 10 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    Month 10：Kaneman
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> Pedagogical Goals</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">This is the month most likely to cause frustration. Forcing students to pause at the ‘almost finished’ moment allows them to experience the logic of ‘Ritual Time’.。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="Month 10 Narratives & Dialogues"
+                                        content={<>
+                                            “This is the most inauspicious month in Lanyu’s calendar. This month is dedicated to making shell ash, and no weddings, house building, or completion ceremonies are allowed. Even if your materials are ready and KP has met the threshold — you must never start caulking now.”
+                                            <br /><br />
+                                            Negotiator (looking at the materials): “This is the logic of ritual time. You must learn to wait. If you force completion now, this boat will lose its soul in the eyes of the tribe.”
+                                            <br /><br />
+                                            Youth (nervously): “But I only have two months left until settlement! If I don't do it now, I'm afraid I won't make it in time...”
+                                            <br /><br />
+                                            Elder (calmly): “You can use this time to learn what you haven't learned yet. Waiting does not mean doing nothing.”
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">Host Operation Tips (pause entire class discussion)</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">Host asks the class: “In modern life, is there a kind of waiting that is meaningful? Or is all waiting just a waste of time for you?” Wait for 2-3 students to speak before continuing. This question does not require a standard answer; the goal is to create a dialogue between students’ life experiences and the game mechanisms。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeMonth === 12 && (
+                            <div className="p-8 md:p-12 animate-fadeIn">
+                                <h2 className="text-4xl font-bold text-white mb-8 pb-6 border-b border-white/10 tracking-widest flex items-center">
+                                    Month 12：Kaowan
+                                </h2>
+                                <div className="bg-[#03241b] border-l-4 border-emerald-500 p-6 mb-10 rounded-r-xl shadow-lg">
+                                    <h4 className="font-bold text-emerald-400 mb-3 flex items-center tracking-wider text-lg"><i className="fas fa-exclamation-triangle text-[24px] mr-3 animate-pulseSlow" /> Pedagogical Goals</h4>
+                                    <p className="text-base text-emerald-50 leading-relaxed">Allow players who stick to the traditional path to feel a sense of acceleration at the last moment, experiencing ‘the rewards of conforming to seasonal flow’.。</p>
+                                </div>
+                                <div className="space-y-8">
+                                    <ScriptButton
+                                        icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
+                                        title="Month 12 Narratives & Dialogues"
+                                        content={<>
+                                            “This is a month dedicated to handicrafts. Men forge iron and weave ropes, women weave cloth — the entire tribe is doing handcrafts.<br /><br />
+                                            “This month, executing ‘Twining Rope’ no longer consumes any AP.<br /><br />
+                                            You find your hands flowing with unprecedented smoothness. Not because you suddenly became amazing, but because you have been accumulating all year, and now, the land has given you the final compensation.”
+                                            <br /><br />
+                                            Elder (showing a smile): “You see — follow the seasonal order, and the land gives you its final reward. Get to work! Let this boat launch before next year's Flying Fish Ritual!”
+                                        </>}
+                                    />
+                                    <div className="bg-[#291b04] p-6 rounded-2xl border border-amber-800/50 flex items-start shadow-lg mt-8">
+                                        <i className="fas fa-info-circle text-[28px] mr-4 text-amber-400 flex-shrink-0 mt-0.5 animate-float" />
+                                        <div>
+                                            <h5 className="font-bold text-amber-300 mb-3 tracking-wider text-lg">Host Operation Tips</h5>
+                                            <p className="text-base text-amber-50/90 leading-relaxed">Let this round run completely. Do not rush; let each group finish their final actions and finish ship calculations. Host remains quiet, only answering rule questions when necessary. Let the endings happen naturally.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection4 = () => (
+                <div className="space-y-8 animate-fadeIn">
+                    <GlassCard className="p-8 md:p-12" delay="delay-100">
+                        <SectionTitle icon={<i className="fas fa-trophy text-[32px] text-amber-400" />} title="Part 3: Scoring & Reflective Discussion（45:00 – 60:00）" />
+
+                        <div className="mb-16">
+                            <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
+                                <StepBadge num="4-1" />Score Settlement (read out the narratives from high to low score)
+                            </h3>
+
+                            <div className="ml-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-amber-400" />}
+                                    title="Spirit of Heritage (18-25 pts)"
+                                    buttonText="Read Ending"
+                                    theme="amber"
+                                    content={<>
+                                        “This boat is alive. It is not just a metaphor, but truly alive. You spent a whole year retracing the exact same mountain path of your ancestors. Your body remembers which tree to bypass when gathering, and which direction to twine the Avaka fibers so they won’t break. These actions might not be recorded in text, but they are hidden in the physical memory of the tribe, waiting to be awakened。<br /><br />
+                                        Later, scientific data confirmed that Avaka fibers expand after absorbing water. You suddenly realized that when the elders said ‘let the boat breathe,’ it was not just a metaphor, but a profound knowledge of boat building. When sea water seeps into the cracks and the fibers expand, the boat becomes tighter instead. It can be disassembled, repaired, and replaced piece by piece, to set sail again.<br /><br />
+                                        “Those memories you thought were long broken are actually just waiting quietly for someone willing to inherit them.“And this boat will continue to sail, carrying the words spoken by the elders, and the memories you have recovered.”
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-cyan-400" />}
+                                    title="Light of Negotiation (11-17 pts)"
+                                    buttonText="Read Ending"
+                                    theme="cyan"
+                                    content={<>
+                                        “You cannot live solely in tradition, that much you know clearly.<br /><br />
+                                        “Children need school, fuel needs to be paid for, and time waits for no one. Amidst these real-life pressures, you tried to find cracks. A few industrial materials saved some effort, but you did not let go entirely. You still knocked on the elder’s door, still asked those few questions that no one would answer unless asked: how to choose materials, and which process cannot be skipped.<br /><br />
+                                        “When the boat was finished, you couldn't tell if it was traditional or modern. But perhaps that is the most honest answer. Lanyu has never been a museum; people live real lives here, and tradition is always rubbing, wearing down, and growing into new shapes in real life.」
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-slate-300" />}
+                                    title="Weight of Efficiency (6-10 pts)"
+                                    buttonText="Read Ending"
+                                    theme="slate"
+                                    content={<>
+                                        “The boat is finished. But something has been quietly lost.<br /><br />
+                                        “The epoxy resin sealed the gaps airtight. No waiting for the wood to slowly swell, no checking the calendar for seasons, saving most of the time. The moment the boat entered the water, it looked no different from any other boat.<br /><br />
+                                        “But once it breaks, it breaks, and there is no way to repair it. That method of interlocking, the possibility of taking it apart and putting it back together, disappeared along with the few processes you chose to skip.Your fingers have forgotten too. Forgotten the resistance when the fibers move back and forth, forgotten how to identify wood species.<br /><br />
+                                        “This boat is usable, but it cannot teach you anything. It is merely a product of the times.”
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-rose-400" />}
+                                    title="Lost Soul (1-5 pts)"
+                                    buttonText="Read Ending"
+                                    theme="rose"
+                                    content={<>
+                                        “The boat is in the water. You should feel that you have accomplished something, but your heart is empty.<br /><br />
+                                        You have never climbed the mountain to gather Avaka, you don’t know what to say during gathering, or which days to avoid. You bypassed all the links that seemed troublesome, and bypassed all the things that truly mattered.。<br /><br />
+                                        “This boat has nothing to do with the sea, and nothing to do with the mountain. It is just a shape, a prop to sell to tourists for photos. No one wants to repair it; if it breaks, throw it away and build a new one.Those songs chanted during gathering, that physical knowledge the elders said can only be understood by doing it yourself — were not opposed by you, but ignored.”
+                                    </>}
+                                />
+                                <ScriptButton
+                                    icon={<i className="fas fa-flag text-[28px] text-red-500" />}
+                                    title="Cultural Disruption (Failure)"
+                                    buttonText="Read Ending"
+                                    theme="red"
+                                    content={<>
+                                        “A year has passed, and the wood on the beach is still scattered there.<br /><br />
+                                        It never started, as if stuck somewhere. Perhaps you didn’t know who to ask for the next step, perhaps you took too many detours, and as time passed day by day, you were still not ready.。<br /><br />
+                                        “The birth of a boat takes a whole year, not because the process is really that complex, but because it must follow the seasons: gathering, drying, waiting, trimming — every step has its own time. Your rhythm did not match this rhythm, and the boat stopped there, waiting for a time that would never come.<br /><br />
+                                        “Those fibers will rot. Those unspoken technical skills will also disappear as the people holding the memories slowly grow old.」
+                                    </>}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
+                                <StepBadge num="4-2" />Three-Level Reflection Discussion (approx. 12 mins)
+                            </h3>
+                            <div className="ml-14 grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
+                                    <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">Level 1: Fact Level</span>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「“Why is Path A (traditional method) so hard to get a high score? Explain from the perspective of game rules.”</p>
+                                    <p className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
+                                        <strong className="text-emerald-300 tracking-widest">Guided Direction:</strong>AP Insufficiency, month ban constraints, high KP thresholds, etc.。
+                                    </p>
+                                    <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
+                                        Host: “Each threshold corresponds to a real cultural phenomenon — this is the chain of knowledge.”
+                                    </p>
+                                </div>
+
+                                <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
+                                    <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">Level 2: Mechanism Level</span>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「“Although the resin path is fast, in the game, how does ‘Deskilling’ happen?”</p>
+                                    <div className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
+                                        <p><strong className="text-emerald-300 tracking-widest">Guided Direction:</strong>The meaning of the Irreparable tag, and the disappearance of technical knowledge after skipping processes。</p>
+                                    </div>
+                                    <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
+                                        Maintain neutrality, let students respond to each other, do not judge the quality of answers。
+                                    </p>
+                                </div>
+
+                                <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
+                                    <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">Level 3: Value Level</span>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「“If you were Lanyu’s Youth, which path would you choose today?”</p>
+                                    <div className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
+                                        <p><strong className="text-emerald-300 tracking-widest">Final Questioning：</strong>「“In the game, what did those rounds of learning from the Elder bring you?”</p>
+                                    </div>
+                                    <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
+                                        Host closing: “Cultural heritage is not about storing knowledge in books; it is about storing it in people’s bodies.”
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            const renderSection5 = () => (
+                <div className="space-y-8 animate-fadeIn">
+                    <GlassCard className="p-8 md:p-12" delay="delay-100">
+                        <SectionTitle icon={<i className="fas fa-list text-[32px] text-emerald-400" />} title="Appendix: Quick Reference Table" />
+
+                        <div className="mb-14">
+                            <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
+                                <StepBadge num="5-1" />Action Reference Table
+                            </h3>
+                            <div className="ml-14 overflow-x-auto rounded-2xl border border-white/10 bg-black/40 shadow-inner">
+                                <table className="min-w-full divide-y divide-white/10 text-base">
+                                    <thead className="bg-[#03241b]">
+                                        <tr>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">Action Name</th>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">Consume AP</th>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">Requirements KP</th>
+                                            <th className="px-8 py-5 text-left font-bold text-emerald-300 uppercase tracking-widest text-sm">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">Move</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP（YouthFree)</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">Move among the mountain forest, beach, and shop</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">Twining Rope</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
+                                            <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 3</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">Must be executed at the beach</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">Caulking（Finish Ship）</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP（ElderFree)</td>
+                                            <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 8</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">Must be executed at the beach; banned in Kaneman month</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">Consult</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">Consult the Elder in the same area, gain 3 KP</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+            );
+
+            return (
+                <div className={`min-h-screen text-emerald-50 relative selection:bg-emerald-500/30 selection:text-white pb-20 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                    {/* Top & Bottom Gradual Blur Glassmorphism Effect */}
+                    <gradual-blur preset="page-header" style={{ zIndex: 30 }}></gradual-blur>
+                    <gradual-blur preset="page-footer" style={{ zIndex: 30 }}></gradual-blur>
+
+                    <div className="fixed inset-0 z-[-1] bg-gradient-to-br from-[#01120d] via-[#021812] to-[#010e0b]"></div>
+                    <div className="fixed inset-0 z-[-1] opacity-[0.08] pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+
+
+
+                    <header className="sticky top-[60px] z-40 bg-[#01120d]/90 backdrop-blur-md border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.8)]">
+                        <div className="max-w-[90rem] mx-auto px-8 py-5 flex flex-col md:flex-row justify-between items-center">
+                            <div className="flex items-center space-x-5 mb-5 md:mb-0">
+                                <div className="bg-emerald-900/50 p-3 rounded-2xl border border-emerald-500/30 flex-shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-pulseSlow">
+                                    <i className="fas fa-map text-[28px] text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-bold tracking-widest text-white text-shadow-glow whitespace-nowrap">Avaka：Dimension of the Island</h1>
+                                    <p className="text-sm text-emerald-400/80 tracking-widest mt-1">Digital Host Dashboard ✧ 60MinutesClassroom Version</p>
+                                </div>
+                            </div>
+                            <GooeyNav tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+                        </div>
+                    </header>
+
+                    <main className="max-w-[90rem] mx-auto px-8 py-12 relative z-10">
+                        {activeTab === 'section1' && renderSection1()}
+                        {activeTab === 'section2' && renderSection2()}
+                        {activeTab === 'section3' && renderSection3()}
+                        {activeTab === 'section4' && renderSection4()}
+                        {activeTab === 'section5' && renderSection5()}
+                    </main>
+
+                    {modal.isOpen && (() => {
+                        const mt = modalThemes[modal.theme] || modalThemes.emerald;
+                        return (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 animate-fadeIn">
+                                <div className="absolute inset-0 bg-[#010a08]/90 backdrop-blur-sm cursor-pointer" onClick={closeModal}></div>
+
+                                <div className={`relative w-full max-w-4xl bg-[#031c15] rounded-3xl border-2 ${mt.borderContainer} shadow-[0_0_60px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[85vh] animate-slideUp`}>
+                                    <div className={`${mt.bgHeader} px-8 py-6 border-b ${mt.borderHeader} flex justify-between items-center`}>
+                                        <div className="flex items-center space-x-4">
+                                            <div className={`p-3 rounded-full bg-black/30 border ${mt.iconBg} shadow-inner flex items-center justify-center`}>
+                                                {modal.icon}
+                                            </div>
+                                            <h3 className={`text-2xl font-bold ${mt.title} tracking-wider`}>
+                                                {modal.title}
+                                            </h3>
+                                        </div>
+                                        <button onClick={closeModal} className="p-3 rounded-full hover:bg-white/10 transition-colors text-white/50 hover:text-white">
+                                            <i className="fas fa-times text-[28px]" />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-10 overflow-y-auto custom-scrollbar relative">
+                                        <div className={`absolute top-0 right-0 w-64 h-64 ${mt.glow} blur-[50px] pointer-events-none rounded-full`}></div>
+                                        <div className={`text-2xl md:text-3xl text-emerald-50 leading-[2.4] tracking-wide border-l-[6px] ${mt.borderLeft} pl-8 py-2 whitespace-pre-wrap`}>
+                                            {modal.content}
+                                        </div>
+                                    </div>
+
+                                    <div className="px-8 py-5 bg-black/40 border-t border-white/5 flex justify-end">
+                                        <button onClick={closeModal} className={`px-10 py-3 rounded-xl ${mt.btnBg} ${mt.btnHover} text-white text-lg font-bold transition-colors shadow-lg ${mt.btnShadow} tracking-widest`}>
+                                            Close Script
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
