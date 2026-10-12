@@ -501,11 +501,11 @@
             ];
 
             const months = [
-                { id: 1, name: '第 1 月 Kashyman', subtitle: '預警的季節', duration: '約 5 分鐘' },
-                { id: 2, name: '第 2 月 Kapowan', subtitle: '飛魚禁令', duration: '約 6 分鐘' },
-                { id: 5, name: '第 5 月 Pipilapila', subtitle: '梅雨腐壞', duration: '約 5 分鐘' },
-                { id: 10, name: '第 10 月 Kaneman', subtitle: '禁忌之月', duration: '約 5 分鐘' },
-                { id: 12, name: '第 12 月 Kaowan', subtitle: '最終衝刺', duration: '約 4 分鐘' }
+                { id: 1, name: '第 1 月 Kashyman', subtitle: '預警的季節', duration: '約 6 分鐘' },
+                { id: 2, name: '第 2 月 Kapowan', subtitle: '飛魚禁令', duration: '約 8 分鐘' },
+                { id: 5, name: '第 5 月 Pipilapila', subtitle: '梅雨腐壞', duration: '約 6 分鐘' },
+                { id: 10, name: '第 10 月 Kaneman', subtitle: '禁忌之月', duration: '約 6 分鐘' },
+                { id: 12, name: '第 12 月 Kaowan', subtitle: '最終衝刺', duration: '約 5 分鐘' }
             ];
 
             const openModal = (title, content, icon, theme = 'emerald') => {
@@ -626,7 +626,7 @@
                     <GlassCard className="p-8 md:p-12" delay="delay-200" isActive={isActive}>
                         <h3 className="font-bold text-cyan-300 mb-8 flex items-center text-3xl tracking-wider border-b border-white/10 pb-6">
                             <i className="fas fa-clock text-[32px] mr-4 animate-spinSlow" />
-                            60 分鐘 課堂操作流程圖
+                            90 分鐘 課堂操作流程圖
                         </h3>
 
                         <div className="relative mt-10">
@@ -638,7 +638,7 @@
                                         <div className="w-3 h-3 bg-cyan-300 rounded-full"></div>
                                     </div>
                                     <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
-                                        <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">00:00 - 10:00</span>
+                                        <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">00:00 - 15:00</span>
                                         <span>第一段：導入與角色分配</span>
                                     </h4>
 
@@ -673,7 +673,7 @@
                                                 <span className="text-cyan-500/70 text-sm font-bold">3 mins</span>
                                             </div>
                                             <div className="text-white font-bold text-xl mb-3 tracking-wide flex items-center"><i className="fas fa-list text-[20px] mr-3 text-cyan-400" />規則說明</div>
-                                            <p className="text-cyan-100/80 text-base leading-relaxed">快速講解 AP 消耗、傳統與工業兩大路徑，以及學徒機制的運作。</p>
+                                            <p className="text-cyan-100/80 text-base leading-relaxed">快速講解 AP 消耗、三種完工路徑，以及請益與互助的加分方式。</p>
                                         </div>
                                     </div>
                                 </div>
@@ -683,7 +683,7 @@
                                         <div className="w-3 h-3 bg-emerald-300 rounded-full"></div>
                                     </div>
                                     <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
-                                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">10:00 - 45:00</span>
+                                        <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">15:00 - 65:00</span>
                                         <span>第二段：遊戲體驗 (精選月份)</span>
                                     </h4>
 
@@ -731,7 +731,7 @@
                                         <div className="w-3 h-3 bg-amber-300 rounded-full"></div>
                                     </div>
                                     <h4 className="text-2xl font-bold text-white mb-8 flex flex-wrap items-center tracking-widest gap-4 min-h-[40px]">
-                                        <span className="bg-amber-950/60 text-amber-400 border border-amber-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">45:00 - 60:00</span>
+                                        <span className="bg-amber-950/60 text-amber-400 border border-amber-500/50 px-4 py-1.5 rounded-lg text-base shadow-inner">65:00 - 90:00</span>
                                         <span>第三段：結算與反思討論</span>
                                     </h4>
 
@@ -758,7 +758,7 @@
                                                 <span className="text-amber-500/70 text-sm font-bold">4m</span>
                                             </div>
                                             <div className="text-white font-bold text-lg mb-2 tracking-wide">機制層討論</div>
-                                            <p className="text-amber-100/70 text-base leading-relaxed">探討「樹脂路徑」造成的不可修復與去技能化。</p>
+                                            <p className="text-amber-100/70 text-base leading-relaxed">比較三種完工路徑各自留下與放掉的東西。</p>
                                         </div>
                                         <div className="bg-gradient-to-br from-amber-950/40 to-[#011410] border border-amber-800/50 p-6 rounded-2xl hover:-translate-y-1 transition-all group shadow-lg">
                                             <div className="flex justify-between items-center mb-3">
@@ -779,21 +779,25 @@
             const renderSection2 = (isActive) => (
                 <div className="space-y-8 animate-fadeIn">
                     <GlassCard className="p-8 md:p-10" delay="delay-100" isActive={isActive}>
-                        <SectionTitle icon={<i className="fas fa-users text-[28px] text-emerald-400" />} title="第一段：導入與角色分配（00:00 – 10:00）" />
+                        <SectionTitle icon={<i className="fas fa-users text-[28px] text-emerald-400" />} title="第一段：導入與角色分配（00:00 – 15:00）" />
 
                         <div className="mb-14">
                             <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
-                                <StepBadge num="2-1" />全班開場引言（約 3 分鐘）
+                                <StepBadge num="2-1" />全班開場引言（約 5 分鐘）
                             </h3>
                             <div className="ml-14 border-l-2 border-emerald-800/50 pl-8 pb-2">
+                                <div className="mb-6 bg-black/30 border border-emerald-800/50 rounded-xl p-5 text-base text-emerald-50 leading-relaxed">
+                                    <p className="mb-3"><strong className="text-emerald-300 tracking-widest">課前：</strong>播放遊戲前導影片（約 2 至 3 分鐘），讓學生先認識 Avaka。</p>
+                                    <p><strong className="text-emerald-300 tracking-widest">生活議題切入（約 2 分鐘）：</strong>「你身上的衣服是什麼材質？它為什麼方便？丟掉之後會怎樣？」不需要得出結論，讓學生帶著「方便」與「代價」這組問題進入遊戲。</p>
+                                </div>
                                 <ScriptButton
                                     icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
                                     title="主持人開場引言"
                                     content={<>
                                         「今天你們不是學生，你們是蘭嶼的工匠。<br /><br />
                                         這一年，你們必須完成一艘拼板舟。這艘船不只是交通工具，它是你們和祖先、和海洋之間的對話。<br /><br />
-                                        但在這一年裡，你們會不斷面對一個問題：走傳統的路，還是走快的路？<br /><br />
-                                        傳統的路，需要等待季節、跟著耆老學習，每一步都有它的節奏。快的路，是去商店買化學樹脂，幾個動作就能完工。兩條路都能讓你造好一艘船，但這兩艘船是不一樣的。<br /><br />
+                                        但在這一年裡，你們會不斷面對一個問題：要用什麼方式把這艘船造好？<br /><br />
+                                        傳統的路，需要等待季節、跟著耆老學習，每一步都有它的節奏。快的路，是去商店買化學樹脂，幾個動作就能完工。在這兩條路之間，也有人試著用機器來加工天然的纖維。每一條路都能讓你造好一艘船，但造出來的船是不一樣的。<br /><br />
                                         今天你們的選擇，會決定你留下什麼。」
                                     </>}
                                     theme="emerald"
@@ -807,7 +811,7 @@
 
                         <div className="mb-14">
                             <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
-                                <StepBadge num="2-2" />角色分牌儀式（約 4 分鐘）
+                                <StepBadge num="2-2" />角色分牌儀式（約 6 分鐘）
                             </h3>
                             <div className="ml-14 border-l-2 border-cyan-800/50 pl-8 pb-2">
                                 <p className="text-lg text-emerald-100/70 mb-5">將角色卡正面朝下分發，請學生先不要翻開。主持人說：</p>
@@ -830,14 +834,14 @@
                                                 <i className="fas fa-trophy text-[24px] mr-3" />資深工匠 (耆老)
                                             </h4>
                                             <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-amber-900/50">
-                                                <p className="flex justify-between text-amber-100/80"><span>AP：</span> <span className="font-bold text-white">6點 / 回合</span></p>
+                                                <p className="flex justify-between text-amber-100/80"><span>AP：</span> <span className="font-bold text-white">4點（每月 +3）</span></p>
                                                 <p className="flex justify-between text-amber-100/80"><span>KP：</span> <span className="font-bold text-emerald-400">10點（初始）</span></p>
                                             </div>
                                             <div className="mb-6 flex-1">
                                                 <p className="text-sm font-bold text-amber-600 uppercase tracking-widest mb-4">特殊能力</p>
                                                 <ul className="text-base text-amber-100/90 space-y-3 pl-5 list-disc marker:text-amber-500 leading-relaxed">
                                                     <li><strong className="text-amber-300">【傳承者】</strong>執行「填縫」不耗 AP。</li>
-                                                    <li><strong className="text-amber-300">【遠程指導】</strong>不在同一區域時可耗 1 AP 使青年 KP+1。</li>
+                                                    <li><strong className="text-amber-300">【遠程指導】</strong>消耗 2 AP 使青年或中生代 KP+1，自己 +1 分。</li>
                                                 </ul>
                                             </div>
                                             <button
@@ -856,18 +860,19 @@
                                                 <i className="fas fa-bullseye text-[24px] mr-3" />文化復振青年
                                             </h4>
                                             <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-teal-900/50">
-                                                <p className="flex justify-between text-teal-100/80"><span>AP：</span> <span className="font-bold text-white">12點 / 回合</span></p>
+                                                <p className="flex justify-between text-teal-100/80"><span>AP：</span> <span className="font-bold text-white">6點（每月 +4）</span></p>
                                                 <p className="flex justify-between text-teal-100/80"><span>KP：</span> <span className="font-bold text-slate-400">0點（初始）</span></p>
                                             </div>
                                             <div className="mb-6 flex-1">
                                                 <p className="text-sm font-bold text-teal-600 uppercase tracking-widest mb-4">特殊能力</p>
                                                 <ul className="text-base text-teal-100/90 space-y-3 pl-5 list-disc marker:text-teal-400 leading-relaxed">
                                                     <li><strong className="text-teal-300">【學徒】</strong>移動不消耗 AP。</li>
-                                                    <li><strong className="text-teal-300">【快速學習】</strong>主動向耆老請益，獲得 3 點 KP。</li>
+                                                    <li><strong className="text-teal-300">【向耆老請益】</strong>3 AP 獲得 3 點 KP，雙方各 +1 分。</li>
+                                                    <li><strong className="text-teal-300">【向中生代請益】</strong>1 AP 獲得 2 點 KP，雙方各 +1 分。</li>
                                                 </ul>
                                             </div>
                                             <button
-                                                onClick={() => openModal("青年：角色旁白", "「你移動不耗體力，學習能力最強，但你現在什麼都不會——KP 是零。你能走到哪裡、能做什麼，很大程度上取決於你願不願意跟著耆老。沒有人會強迫你，但知識只在靠近的地方發生。」", <i className="fas fa-users text-[28px] text-teal-400" />, "cyan")}
+                                                onClick={() => openModal("青年：角色旁白", "「你移動不耗體力，學習能力最強，但你現在什麼都不會——KP 是零。你能走到哪裡、能做什麼，很大程度上取決於你願不願意跟著耆老，以及願不願意開口問中生代。沒有人會強迫你，但知識只在靠近的地方發生。」", <i className="fas fa-users text-[28px] text-teal-400" />, "cyan")}
                                                 className="mt-auto w-full py-4 rounded-xl border border-teal-500/40 text-teal-300 text-base font-bold hover:bg-teal-900/50 hover:text-white transition-colors flex justify-center items-center"
                                             >
                                                 <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />閱讀角色旁白
@@ -882,17 +887,18 @@
                                                 <i className="fas fa-users text-[24px] mr-3" />中生代工匠
                                             </h4>
                                             <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-slate-800/50">
-                                                <p className="flex justify-between text-slate-200/80"><span>AP：</span> <span className="font-bold text-white">8點 / 回合</span></p>
+                                                <p className="flex justify-between text-slate-200/80"><span>AP：</span> <span className="font-bold text-white">5點（每月 +3）</span></p>
                                                 <p className="flex justify-between text-slate-200/80"><span>KP：</span> <span className="font-bold text-emerald-400">5點（初始）</span></p>
                                             </div>
                                             <div className="mb-6 flex-1">
                                                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">特殊能力</p>
                                                 <ul className="text-base text-slate-200/90 space-y-3 pl-5 list-disc marker:text-slate-400 leading-relaxed">
-                                                    <li><strong className="text-slate-300">【協商者】</strong>用工業材料完工時得分提升，且無「去技能化」懲罰。</li>
+                                                    <li><strong className="text-slate-300">【承先啟後】</strong>向耆老請益只需 2 AP 即獲得 3 點 KP；青年可以向你請益。</li>
+                                                    <li><strong className="text-slate-300">【轉化者】</strong>科學轉譯成功率 +20%；機器加工完工額外 +3 分。</li>
                                                 </ul>
                                             </div>
                                             <button
-                                                onClick={() => openModal("中生代：角色旁白", "「你是橋樑，也是矛盾最深的人。你用工業材料不會被懲罰，但你也清楚，這條路走到底，船造好了，技術也死了。你有能力在現實與傳統之間找到縫隙——問題是你想不想找。」", <i className="fas fa-users text-[28px] text-slate-400" />, "slate")}
+                                                onClick={() => openModal("中生代：角色旁白", "「你是橋樑。你小時候看過老人家怎麼做，所以學得比年輕人快；你也在另一種生活裡待過，所以知道怎麼把老人家的話說給年輕人聽。老人家能說出什麼東西不見了，你還能想出它可以轉化成什麼。這個部落要怎麼走下去，很大一部分要看你。」", <i className="fas fa-users text-[28px] text-slate-400" />, "slate")}
                                                 className="mt-auto w-full py-4 rounded-xl border border-slate-500/40 text-slate-300 text-base font-bold hover:bg-slate-800/50 hover:text-white transition-colors flex justify-center items-center"
                                             >
                                                 <i className="fas fa-quote-left text-[18px] mr-3 opacity-70" />閱讀角色旁白
@@ -905,16 +911,17 @@
 
                         <div>
                             <h3 className="text-2xl font-bold text-white mb-6 flex items-center tracking-wide">
-                                <StepBadge num="2-3" />規則快速說明（約 3 分鐘）
+                                <StepBadge num="2-3" />規則快速說明（約 4 分鐘）
                             </h3>
                             <div className="ml-14 border-l-2 border-emerald-800/50 pl-8 pb-2">
                                 <div className="bg-[#04281f] p-8 rounded-2xl border border-emerald-900 shadow-inner hover:shadow-emerald-900/30 transition-shadow">
                                     <ul className="text-emerald-50/90 space-y-6 list-decimal pl-6 marker:text-emerald-500 marker:font-bold text-lg leading-relaxed">
-                                        <li className="pl-3">每回合翻開一張月份卡，月份卡決定本回合的環境限制。</li>
-                                        <li className="pl-3">每位玩家每回合有固定 <strong className="text-white tracking-wide text-xl">AP</strong>，用完為止。</li>
-                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 A（傳統工法）：</strong>採集 → 剝麻 → 刮絲 → 捻線（需 KP 3）→ 填縫（需 KP 8）。</li>
-                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 B（工業替代）：</strong>去商店買樹脂，直接完工，但取得「不可修復」標記。</li>
-                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">學徒機制：</strong>青年與耆老同區域時，回合結束自動獲得 1 KP。</li>
+                                        <li className="pl-3">每個月有固定的月份效果，決定當月的環境限制。</li>
+                                        <li className="pl-3">每位玩家每回合有固定 <strong className="text-white tracking-wide text-xl">AP</strong>，用完為止；每個月只回復一部分。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 A（傳統工法）：</strong>砍伐剝皮 → 摩擦軟化 → 劃痕撕絲 → 曝曬乾燥 → 理線捻繩（需 KP 3）→ 填縫完工（需 KP 8）。每道工序要跨月。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 B（機器加工）：</strong>完成山林三道工序後到商店，KP 達 5 可用機器加工 Avaka 纖維完工，船仍可拆修。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 C（工業樹脂）：</strong>完成山林三道工序後到商店用樹脂完工，很快，但取得「不可修復」標記。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">請益與互助：</strong>向耆老或中生代請益、送材料給耆老、幫忙長者都會加分。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -972,7 +979,7 @@
                                         icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
                                         title="第 1 月 主持人台詞"
                                         content={<>
-                                            「月份卡說——本回合移動不耗 AP，這是立春的禮物。
+                                            「月份卡說——這個月上山砍伐，一次可以帶回兩份材料，這是準備月的禮物。
                                             <br /><br />
                                             （停頓兩秒）
                                             <br /><br />
@@ -1016,7 +1023,7 @@
                                     <div className="ml-3 my-10 px-5 border-l-4 border-cyan-800/50">
                                         <ul className="space-y-6 text-base text-emerald-50">
                                             <li className="bg-cyan-950/20 p-6 rounded-xl border border-teal-800/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-teal-400 block mb-3 tracking-widest text-xl">選擇一：向同組玩家求援</strong><span className="opacity-90">消耗 1 AP。尋求團隊支援。</span></li>
-                                            <li className="bg-slate-900/40 p-6 rounded-xl border border-slate-700/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-slate-300 block mb-3 tracking-widest text-xl">選擇二：前往商店購買尼初繩</strong><span className="opacity-90">消耗 2 AP，獲得「不可修復」標記。</span></li>
+                                            <li className="bg-slate-900/40 p-6 rounded-xl border border-slate-700/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-slate-300 block mb-3 tracking-widest text-xl">選擇二：把時間拿來學習</strong><span className="opacity-90">向耆老或中生代請益，累積 KP，等下個月解禁。</span></li>
                                             <li className="bg-amber-950/20 p-6 rounded-xl border border-amber-800/50 hover:-translate-y-1 transition-transform shadow-lg"><strong className="text-amber-400 block mb-3 tracking-widest text-xl">選擇三：枯坐一個月</strong><span className="opacity-90">放棄行動。默默承受時間壓力。</span></li>
                                         </ul>
                                     </div>
@@ -1026,7 +1033,7 @@
                                         content={<>
                                             青年：「糟了！我的 Avaka 原料用完了，但現在上山會觸犯禁忌……」
                                             <br /><br />
-                                            中生代：「這就是為什麼老人家說 Kashyman 月要拼命存貨。現在你只能跟我去商店買尼龍繩，或者枯等一個月，看著進度落後。」
+                                            中生代：「這就是為什麼老人家說 Kashyman 月要拼命存貨。山上現在不能去，但你可以來問我，或是帶著禮物去請教老人家。等待的時候，正好把該懂的學起來。」
                                             <br /><br />
                                             耆老：「飛魚隨著黑潮而來，而我們則順應時節。這是海洋的規矩，我們要好好遵守。」
                                         </>}
@@ -1058,7 +1065,7 @@
                                         title="第 5 月 環境與角色旁白"
                                         content={<>
                                             「天空陰雲密佈。 突如其來的降雨，讓你在灘頭曝曬的 Avaka 纖維陷入腐爛危機。<br /><br />
-                                            規則說：曝曬中的材料，若你沒有預留 1 AP 進行維護，下回合自動報廢。」
+                                            規則說：還沒完成曝曬乾燥的材料，要用你上個月留下的 1 AP 來遮蓋；上個月把 AP 用完的人，材料現在就腐爛歸零。」
                                             <br /><br />
                                             耆老（突然抬頭看天）：「孩子，做船不能只看地上的麻，要看天上的雲。快收起來！」
                                             <br /><br />
@@ -1092,7 +1099,7 @@
                                         icon={<i className="fas fa-play-circle text-[28px] text-emerald-400" />}
                                         title="第 10 月 旁白與台詞"
                                         content={<>
-                                            「這是蘭嶼夜曆中最不吉祥的月份。這個月，專門製作貝灰，不允許舉行婚禮、造屋，也不允許落成禮。 即便你的材料已齊備，KP 已達標——現在也絕對不能動工填縫。」
+                                            「這是蘭嶼夜曆中最不吉祥的月份。這個月，專門製作貝灰，不允許舉行婚禮、造屋，也不允許落成禮。 即便你的材料已齊備，KP 已達標——現在也絕對不能動工填縫。去商店也一樣，這個月任何方式都不能完工。」
                                             <br /><br />
                                             中生代（看著材料）：「這就是『儀式時間』的邏輯。你得學會等待。如果你現在強行完工，這艘船在部落眼中將失去靈魂。」
                                             <br /><br />
@@ -1127,7 +1134,7 @@
                                         title="第 12 月 旁白與台詞"
                                         content={<>
                                             「這是屬於手工藝的月份。 男人冶鐵織繩，女人織布——整個部落都在做手工。<br /><br />
-                                            本月，執行『捻線』不再消耗任何 AP。<br /><br />
+                                            本月，執行『捻繩』不再消耗任何 AP，而且捻繩和填縫可以接連完成。<br /><br />
                                             你發現自己的手感前所未有的流暢。不是因為你突然變厲害了，是因為你整年都在積累，而現在，土地給了你最後的補償。」
                                             <br /><br />
                                             耆老（展露出笑意）：「看吧，只要你順應時序，土地會給你最後的補償。快動手，讓這條船趕在明年飛魚祭前下水！」
@@ -1150,7 +1157,7 @@
             const renderSection4 = () => (
                 <div className="space-y-8 animate-fadeIn">
                     <GlassCard className="p-8 md:p-12" delay="delay-100">
-                        <SectionTitle icon={<i className="fas fa-trophy text-[32px] text-amber-400" />} title="第三段：結算與反思討論（45:00 – 60:00）" />
+                        <SectionTitle icon={<i className="fas fa-trophy text-[32px] text-amber-400" />} title="第三段：結算與反思討論（65:00 – 90:00）" />
 
                         <div className="mb-16">
                             <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
@@ -1160,7 +1167,7 @@
                             <div className="ml-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <ScriptButton
                                     icon={<i className="fas fa-flag text-[28px] text-amber-400" />}
-                                    title="傳承之靈 (18-25分)"
+                                    title="傳承之靈 (18分以上，限傳統路徑)"
                                     buttonText="閱讀結局"
                                     theme="amber"
                                     content={<>
@@ -1171,7 +1178,7 @@
                                 />
                                 <ScriptButton
                                     icon={<i className="fas fa-flag text-[28px] text-cyan-400" />}
-                                    title="協商之光 (11-17分)"
+                                    title="協商之光 (11分以上)"
                                     buttonText="閱讀結局"
                                     theme="cyan"
                                     content={<>
@@ -1220,7 +1227,7 @@
 
                         <div>
                             <h3 className="text-2xl font-bold text-white mb-8 flex items-center tracking-wide">
-                                <StepBadge num="4-2" />三層次反思討論（約 12 分鐘）
+                                <StepBadge num="4-2" />三層次反思討論（約 21 分鐘）
                             </h3>
                             <div className="ml-14 grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
@@ -1236,9 +1243,9 @@
 
                                 <div className="bg-[#03241b] p-8 rounded-2xl border border-emerald-800/50 flex flex-col shadow-lg hover:-translate-y-1 transition-transform group">
                                     <span className="text-emerald-300 font-bold text-base block mb-5 border-b border-white/10 pb-4 uppercase tracking-widest">層次二：機制層</span>
-                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「樹脂路徑雖然快，但在遊戲裡，『去技能化』是怎麼發生的？」</p>
+                                    <p className="font-bold text-white mb-5 text-lg leading-relaxed">「三種完工的方式，各留下了什麼、又放掉了什麼？『去技能化』是怎麼發生的？」</p>
                                     <div className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
-                                        <p><strong className="text-emerald-300 tracking-widest">引導方向：</strong>不可修復標記的意涵，以及跳過工序後技術知識的消失。</p>
+                                        <p><strong className="text-emerald-300 tracking-widest">引導方向：</strong>不可修復標記的意涵，以及跳過工序後技術知識的消失。也請學生看「得分來源」：為什麼請益、送禮、幫忙會加分？</p>
                                     </div>
                                     <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
                                         保持中立，讓學生互相回應，不要評判答案優劣。
@@ -1250,9 +1257,11 @@
                                     <p className="font-bold text-white mb-5 text-lg leading-relaxed">「如果你是蘭嶼的青年，你今天會選哪條路？」</p>
                                     <div className="text-emerald-50 text-base mb-6 bg-black/40 p-5 rounded-xl flex-1">
                                         <p><strong className="text-emerald-300 tracking-widest">最終提問：</strong>「在遊戲裡，你跟著耆老學習的那幾個回合帶給你什麼？」</p>
+                                        <p className="mt-3"><strong className="text-emerald-300 tracking-widest">可以跟誰討論：</strong>「如果你想認真思考自己的文化，身邊可以找誰？老人家和中生代各自會告訴你什麼？」</p>
+                                        <p className="mt-3"><strong className="text-emerald-300 tracking-widest">回扣開場：</strong>「哪一種材質對環境的影響比較小？可是它比較麻煩，你有沒有別的想法？」</p>
                                     </div>
                                     <p className="text-amber-100 text-base italic bg-[#291b04] border border-amber-800/50 p-5 rounded-xl shadow-inner">
-                                        主持人收尾：「文化傳承不是把知識存在書裡，是存在人的身體裡。」
+                                        主持人收尾：「文化傳承不是把知識存在書裡，是存在人的身體裡。文化會變是正常的，重要的是知道自己為什麼這樣選。」
                                     </p>
                                 </div>
                             </div>
@@ -1285,25 +1294,61 @@
                                             <td className="px-8 py-5 font-bold text-emerald-50">移動</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP（青年免費）</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
-                                            <td className="px-8 py-5 text-emerald-200/80">在山林、灘頭、商店間移動</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">在山林、灘頭工作室、商店間移動</td>
                                         </tr>
                                         <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
-                                            <td className="px-8 py-5 font-bold text-emerald-50">捻線</td>
-                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
+                                            <td className="px-8 py-5 font-bold text-emerald-50">工序①至④</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">3 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">①②③在山林、④在灘頭；每道工序要跨月</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">理線捻繩</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">3 AP（12 月免費）</td>
                                             <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 3</td>
                                             <td className="px-8 py-5 text-emerald-200/80">須在灘頭執行</td>
                                         </tr>
-                                        <tr className="hover:bg-white/5 transition-colors">
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
                                             <td className="px-8 py-5 font-bold text-emerald-50">填縫（完工）</td>
-                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP（耆老免費）</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">3 AP（耆老免費）</td>
                                             <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 8</td>
-                                            <td className="px-8 py-5 text-emerald-200/80">須在灘頭執行；Kaneman 月禁止</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">須在灘頭執行；Kaneman 月禁止；+20 分</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">向耆老請益</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">青年 3 AP／中生代 2 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">獲得 3 KP，雙方各 +1 分</td>
                                         </tr>
                                         <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
-                                            <td className="px-8 py-5 font-bold text-emerald-50">請益</td>
+                                            <td className="px-8 py-5 font-bold text-emerald-50">向中生代請益</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">限青年；獲得 2 KP，雙方各 +1 分</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">贈予材料</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">同區域；送給耆老時自己 +1 分</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">幫忙長者</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
-                                            <td className="px-8 py-5 text-emerald-200/80">向同區域耆老請益，獲得 3 KP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">與耆老同區域；耆老回復 2 AP，自己 +1 分</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">機器加工完工</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">3 AP</td>
+                                            <td className="px-8 py-5 font-bold text-amber-400 tracking-wider text-shadow-glow">KP 5</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">須在商店；先完成山林三道工序並持有 2 份材料；+12 分</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">工業樹脂完工</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">3 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">須在商店；先完成山林三道工序並持有 2 份材料；+5 分，不可修復</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1332,7 +1377,7 @@
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-bold tracking-widest text-white text-shadow-glow whitespace-nowrap">Avaka：島嶼的維度</h1>
-                                    <p className="text-sm text-emerald-400/80 tracking-widest mt-1">數位主持人儀表板 ✧ 60分鐘課堂版</p>
+                                    <p className="text-sm text-emerald-400/80 tracking-widest mt-1">數位主持人儀表板 ✧ 90分鐘課堂版</p>
                                 </div>
                             </div>
                             <GooeyNav tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
