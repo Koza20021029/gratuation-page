@@ -834,7 +834,7 @@
                                                 <i className="fas fa-trophy text-[24px] mr-3" />資深工匠 (耆老)
                                             </h4>
                                             <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-amber-900/50">
-                                                <p className="flex justify-between text-amber-100/80"><span>AP：</span> <span className="font-bold text-white">4點（每月 +3）</span></p>
+                                                <p className="flex justify-between text-amber-100/80"><span>AP：</span> <span className="font-bold text-white">6點（每月 +5）</span></p>
                                                 <p className="flex justify-between text-amber-100/80"><span>KP：</span> <span className="font-bold text-emerald-400">10點（初始）</span></p>
                                             </div>
                                             <div className="mb-6 flex-1">
@@ -860,7 +860,7 @@
                                                 <i className="fas fa-bullseye text-[24px] mr-3" />文化復振青年
                                             </h4>
                                             <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-teal-900/50">
-                                                <p className="flex justify-between text-teal-100/80"><span>AP：</span> <span className="font-bold text-white">6點（每月 +4）</span></p>
+                                                <p className="flex justify-between text-teal-100/80"><span>AP：</span> <span className="font-bold text-white">8點（每月 +6）</span></p>
                                                 <p className="flex justify-between text-teal-100/80"><span>KP：</span> <span className="font-bold text-slate-400">0點（初始）</span></p>
                                             </div>
                                             <div className="mb-6 flex-1">
@@ -887,7 +887,7 @@
                                                 <i className="fas fa-users text-[24px] mr-3" />中生代工匠
                                             </h4>
                                             <div className="text-base space-y-3 mb-6 bg-black/40 p-4 rounded-xl border border-slate-800/50">
-                                                <p className="flex justify-between text-slate-200/80"><span>AP：</span> <span className="font-bold text-white">5點（每月 +3）</span></p>
+                                                <p className="flex justify-between text-slate-200/80"><span>AP：</span> <span className="font-bold text-white">7點（每月 +5）</span></p>
                                                 <p className="flex justify-between text-slate-200/80"><span>KP：</span> <span className="font-bold text-emerald-400">5點（初始）</span></p>
                                             </div>
                                             <div className="mb-6 flex-1">
@@ -922,6 +922,7 @@
                                         <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 B（機器加工）：</strong>完成山林三道工序後到商店，KP 達 5 可用機器加工 Avaka 纖維完工，船仍可拆修。</li>
                                         <li className="pl-3"><strong className="text-emerald-300 tracking-wide">路徑 C（工業樹脂）：</strong>完成山林三道工序後到商店用樹脂完工，很快，但取得「不可修復」標記。</li>
                                         <li className="pl-3"><strong className="text-emerald-300 tracking-wide">請益與互助：</strong>向耆老或中生代請益、送材料給耆老、幫忙長者都會加分。</li>
+                                        <li className="pl-3"><strong className="text-emerald-300 tracking-wide">森林狀態：</strong>全組共用。有人上山砍伐、照顧林地就 +1，整個月沒人去就 −1；年終在 4 以上，全組每人 +2 分。</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1328,13 +1329,13 @@
                                         </tr>
                                         <tr className="hover:bg-white/5 transition-colors">
                                             <td className="px-8 py-5 font-bold text-emerald-50">贈予材料</td>
-                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">0 AP</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
                                             <td className="px-8 py-5 text-emerald-200/80">同區域；送給耆老時自己 +1 分</td>
                                         </tr>
                                         <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
                                             <td className="px-8 py-5 font-bold text-emerald-50">幫忙長者</td>
-                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">2 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
                                             <td className="px-8 py-5 text-emerald-200/80">與耆老同區域；耆老回復 2 AP，自己 +1 分</td>
                                         </tr>
@@ -1349,6 +1350,48 @@
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">3 AP</td>
                                             <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
                                             <td className="px-8 py-5 text-emerald-200/80">須在商店；先完成山林三道工序並持有 2 份材料；+5 分，不可修復</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">每月小組任務</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">—</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">系統每月抽一個全組任務；達成後所有人 +1 分</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">請益與指導的加分上限</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">—</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">每人每月最多計 2 次；超過仍得 KP，不再加分</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">補種 Avaka</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">須在山林，每月 1 次；算作照顧林地，下個月起第一次砍伐多得 1 份材料</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">搭把手</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">1 AP</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">與隊友同區域；對方本月下一道工序少 2 AP，自己 +1 分（每月計 1 次）</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">請益小問答</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">—</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">請益後出一題三選一；答對多得 1 KP，答錯沒有損失</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">事件卡</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">—</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">3、6、8、11 月每人一張二選一的事件卡</td>
+                                        </tr>
+                                        <tr className="bg-white/[0.02] hover:bg-white/5 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-emerald-50">工序小遊戲</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">—</td>
+                                            <td className="px-8 py-5 text-emerald-200/80 tracking-wider">無</td>
+                                            <td className="px-8 py-5 text-emerald-200/80">做完工序後抓準時機，成功退回 1 AP，可以跳過</td>
                                         </tr>
                                     </tbody>
                                 </table>
